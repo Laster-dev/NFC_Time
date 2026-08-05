@@ -132,7 +132,7 @@
             background: #FFFFFF;
             border-radius: 18px;
             padding: 12px 14px;
-            border: 2px solid #FDE68A;
+            border: 2px solid #FCD34D;
             background: linear-gradient(180deg, #FFFFFF 0%, #FEFCE8 100%);
             box-shadow: var(--shadow-kawaii);
             position: relative;
@@ -452,9 +452,9 @@
             <div class="hand-badge" id="cardCounter">0 份手作</div>
         </header>
 
-        <!-- Announcement Board Container (Normal non-force announcements) -->
+        <!-- Announcement Board Container -->
         <div class="anno-board-area" id="annoBoardArea">
-            <!-- Dynamic normal announcements -->
+            <!-- Dynamic announcements -->
         </div>
 
         <!-- Cute Filter Tabs -->
@@ -470,7 +470,7 @@
         </main>
     </div>
 
-    <!-- Forced Announcement Modal (Hidden by default) -->
+    <!-- Forced Announcement Modal -->
     <div class="force-modal-overlay" id="forceAnnoModal" style="display: none;">
         <div class="force-modal-box">
             <div class="force-modal-header" id="forceModalTitle">📢 重要公告</div>
@@ -483,9 +483,12 @@
         let currentFilter = 'all';
         let cachedCardsData = [];
         let cachedAnnouncements = [];
-        let forceShownMap = new Set(); // Avoid repeated popup in same session
+        let forceShownMap = new Set();
 
         const FIXED_GIST_ID = "6582c66b24bad75381f70abdae62e81b";
+        
+        // Single API endpoint for Gist containing both files
+        const GIST_API_URL = `https://api.github.com/gists/${FIXED_GIST_ID}`;
         const RAW_GIST_CARDS = `https://gist.githubusercontent.com/raw/${FIXED_GIST_ID}/cards_data.json`;
         const RAW_GIST_ANNOS = `https://gist.githubusercontent.com/raw/${FIXED_GIST_ID}/announcements.json`;
 
@@ -502,22 +505,49 @@
             });
 
             fetchAllFromGist();
-            setInterval(fetchAllFromGist, 5000); // Poll Gist every 5s
+            setInterval(fetchAllFromGist, 4000); // Poll Gist every 4s
             setInterval(tickLocalTimers, 1000);     // Tick UI timer every 1s
         });
 
         async function fetchAllFromGist() {
             try {
-                // Fetch cards and announcements in parallel
+                // Try Gist API first (contains all files in one response)
+                const res = await fetch(`${GIST_API_URL}?t=${Date.now()}`);
+                if (res.ok) {
+                    const data = await res.json();
+                    const files = data.files || {};
+
+                    // Extract cards
+                    const cardsFile = files['cards_data.json'] || files['gistfile1.txt'];
+                    if (cardsFile && cardsFile.content) {
+                        try { cachedCardsData = JSON.parse(cardsFile.content); } catch (e) {}
+                    }
+
+                    // Extract announcements
+                    const annosFile = files['announcements.json'];
+                    if (annosFile && annosFile.content) {
+                        try { cachedAnnouncements = JSON.parse(annosFile.content); } catch (e) {}
+                    }
+
+                    renderDashboard(cachedCardsData);
+                    renderAnnouncements(cachedAnnouncements);
+                    return;
+                }
+            } catch (apiErr) {
+                console.warn('Gist API fetch fallback to Raw CDN');
+            }
+
+            // Fallback to Raw CDN
+            try {
                 const [cardsRes, annosRes] = await Promise.all([
-                    fetch(`${RAW_GIST_CARDS}?t=${Date.now()}`),
+                    fetch(`${RAW_GIST_CARDS}?t=${Date.now()}`).catch(() => null),
                     fetch(`${RAW_GIST_ANNOS}?t=${Date.now()}`).catch(() => null)
                 ]);
 
                 if (cardsRes && cardsRes.ok) {
                     const cardsText = await cardsRes.text();
                     if (cardsText) {
-                        try { cachedCardsData = JSON.parse(cardsText); } catch (e) { cachedCardsData = []; }
+                        try { cachedCardsData = JSON.parse(cardsText); } catch (e) {}
                     }
                     renderDashboard(cachedCardsData);
                 }
@@ -525,7 +555,7 @@
                 if (annosRes && annosRes.ok) {
                     const annosText = await annosRes.text();
                     if (annosText) {
-                        try { cachedAnnouncements = JSON.parse(annosText); } catch (e) { cachedAnnouncements = []; }
+                        try { cachedAnnouncements = JSON.parse(annosText); } catch (e) {}
                     }
                     renderAnnouncements(cachedAnnouncements);
                 }
@@ -540,27 +570,21 @@
                 return;
             }
 
-            // 1. Separate forced vs normal announcements
             const forcedAnnos = annos.filter(a => a.isForce);
-            const normalAnnos = annos.filter(a => !a.isForce);
 
-            // Render normal announcements on board
+            // Render ALL announcements on board
             const board = document.getElementById('annoBoardArea');
-            if (normalAnnos.length > 0) {
-                board.innerHTML = normalAnnos.map(a => `
-                    <div class="anno-cute-card">
-                        <div class="anno-card-head">
-                            <span class="anno-card-title">📢 ${escapeHtml(a.title)}</span>
-                            <span class="anno-card-time">${formatAnnoTime(a.publishTimeUtc)}</span>
-                        </div>
-                        <div class="anno-card-content">${escapeHtml(a.content)}</div>
+            board.innerHTML = annos.map(a => `
+                <div class="anno-cute-card">
+                    <div class="anno-card-head">
+                        <span class="anno-card-title">${a.isForce ? '🚨 [重要提醒]' : '📢'} ${escapeHtml(a.title)}</span>
+                        <span class="anno-card-time">${formatAnnoTime(a.publishTimeUtc)}</span>
                     </div>
-                `).join('');
-            } else {
-                board.innerHTML = '';
-            }
+                    <div class="anno-card-content">${escapeHtml(a.content)}</div>
+                </div>
+            `).join('');
 
-            // 2. Handle forced popup (Show latest forced announcement if not popped yet)
+            // Handle forced popup (Show latest forced announcement if not popped yet)
             if (forcedAnnos.length > 0) {
                 const latestForce = forcedAnnos[0];
                 if (!forceShownMap.has(latestForce.id)) {
