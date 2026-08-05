@@ -44,7 +44,6 @@ import java.util.TimeZone
 class MainActivity : AppCompatActivity() {
 
     private var nfcAdapter: NfcAdapter? = null
-    private var pendingIntent: PendingIntent? = null
     private lateinit var apiClient: GitHubApiClient
     private var pollJob: Job? = null
 
@@ -105,14 +104,6 @@ class MainActivity : AppCompatActivity() {
         } else {
             tvNfcStatus.text = "🟢 NFC 已就绪，随时可贴卡"
         }
-
-        val flags = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
-        } else {
-            PendingIntent.FLAG_UPDATE_CURRENT
-        }
-        val intent = Intent(this, javaClass).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP)
-        pendingIntent = PendingIntent.getActivity(this, 0, intent, flags)
     }
 
     override fun onResume() {
@@ -123,8 +114,15 @@ class MainActivity : AppCompatActivity() {
 
     private fun enableForegroundDispatchSafely() {
         try {
-            if (nfcAdapter != null && nfcAdapter!!.isEnabled && pendingIntent != null) {
-                // Register for all tech lists to ensure no card type is missed
+            if (nfcAdapter != null && nfcAdapter!!.isEnabled) {
+                val flags = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                    PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+                } else {
+                    PendingIntent.FLAG_UPDATE_CURRENT
+                }
+                val intent = Intent(this, javaClass).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP)
+                val pendingIntent = PendingIntent.getActivity(this, 0, intent, flags)
+
                 val techList = arrayOf(
                     arrayOf(NfcA::class.java.name),
                     arrayOf(NfcB::class.java.name),
