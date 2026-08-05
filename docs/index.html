@@ -275,18 +275,18 @@
             font-weight: 900;
         }
 
-        /* Dual Column Hand-crafted Card Grid */
+        /* Single Column Hand-crafted Card Grid */
         .card-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
             padding-bottom: 30px;
         }
 
         .cute-card {
             background: #FFFFFF;
             border-radius: 22px;
-            padding: 14px 12px;
+            padding: 14px 14px;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
@@ -320,13 +320,13 @@
         }
 
         .card-name-title {
-            font-size: 1.05rem;
+            font-size: 1.08rem;
             font-weight: 800;
             color: var(--text-dark);
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
-            max-width: 95px;
+            max-width: 240px;
         }
 
         .cute-tag {
