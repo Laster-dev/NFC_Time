@@ -1,7 +1,7 @@
 @echo off
 title NFC App Build Script
 echo ===================================================
-echo             NFC App Build Script
+echo     NFC App Build Script (Debug and Release)
 echo ===================================================
 echo.
 
@@ -36,21 +36,18 @@ if defined ANDROID_HOME (
 )
 
 echo.
-echo [3/3] Building Android Debug APK...
+echo [3/3] Building Debug and Signed Release APKs...
 echo.
 
 set SCRIPT_DIR=%~dp0
 cd /d "%SCRIPT_DIR%android"
 
-call gradlew.bat assembleDebug
+call gradlew.bat assembleDebug assembleRelease
 
 if %errorlevel% neq 0 (
     echo.
     echo ===================================================
-    echo [Build Note]
-    echo If this is the first time running without gradle-wrapper.jar,
-    echo please open the 'android' folder in Android Studio once to allow
-    echo it to automatically download Gradle dependencies.
+    echo [Build Failed] Please check build errors above.
     echo ===================================================
     echo.
     pause
@@ -59,12 +56,16 @@ if %errorlevel% neq 0 (
 
 echo.
 echo ===================================================
-echo [Build Success] APK generated successfully!
-echo File path: android\app\build\outputs\apk\debug\app-debug.apk
+echo [Build Success] Both Debug and Signed Release APKs generated!
+echo.
+echo  - Debug APK:   android\app\build\outputs\apk\debug\app-debug.apk
+echo  - Release APK: android\app\build\outputs\apk\release\app-release.apk
 echo ===================================================
 echo.
 
-if exist "app\build\outputs\apk\debug\app-debug.apk" (
+if exist "app\build\outputs\apk\release\app-release.apk" (
+    explorer /select,"app\build\outputs\apk\release\app-release.apk"
+) else if exist "app\build\outputs\apk\debug\app-debug.apk" (
     explorer /select,"app\build\outputs\apk\debug\app-debug.apk"
 )
 pause
