@@ -57,6 +57,7 @@
         android:padding="16dp">
 
         <TextView
+            android:id="@+id/tvActiveTimeLabel"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="剩余时间"
@@ -78,9 +79,9 @@
             android:id="@+id/tvActiveOverdueAlert"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="🚨 超时: 00:05:12"
+            android:text="🚨 已超时 00:05:12"
             android:textColor="#EF4444"
-            android:textSize="14sp"
+            android:textSize="16sp"
             android:textStyle="bold"
             android:visibility="gone" />
     </LinearLayout>
@@ -106,7 +107,7 @@
             android:id="@+id/tvActiveStartTime"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="2026-08-05 14:30:00"
+            android:text="14:30:00"
             android:textColor="#FFFFFF"
             android:textSize="13sp"
             android:textStyle="bold" />

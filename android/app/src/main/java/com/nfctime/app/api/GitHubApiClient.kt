@@ -21,7 +21,7 @@ data class CardInfo(
     val cardId: String,
     var name: String = "",
     var targetDurationSeconds: Int = 0,
-    var status: Int = 0, // 0: Stopped, 1: Running, 2: Paused, 3: Expired
+    var status: Int = 0, // 0: Stopped/Unused, 1: Running, 2: Paused, 3: Expired
     var startTimeUtc: String? = null,
     var savedRemainingSeconds: Int = 0,
     var remainingSeconds: Double = 0.0,
@@ -53,7 +53,7 @@ class GitHubApiClient(
         token = newToken.trim()
     }
 
-    private fun getCachedCards(): MutableList<CardInfo> {
+    fun getCachedCards(): MutableList<CardInfo> {
         val json = prefs.getString("cached_json", "[]")
         return try {
             gson.fromJson(json, Array<CardInfo>::class.java).toMutableList()
@@ -154,6 +154,7 @@ class GitHubApiClient(
         return@withContext list
     }
 
+    // Swipe card: retains pre-saved name if found, else creates new unused card entry
     fun swipeCardImmediate(cardId: String): CardInfo {
         val list = getCachedCards()
         var card = list.find { it.cardId.equals(cardId, ignoreCase = true) }
@@ -209,7 +210,7 @@ class GitHubApiClient(
                 }
             }
             "stop" -> {
-                card.status = 0 // Stopped
+                card.status = 0 // Stopped / Unused
                 card.savedRemainingSeconds = card.targetDurationSeconds
                 card.startTimeUtc = null
             }
@@ -227,12 +228,14 @@ class GitHubApiClient(
         return card
     }
 
-    fun deleteCardImmediate(cardId: String): Boolean {
+    // Soft Delete: Reset status to 0 (Unused/Stopped) while preserving card's name & UID record!
+    fun resetCardToUnusedImmediate(cardId: String): Boolean {
         val list = getCachedCards()
-        val removed = list.removeAll { it.cardId.equals(cardId, ignoreCase = true) }
-        if (removed) {
-            syncToRemoteAsync(list)
-        }
-        return removed
+        val card = list.find { it.cardId.equals(cardId, ignoreCase = true) } ?: return false
+        card.status = 0
+        card.startTimeUtc = null
+        card.savedRemainingSeconds = card.targetDurationSeconds
+        syncToRemoteAsync(list)
+        return true
     }
 }

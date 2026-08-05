@@ -85,10 +85,9 @@ class MainActivity : AppCompatActivity() {
         if (!nfcAdapter!!.isEnabled) {
             tvNfcStatus.text = "⚠️ NFC 未开启，请在系统设置中启用 NFC"
         } else {
-            tvNfcStatus.text = "🟢 NFC 已就绪，请贴近卡片中央"
+            tvNfcStatus.text = "🟢 NFC 已就绪，随时可刷卡"
         }
 
-        // FLAG_UPDATE_CURRENT avoids missing intent payload when swiping repeatedly
         val flags = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
         } else {
@@ -100,7 +99,6 @@ class MainActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
-        // Broadly accept all NFC tech/tags to guarantee 100% swipe recognition rate
         nfcAdapter?.enableForegroundDispatch(this, pendingIntent, null, null)
         startPolling()
     }
@@ -146,11 +144,11 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun openCardDialogByState(card: CardInfo) {
-        // If card is currently running (status == 1), show compact Active Card Dialog
-        if (card.status == 1) {
+        // If card is currently running (1) or expired (3) or overdue, show Active Dialog
+        if (card.status == 1 || card.status == 3 || card.isOverdue) {
             showActiveRunningCardDialog(card)
         } else {
-            // Otherwise show full setup dialog (for stopped or new cards)
+            // Unused / stopped card (status == 0) -> shows full setup dialog (with preserved name)
             showCardControlDialog(card)
         }
     }
@@ -169,9 +167,10 @@ class MainActivity : AppCompatActivity() {
         lifecycleScope.launch { refreshCards() }
     }
 
+    // Only show active cards (status != 0) on RecyclerView list
     private suspend fun refreshCards() {
-        val cards = apiClient.getAllCards()
-        adapter.setCards(cards)
+        val allCards = apiClient.getAllCards()
+        adapter.setCards(allCards)
     }
 
     private fun showGitHubSettingsDialog() {
@@ -216,7 +215,7 @@ class MainActivity : AppCompatActivity() {
             .show()
     }
 
-    // Dialog for active running card (No name/duration edit fields)
+    // Active Card Control Dialog
     private fun showActiveRunningCardDialog(card: CardInfo) {
         val view = LayoutInflater.from(this).inflate(R.layout.dialog_active_card_control, null)
         val dialog = AlertDialog.Builder(this)
@@ -224,6 +223,7 @@ class MainActivity : AppCompatActivity() {
             .create()
 
         val tvTitle = view.findViewById<TextView>(R.id.tvActiveTitle)
+        val tvStatusBadge = view.findViewById<TextView>(R.id.tvActiveStatusBadge)
         val tvUid = view.findViewById<TextView>(R.id.tvActiveUid)
         val tvRemaining = view.findViewById<TextView>(R.id.tvActiveRemainingBig)
         val tvOverdueAlert = view.findViewById<TextView>(R.id.tvActiveOverdueAlert)
@@ -237,7 +237,6 @@ class MainActivity : AppCompatActivity() {
         tvTitle.text = card.name
         tvUid.text = "UID: ${card.cardId}"
 
-        // Format start time
         val startMs = try { isoFormat.parse(card.startTimeUtc ?: "")?.time } catch (e: Exception) { null }
         if (startMs != null) {
             val sdf = SimpleDateFormat("HH:mm:ss", Locale.getDefault())
@@ -246,16 +245,53 @@ class MainActivity : AppCompatActivity() {
             tvStartTime.text = "--:--:--"
         }
 
-        // Remaining time & overdue display
-        tvRemaining.text = formatTime(card.remainingSeconds)
-        if (card.isOverdue) {
-            tvOverdueAlert.visibility = View.VISIBLE
-            tvOverdueAlert.text = "🚨 已超时: ${formatTime(card.overdueSeconds)}"
-        } else {
-            tvOverdueAlert.visibility = View.GONE
+        var dialogTickJob: Job? = null
+        dialogTickJob = lifecycleScope.launch {
+            while (isActive) {
+                val now = System.currentTimeMillis()
+                var remaining = card.savedRemainingSeconds.toDouble()
+                var isOverdue = false
+                var overdueSeconds = 0.0
+
+                if (startMs != null && (card.status == 1 || card.status == 3)) {
+                    val elapsedSec = (now - startMs) / 1000.0
+                    remaining = card.savedRemainingSeconds - elapsedSec
+                }
+
+                if (remaining < 0) {
+                    isOverdue = true
+                    overdueSeconds = Math.abs(remaining)
+                }
+
+                if (isOverdue) {
+                    tvStatusBadge.text = "⚠️ 已超时"
+                    tvStatusBadge.setTextColor(0xFFEF4444.toInt())
+                    tvStatusBadge.setBackgroundColor(0x33EF4444.toInt())
+
+                    tvRemaining.text = "00:00:00"
+                    tvRemaining.setTextColor(0xFFEF4444.toInt())
+
+                    tvOverdueAlert.visibility = View.VISIBLE
+                    tvOverdueAlert.text = "🚨 已超时: ${formatTime(overdueSeconds)}"
+                } else {
+                    tvStatusBadge.text = if (card.status == 2) "已暂停" else "进行中"
+                    tvStatusBadge.setTextColor(if (card.status == 2) 0xFFF59E0B.toInt() else 0xFF10B981.toInt())
+                    tvStatusBadge.setBackgroundColor(if (card.status == 2) 0x33F59E0B.toInt() else 0x3310B981.toInt())
+
+                    tvRemaining.text = formatTime(remaining)
+                    tvRemaining.setTextColor(if (card.status == 2) 0xFFF59E0B.toInt() else 0xFF10B981.toInt())
+
+                    tvOverdueAlert.visibility = View.GONE
+                }
+
+                delay(1000)
+            }
         }
 
-        // Add Time Actions
+        dialog.setOnDismissListener {
+            dialogTickJob?.cancel()
+        }
+
         btnAdd10.setOnClickListener {
             apiClient.addTimeImmediate(card.cardId, 10 * 60)
             Toast.makeText(this, "已加时 10 分钟", Toast.LENGTH_SHORT).show()
@@ -278,8 +314,9 @@ class MainActivity : AppCompatActivity() {
         }
 
         btnPause.setOnClickListener {
-            apiClient.setTimerImmediate(card.cardId, 0, "pause")
-            Toast.makeText(this, "已暂停计时", Toast.LENGTH_SHORT).show()
+            val action = if (card.status == 2) "resume" else "pause"
+            apiClient.setTimerImmediate(card.cardId, 0, action)
+            Toast.makeText(this, if (action == "resume") "已恢复" else "已暂停", Toast.LENGTH_SHORT).show()
             dialog.dismiss()
             triggerLocalRefresh()
         }
@@ -294,7 +331,7 @@ class MainActivity : AppCompatActivity() {
         dialog.show()
     }
 
-    // Dialog for stopped/new cards (Full setup dialog)
+    // Dialog for unused / stopped cards (status == 0)
     private fun showCardControlDialog(card: CardInfo) {
         val view = LayoutInflater.from(this).inflate(R.layout.dialog_card_control, null)
         val dialog = AlertDialog.Builder(this)
@@ -304,8 +341,6 @@ class MainActivity : AppCompatActivity() {
         val tvUid = view.findViewById<TextView>(R.id.dialogCardUid)
         val etName = view.findViewById<EditText>(R.id.etCardName)
         val llTimelineDetails = view.findViewById<LinearLayout>(R.id.llTimelineDetails)
-        val tvStartTime = view.findViewById<TextView>(R.id.tvStartTimeDetail)
-        val tvEndTime = view.findViewById<TextView>(R.id.tvEndTimeDetail)
         val npHours = view.findViewById<NumberPicker>(R.id.npHours)
         val npMinutes = view.findViewById<NumberPicker>(R.id.npMinutes)
         val btnRename = view.findViewById<Button>(R.id.btnRename)
@@ -317,21 +352,11 @@ class MainActivity : AppCompatActivity() {
         tvUid.text = "UID: ${card.cardId}"
         etName.setText(card.name)
 
-        if (card.startTimeUtc != null) {
-            llTimelineDetails.visibility = View.VISIBLE
-            val startMs = try { isoFormat.parse(card.startTimeUtc!!)?.time } catch (e: Exception) { null }
-            tvStartTime.text = if (startMs != null) SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date(startMs)) else "--:--"
-            if (startMs != null && card.targetDurationSeconds > 0) {
-                val endMs = startMs + (card.targetDurationSeconds * 1000L)
-                tvEndTime.text = SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date(endMs))
-            } else {
-                tvEndTime.text = "--:--"
-            }
-        } else {
-            llTimelineDetails.visibility = View.GONE
-        }
+        llTimelineDetails.visibility = View.GONE
+        btnPause.visibility = View.GONE
+        btnStop.visibility = View.GONE
 
-        btnPause.text = if (card.status == 2) "恢复" else "暂停"
+        btnDeleteCard.text = "🗑️ 清理/设为未使用状态"
 
         npHours.minValue = 0
         npHours.maxValue = 23
@@ -348,7 +373,7 @@ class MainActivity : AppCompatActivity() {
             val newName = etName.text.toString().trim()
             if (newName.isNotEmpty()) {
                 apiClient.renameCardImmediate(card.cardId, newName)
-                Toast.makeText(this@MainActivity, "卡片已重命名为: $newName", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this@MainActivity, "卡片名称已更新: $newName", Toast.LENGTH_SHORT).show()
                 triggerLocalRefresh()
             }
         }
@@ -364,28 +389,13 @@ class MainActivity : AppCompatActivity() {
             triggerLocalRefresh()
         }
 
-        btnPause.setOnClickListener {
-            val action = if (card.status == 2) "resume" else "pause"
-            apiClient.setTimerImmediate(card.cardId, 0, action)
-            Toast.makeText(this@MainActivity, if (action == "resume") "已恢复" else "已暂停", Toast.LENGTH_SHORT).show()
-            dialog.dismiss()
-            triggerLocalRefresh()
-        }
-
-        btnStop.setOnClickListener {
-            apiClient.setTimerImmediate(card.cardId, 0, "stop")
-            Toast.makeText(this@MainActivity, "已停止计时", Toast.LENGTH_SHORT).show()
-            dialog.dismiss()
-            triggerLocalRefresh()
-        }
-
         btnDeleteCard.setOnClickListener {
             AlertDialog.Builder(this)
-                .setTitle("确认删除")
-                .setMessage("确定要彻底删除卡片「${card.name}」的计时记录吗？")
-                .setPositiveButton("删除") { _, _ ->
-                    apiClient.deleteCardImmediate(card.cardId)
-                    Toast.makeText(this@MainActivity, "卡片记录已删除", Toast.LENGTH_SHORT).show()
+                .setTitle("设为未使用状态")
+                .setMessage("保留名称「${card.name}」，将其转为未使用状态？（Web端将不再显示此卡片）")
+                .setPositiveButton("确认") { _, _ ->
+                    apiClient.resetCardToUnusedImmediate(card.cardId)
+                    Toast.makeText(this@MainActivity, "卡片已重置为未使用状态", Toast.LENGTH_SHORT).show()
                     dialog.dismiss()
                     triggerLocalRefresh()
                 }
@@ -408,12 +418,13 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    // RecyclerView Adapter
+    // RecyclerView Adapter: Shows cards in MainActivity
     class CardAdapter : RecyclerView.Adapter<CardAdapter.CardViewHolder>() {
         private var cards: List<CardInfo> = emptyList()
         var onManageClick: ((CardInfo) -> Unit)? = null
 
         fun setCards(newCards: List<CardInfo>) {
+            // Show active cards (status != 0) first, but keep full list manageable
             cards = newCards
             notifyDataSetChanged()
         }
@@ -460,10 +471,10 @@ class MainActivity : AppCompatActivity() {
                     tvTime.text = formatTime(card.remainingSeconds)
                     tvTime.setTextColor(0xFFF59E0B.toInt())
                 } else {
-                    tvBadge.text = "未开始"
+                    tvBadge.text = "未使用"
                     tvBadge.setBackgroundColor(0x3364748B.toInt())
                     tvBadge.setTextColor(0xFF94A3B8.toInt())
-                    tvTime.text = formatTime(card.remainingSeconds)
+                    tvTime.text = "00:00"
                     tvTime.setTextColor(0xFF94A3B8.toInt())
                 }
 

@@ -43,7 +43,7 @@
         }
 
         body {
-            /* Ultra-Cute Round Fonts: M PLUS Rounded 1c & Comfortaa & ZCOOL KuaiLe */
+            /* Ultra-Cute Round Fonts */
             font-family: 'M PLUS Rounded 1c', 'Comfortaa', 'ZCOOL KuaiLe', system-ui, -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
             background-color: var(--bg-page);
             background-image: 
@@ -401,7 +401,7 @@
 
             return cards.map(c => {
                 let remaining = c.savedRemainingSeconds || 0;
-                let status = c.status; // 0: Stopped, 1: Running, 2: Paused, 3: Expired
+                let status = c.status; // 0: Unused/Stopped, 1: Running, 2: Paused, 3: Expired
 
                 let startTimeStr = "--:--";
                 let endTimeStr = "--:--";
@@ -462,11 +462,14 @@
         }
 
         function renderDashboard(rawCards) {
-            const cards = computeCardsState(rawCards);
+            const allCards = computeCardsState(rawCards);
 
-            document.getElementById('cardCounter').textContent = `${cards.length} 份手作`;
+            // Filter out status === 0 (Unused cards) from Web display
+            const activeWebCards = allCards.filter(c => c.status !== 0);
 
-            const filtered = cards.filter(c => {
+            document.getElementById('cardCounter').textContent = `${activeWebCards.length} 份手作`;
+
+            const filtered = activeWebCards.filter(c => {
                 if (currentFilter === 'running') return c.status === 1 && !c.isOverdue;
                 if (currentFilter === 'expired') return c.isOverdue || c.status === 3;
                 return true;
@@ -477,7 +480,7 @@
                 grid.innerHTML = `
                     <div class="empty-cute-box">
                         <div class="empty-mascot">🐾</div>
-                        <p>暂无手作在此分类下哦~<br>快去手机端刷卡体验吧！✨</p>
+                        <p>暂无制作中的手作哦~<br>快去手机端刷卡开始吧！✨</p>
                     </div>
                 `;
                 return;
@@ -525,7 +528,7 @@
                 }
 
                 return `
-                    <div class="cute-card ${isExpiredMode ? 'card-expired-theme' : ''}">
+                    <div class="cute-card ${isExpiredMode ? 'card-overdue-mode' : ''}">
                         <div>
                             <div class="card-head-bar">
                                 <div class="card-name-title" title="${escapeHtml(card.name)}">${escapeHtml(card.name)}</div>
