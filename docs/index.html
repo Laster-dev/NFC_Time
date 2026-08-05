@@ -487,8 +487,7 @@
 
         const FIXED_GIST_ID = "6582c66b24bad75381f70abdae62e81b";
         
-        // Single API endpoint for Gist containing both files
-        const GIST_API_URL = `https://api.github.com/gists/${FIXED_GIST_ID}`;
+        // Pure CDN URLs
         const RAW_GIST_CARDS = `https://gist.githubusercontent.com/raw/${FIXED_GIST_ID}/cards_data.json`;
         const RAW_GIST_ANNOS = `https://gist.githubusercontent.com/raw/${FIXED_GIST_ID}/announcements.json`;
 
@@ -504,40 +503,12 @@
                 });
             });
 
-            fetchAllFromGist();
-            setInterval(fetchAllFromGist, 4000); // Poll Gist every 4s
-            setInterval(tickLocalTimers, 1000);     // Tick UI timer every 1s
+            fetchAllFromCDN();
+            setInterval(fetchAllFromCDN, 4000);  // Poll Raw CDN every 4s
+            setInterval(tickLocalTimers, 1000);   // Tick UI timer every 1s
         });
 
-        async function fetchAllFromGist() {
-            try {
-                // Try Gist API first (contains all files in one response)
-                const res = await fetch(`${GIST_API_URL}?t=${Date.now()}`);
-                if (res.ok) {
-                    const data = await res.json();
-                    const files = data.files || {};
-
-                    // Extract cards
-                    const cardsFile = files['cards_data.json'] || files['gistfile1.txt'];
-                    if (cardsFile && cardsFile.content) {
-                        try { cachedCardsData = JSON.parse(cardsFile.content); } catch (e) {}
-                    }
-
-                    // Extract announcements
-                    const annosFile = files['announcements.json'];
-                    if (annosFile && annosFile.content) {
-                        try { cachedAnnouncements = JSON.parse(annosFile.content); } catch (e) {}
-                    }
-
-                    renderDashboard(cachedCardsData);
-                    renderAnnouncements(cachedAnnouncements);
-                    return;
-                }
-            } catch (apiErr) {
-                console.warn('Gist API fetch fallback to Raw CDN');
-            }
-
-            // Fallback to Raw CDN
+        async function fetchAllFromCDN() {
             try {
                 const [cardsRes, annosRes] = await Promise.all([
                     fetch(`${RAW_GIST_CARDS}?t=${Date.now()}`).catch(() => null),
@@ -560,7 +531,7 @@
                     renderAnnouncements(cachedAnnouncements);
                 }
             } catch (err) {
-                console.error('Failed to fetch Gist data:', err);
+                console.error('Failed to fetch CDN data:', err);
             }
         }
 

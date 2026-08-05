@@ -1,5 +1,6 @@
 package com.nfctime.app
 
+import android.content.Context
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -28,6 +29,10 @@ class AnnouncementActivity : AppCompatActivity() {
         setContentView(R.layout.activity_announcement)
 
         apiClient = GitHubApiClient(this)
+        val prefs = getSharedPreferences("nfc_prefs", Context.MODE_PRIVATE)
+        val savedGistId = prefs.getString("gist_id", "") ?: ""
+        val savedToken = prefs.getString("github_token", "") ?: ""
+        apiClient.updateConfig(savedGistId, savedToken)
 
         rvAnnouncements = findViewById(R.id.rvAnnouncements)
         rvAnnouncements.layoutManager = LinearLayoutManager(this)
@@ -93,7 +98,7 @@ class AnnouncementActivity : AppCompatActivity() {
                     ?: Announcement(title = title, content = content, isForce = isForce)
 
                 apiClient.addOrUpdateAnnouncement(anno)
-                Toast.makeText(this, "公告已更新并后台发布", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "公告已更新并上传云端", Toast.LENGTH_SHORT).show()
                 refreshList()
             }
             .setNegativeButton("取消", null)
