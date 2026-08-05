@@ -356,11 +356,11 @@
         }
 
         .clock-val-cute {
-            font-size: 1.85rem;
-            font-family: 'Comfortaa', 'M PLUS Rounded 1c', monospace;
+            font-size: 1.55rem;
+            font-family: 'M PLUS Rounded 1c', 'Comfortaa', sans-serif;
             font-weight: 800;
             letter-spacing: -0.5px;
-            line-height: 1;
+            line-height: 1.2;
         }
 
         .clock-val-cute.text-mint { color: var(--color-mint-text); }
@@ -668,9 +668,11 @@
             const m = Math.floor((absSeconds % 3600) / 60);
             const s = absSeconds % 60;
 
-            const pad = n => n.toString().padStart(2, '0');
-            let str = `${pad(m)}:${pad(s)}`;
-            if (h > 0) str = `${pad(h)}:` + str;
+            let parts = [];
+            if (h > 0) parts.push(`${h}小时`);
+            if (m > 0 || h > 0) parts.push(`${m}分钟`);
+            parts.push(`${s}秒`);
+            let str = parts.join('');
             
             return isNegative ? `-${str}` : str;
         }
@@ -730,7 +732,7 @@
                 let timeHtml = '';
                 if (isExpiredMode) {
                     timeHtml = `
-                        <div class="clock-val-cute text-rose">00:00</div>
+                        <div class="clock-val-cute text-rose">0秒</div>
                         <div class="overdue-cute-banner">🚨 已超时 ${formatTime(card.overdueSeconds)}</div>
                     `;
                 } else {

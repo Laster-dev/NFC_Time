@@ -181,8 +181,8 @@ class GitHubApiClient(
         }
     }
 
-    suspend fun getAllCards(): List<CardInfo> = withContext(Dispatchers.IO) {
-        val remoteList = fetchRemoteCards()
+    suspend fun getAllCards(forceFetch: Boolean = false): List<CardInfo> = withContext(Dispatchers.IO) {
+        val remoteList = if (forceFetch) fetchRemoteCards() else null
         val list = remoteList ?: getCachedCards()
         val now = System.currentTimeMillis()
         val sdf = getIsoFormat()

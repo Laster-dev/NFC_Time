@@ -3,6 +3,8 @@ package com.nfctime.app
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.graphics.Color
+import android.graphics.drawable.ColorDrawable
 import android.nfc.NfcAdapter
 import android.nfc.Tag
 import android.nfc.tech.IsoDep
@@ -45,7 +47,8 @@ class MainActivity : AppCompatActivity() {
 
     private var nfcAdapter: NfcAdapter? = null
     private lateinit var apiClient: GitHubApiClient
-    private var pollJob: Job? = null
+    private var syncJob: Job? = null
+    private var tickJob: Job? = null
 
     private lateinit var tvNfcStatus: TextView
     private lateinit var rvCards: RecyclerView
@@ -147,7 +150,33 @@ class MainActivity : AppCompatActivity() {
         } catch (e: Exception) {
             e.printStackTrace()
         }
-        pollJob?.cancel()
+        stopPolling()
+    }
+
+    private fun startPolling() {
+        syncJob?.cancel()
+        tickJob?.cancel()
+
+        // 1. Tick Job: refreshes local ticking calculations every 1 second offline without fetching Gist
+        tickJob = lifecycleScope.launch {
+            while (isActive) {
+                refreshCards(forceFetch = false)
+                delay(1000)
+            }
+        }
+
+        // 2. Sync Job: fetches remote Gist every 10 seconds asynchronously to synchronize state
+        syncJob = lifecycleScope.launch {
+            while (isActive) {
+                refreshCards(forceFetch = true)
+                delay(10000)
+            }
+        }
+    }
+
+    private fun stopPolling() {
+        syncJob?.cancel()
+        tickJob?.cancel()
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -192,22 +221,12 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun startPolling() {
-        pollJob?.cancel()
-        pollJob = lifecycleScope.launch {
-            while (isActive) {
-                refreshCards()
-                delay(1000)
-            }
-        }
-    }
-
     private fun triggerLocalRefresh() {
-        lifecycleScope.launch { refreshCards() }
+        lifecycleScope.launch { refreshCards(forceFetch = false) }
     }
 
-    private suspend fun refreshCards() {
-        val allCards = apiClient.getAllCards()
+    private suspend fun refreshCards(forceFetch: Boolean) {
+        val allCards = apiClient.getAllCards(forceFetch)
         val activeCards = allCards.filter { it.status != 0 }
         adapter.setCards(activeCards)
     }
@@ -260,6 +279,9 @@ class MainActivity : AppCompatActivity() {
             .setView(view)
             .create()
 
+        // Set transparent window background for custom rounded background corner rendering
+        dialog.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+
         val tvTitle = view.findViewById<TextView>(R.id.tvActiveTitle)
         val tvStatusBadge = view.findViewById<TextView>(R.id.tvActiveStatusBadge)
         val tvUid = view.findViewById<TextView>(R.id.tvActiveUid)
@@ -306,7 +328,7 @@ class MainActivity : AppCompatActivity() {
                     tvStatusBadge.text = "⚠️ 已超时"
                     tvStatusBadge.setTextColor(0xFFFF5252.toInt())
 
-                    tvRemaining.text = "00:00:00"
+                    tvRemaining.text = "已超时"
                     tvRemaining.setTextColor(0xFFFF5252.toInt())
 
                     tvOverdueAlert.visibility = View.VISIBLE
@@ -373,6 +395,9 @@ class MainActivity : AppCompatActivity() {
         val dialog = AlertDialog.Builder(this)
             .setView(view)
             .create()
+
+        // Set transparent window background for custom rounded background corner rendering
+        dialog.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
 
         val tvUid = view.findViewById<TextView>(R.id.dialogCardUid)
         val etName = view.findViewById<EditText>(R.id.etCardName)
@@ -442,15 +467,21 @@ class MainActivity : AppCompatActivity() {
         dialog.show()
     }
 
-    private fun formatTime(sec: Double): String {
-        val totalSec = Math.abs(sec.toInt())
-        val h = totalSec / 3600
-        val m = (totalSec % 3600) / 60
-        val s = totalSec % 60
-        return if (h > 0) {
-            String.format("%02d:%02d:%02d", h, m, s)
-        } else {
-            String.format("%02d:%02d", m, s)
+    companion object {
+        fun formatTime(sec: Double): String {
+            val totalSec = Math.abs(sec.toInt())
+            val h = totalSec / 3600
+            val m = (totalSec % 3600) / 60
+            val s = totalSec % 60
+            val sb = StringBuilder()
+            if (h > 0) {
+                sb.append("${h}小时")
+            }
+            if (m > 0 || h > 0) {
+                sb.append("${m}分钟")
+            }
+            sb.append("${s}秒")
+            return sb.toString()
         }
     }
 
@@ -505,7 +536,7 @@ class MainActivity : AppCompatActivity() {
                 } else {
                     tvBadge.text = "未使用"
                     tvBadge.setTextColor(0xFF7F91A4.toInt())
-                    tvTime.text = "00:00"
+                    tvTime.text = "0秒"
                     tvTime.setTextColor(0xFF7F91A4.toInt())
                 }
 
@@ -513,15 +544,7 @@ class MainActivity : AppCompatActivity() {
             }
 
             private fun formatTime(sec: Double): String {
-                val totalSec = Math.abs(sec.toInt())
-                val h = totalSec / 3600
-                val m = (totalSec % 3600) / 60
-                val s = totalSec % 60
-                return if (h > 0) {
-                    String.format("%02d:%02d:%02d", h, m, s)
-                } else {
-                    String.format("%02d:%02d", m, s)
-                }
+                return MainActivity.formatTime(sec)
             }
         }
     }
