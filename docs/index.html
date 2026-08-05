@@ -4,8 +4,306 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>🌟 星野手作 | 桌面计时小屋 🌙</title>
-    <link rel="stylesheet" href="style.css">
-    <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@600;700&family=Noto+Sans+SC:wght@500;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-hoshino: #0e1326;
+            --bg-card: #181e36;
+            --bg-card-hover: #212948;
+            
+            --text-gold: #fde047;
+            --text-main: #f8fafc;
+            --text-sub: #94a3b8;
+            
+            --color-starlight: #fbbf24;
+            --color-starlight-soft: rgba(251, 191, 36, 0.15);
+            --color-mint: #34d399;
+            --color-mint-soft: rgba(52, 211, 153, 0.15);
+            --color-rose: #fb7185;
+            --color-rose-soft: rgba(251, 113, 133, 0.2);
+
+            --shadow-hoshino: 0 8px 24px rgba(15, 23, 42, 0.6);
+            --shadow-glow: 0 0 20px rgba(251, 191, 36, 0.25);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+            background-color: var(--bg-hoshino);
+            background-image: 
+                radial-gradient(circle at 50% 0%, #1e264a 0%, var(--bg-hoshino) 70%),
+                radial-gradient(rgba(253, 224, 71, 0.15) 1px, transparent 1px);
+            background-size: 100% 100%, 24px 24px;
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+        }
+
+        .hoshino-app {
+            width: 100%;
+            max-width: 440px;
+            min-height: 100vh;
+            padding: 20px 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        /* Header */
+        .hoshino-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 4px 0;
+        }
+
+        .brand-box {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .star-icon {
+            font-size: 2rem;
+            filter: drop-shadow(0 0 10px var(--text-gold));
+            animation: rotate-star 8s linear infinite;
+        }
+
+        @keyframes rotate-star {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .hoshino-title {
+            font-size: 1.35rem;
+            font-weight: 900;
+            background: linear-gradient(135deg, #fef08a, #fde047, #f59e0b);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: 1px;
+        }
+
+        .hoshino-subtitle {
+            font-size: 0.72rem;
+            color: #cbd5e1;
+            letter-spacing: 0.5px;
+        }
+
+        .moon-badge {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: var(--bg-card);
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: var(--text-gold);
+            border: 1px solid rgba(253, 224, 71, 0.3);
+            box-shadow: var(--shadow-glow);
+        }
+
+        .moon-twinkle {
+            font-size: 0.9rem;
+            animation: pulse-moon 2s infinite alternate;
+        }
+
+        @keyframes pulse-moon {
+            0% { transform: scale(0.9); opacity: 0.7; }
+            100% { transform: scale(1.15); opacity: 1; }
+        }
+
+        /* Summary Grid */
+        .star-summary {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+        }
+
+        .chip {
+            background: var(--bg-card);
+            border-radius: 16px;
+            padding: 10px 4px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: var(--shadow-hoshino);
+        }
+
+        .chip-emoji { font-size: 1.1rem; }
+        .chip-num { font-size: 1.25rem; font-weight: 800; }
+        .chip-txt { font-size: 0.68rem; color: var(--text-sub); }
+
+        .chip-run { border-color: rgba(52, 211, 153, 0.3); }
+        .chip-run .chip-num { color: var(--color-mint); }
+
+        .chip-pause { border-color: rgba(251, 191, 36, 0.3); }
+        .chip-pause .chip-num { color: var(--color-starlight); }
+
+        .chip-stop { border-color: rgba(148, 163, 184, 0.2); }
+        .chip-stop .chip-num { color: var(--text-sub); }
+
+        .chip-expire { border-color: rgba(251, 113, 133, 0.4); }
+        .chip-expire .chip-num { color: var(--color-rose); }
+
+        /* Tabs Navigation */
+        .hoshino-tabs {
+            display: flex;
+            background: var(--bg-card);
+            padding: 5px;
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            gap: 4px;
+        }
+
+        .tab-btn {
+            flex: 1;
+            background: transparent;
+            border: none;
+            outline: none;
+            color: var(--text-sub);
+            padding: 10px 0;
+            font-size: 0.85rem;
+            font-weight: 700;
+            border-radius: 14px;
+            cursor: pointer;
+            transition: all 0.25s ease;
+        }
+
+        .tab-btn.active {
+            background: linear-gradient(135deg, #fde047, #f59e0b);
+            color: #0f172a;
+            font-weight: 800;
+            box-shadow: var(--shadow-glow);
+        }
+
+        /* Card Stream List */
+        .hoshino-card-stream {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            padding-bottom: 24px;
+        }
+
+        .hoshino-card-item {
+            background: var(--bg-card);
+            border-radius: 22px;
+            padding: 18px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: var(--shadow-hoshino);
+            transition: transform 0.2s, box-shadow 0.2s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hoshino-card-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4);
+        }
+
+        .hoshino-card-item.card-expired-theme {
+            border-color: rgba(251, 113, 133, 0.5);
+            background: linear-gradient(180deg, #181e36 0%, #2e1524 100%);
+        }
+
+        .card-top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .card-title-text {
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: var(--text-main);
+        }
+
+        .card-uid-sub {
+            font-size: 0.72rem;
+            font-family: monospace;
+            color: var(--text-sub);
+            background: rgba(0, 0, 0, 0.3);
+            padding: 2px 8px;
+            border-radius: 8px;
+            display: inline-block;
+            margin-top: 3px;
+        }
+
+        .pill-badge {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.78rem;
+            font-weight: 700;
+        }
+
+        .badge-mint { background: var(--color-mint-soft); color: var(--color-mint); }
+        .badge-yellow { background: var(--color-starlight-soft); color: var(--text-gold); }
+        .badge-gray { background: rgba(148, 163, 184, 0.15); color: var(--text-sub); }
+        .badge-rose { background: var(--color-rose-soft); color: var(--color-rose); }
+
+        .timer-box {
+            text-align: center;
+            padding: 4px 0;
+        }
+
+        .hoshino-time-val {
+            font-size: 2.4rem;
+            font-weight: 800;
+            font-family: monospace;
+            letter-spacing: 1px;
+            color: var(--text-main);
+        }
+
+        .hoshino-time-val.text-mint { color: var(--color-mint); }
+        .hoshino-time-val.text-gold { color: var(--text-gold); }
+        .hoshino-time-val.text-rose { color: var(--color-rose); }
+
+        .overdue-alert {
+            color: var(--color-rose);
+            font-weight: 700;
+            font-size: 0.9rem;
+            margin-top: 4px;
+        }
+
+        .hoshino-progress-bar {
+            height: 8px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .hoshino-progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #f59e0b, #34d399);
+            border-radius: 10px;
+            transition: width 0.5s ease-out;
+        }
+
+        .empty-view {
+            text-align: center;
+            padding: 50px 20px;
+            background: var(--bg-card);
+            border-radius: 24px;
+            border: 1px dashed rgba(255, 255, 255, 0.1);
+            color: var(--text-sub);
+        }
+
+        .empty-emoji {
+            font-size: 3rem;
+            margin-bottom: 10px;
+        }
+    </style>
 </head>
 <body>
     <div class="hoshino-app">
@@ -61,6 +359,203 @@
         </main>
     </div>
 
-    <script src="app.js"></script>
+    <script>
+        let currentFilter = 'all';
+
+        // Built-in fixed Gist ID
+        const FIXED_GIST_ID = "6582c66b24bad75381f70abdae62e81b";
+        const RAW_GIST_URL = `https://gist.githubusercontent.com/raw/${FIXED_GIST_ID}/cards_data.json`;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            // Tab Button Click Listeners
+            const tabBtns = document.querySelectorAll('.tab-btn');
+            tabBtns.forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    tabBtns.forEach(b => b.classList.remove('active'));
+                    const target = e.currentTarget;
+                    target.classList.add('active');
+                    currentFilter = target.getAttribute('data-filter') || 'all';
+                    fetchCardsFromGist();
+                });
+            });
+
+            fetchCardsFromGist();
+            setInterval(fetchCardsFromGist, 3000); // 3-second polling interval
+        });
+
+        async function fetchCardsFromGist() {
+            try {
+                const res = await fetch(`${RAW_GIST_URL}?t=${Date.now()}`);
+                if (!res.ok) {
+                    console.warn("Raw fetch HTTP error: ", res.status);
+                    return;
+                }
+                const fileContent = await res.text();
+
+                if (fileContent) {
+                    let rawCards = [];
+                    try {
+                        rawCards = JSON.parse(fileContent);
+                    } catch (parseErr) {
+                        console.error("JSON parse error: ", parseErr);
+                        rawCards = [];
+                    }
+                    const computedCards = computeCardsState(rawCards);
+                    renderDashboard(computedCards);
+                } else {
+                    renderDashboard([]);
+                }
+            } catch (err) {
+                console.error('Failed to fetch from Raw Gist CDN:', err);
+            }
+        }
+
+        function computeCardsState(cards) {
+            if (!Array.isArray(cards)) return [];
+            const now = Date.now();
+
+            return cards.map(c => {
+                let remaining = c.savedRemainingSeconds || 0;
+                let status = c.status; // 0: Stopped, 1: Running, 2: Paused, 3: Expired
+
+                if (status === 1 && c.startTimeUtc) {
+                    const elapsed = (now - new Date(c.startTimeUtc).getTime()) / 1000;
+                    remaining = (c.savedRemainingSeconds || 0) - elapsed;
+                    if (remaining <= 0) {
+                        status = 3; // Expired
+                    }
+                }
+
+                const isOverdue = remaining < 0 && (status === 1 || status === 3);
+                const overdueSeconds = isOverdue ? Math.abs(remaining) : 0;
+
+                return {
+                    ...c,
+                    status,
+                    remainingSeconds: remaining,
+                    overdueSeconds,
+                    isOverdue
+                };
+            });
+        }
+
+        function formatTime(totalSeconds) {
+            const isNegative = totalSeconds < 0;
+            const absSeconds = Math.abs(Math.floor(totalSeconds));
+            
+            const h = Math.floor(absSeconds / 3600);
+            const m = Math.floor((absSeconds % 3600) / 60);
+            const s = absSeconds % 60;
+
+            const pad = n => n.toString().padStart(2, '0');
+            let str = `${pad(m)}:${pad(s)}`;
+            if (h > 0) str = `${pad(h)}:` + str;
+            
+            return isNegative ? `-${str}` : str;
+        }
+
+        function renderDashboard(cards) {
+            let running = 0, paused = 0, stopped = 0, expired = 0;
+            cards.forEach(c => {
+                if (c.isOverdue || c.status === 3) expired++;
+                else if (c.status === 1) running++;
+                else if (c.status === 2) paused++;
+                else stopped++;
+            });
+
+            document.getElementById('cardCounter').textContent = `${cards.length} 份手作`;
+            document.getElementById('countRunning').textContent = running;
+            document.getElementById('countPaused').textContent = paused;
+            document.getElementById('countStopped').textContent = stopped;
+            document.getElementById('countExpired').textContent = expired;
+
+            // Filter cards
+            const filtered = cards.filter(c => {
+                if (currentFilter === 'running') return c.status === 1 && !c.isOverdue;
+                if (currentFilter === 'expired') return c.isOverdue || c.status === 3;
+                return true;
+            });
+
+            const grid = document.getElementById('cardsGrid');
+            if (filtered.length === 0) {
+                grid.innerHTML = `
+                    <div class="empty-view">
+                        <div class="empty-emoji">🌙</div>
+                        <p>暂无手作正在制作中~<br>期待星野的下一次创作 ✨</p>
+                    </div>
+                `;
+                return;
+            }
+
+            grid.innerHTML = filtered.map(card => {
+                let isExpiredMode = card.isOverdue || card.status === 3;
+                let badgeClass = 'badge-gray';
+                let statusText = '🌸 准备中';
+                let timeColorClass = '';
+
+                if (isExpiredMode) {
+                    badgeClass = 'badge-rose';
+                    statusText = '🔔 时间到啦';
+                    timeColorClass = 'text-rose';
+                } else if (card.status === 1) {
+                    badgeClass = 'badge-mint';
+                    statusText = '🌟 制作中';
+                    timeColorClass = 'text-mint';
+                } else if (card.status === 2) {
+                    badgeClass = 'badge-yellow';
+                    statusText = '🍵 憩息中';
+                    timeColorClass = 'text-gold';
+                }
+
+                const remainingSec = card.remainingSeconds;
+                const targetSec = card.targetDurationSeconds;
+                let pct = 100;
+                if (targetSec > 0) {
+                    pct = Math.max(0, Math.min(100, (remainingSec / targetSec) * 100));
+                }
+
+                let timeHtml = '';
+                if (isExpiredMode) {
+                    timeHtml = `
+                        <div class="hoshino-time-val text-rose">00:00</div>
+                        <div class="overdue-alert">🚨 已超时: ${formatTime(card.overdueSeconds)}</div>
+                    `;
+                } else {
+                    timeHtml = `
+                        <div class="hoshino-time-val ${timeColorClass}">
+                            ${formatTime(remainingSec)}
+                        </div>
+                    `;
+                }
+
+                return `
+                    <div class="hoshino-card-item ${isExpiredMode ? 'card-expired-theme' : ''}">
+                        <div class="card-top-bar">
+                            <div>
+                                <div class="card-title-text">${escapeHtml(card.name)}</div>
+                                <div class="card-uid-sub">UID: ${escapeHtml(card.cardId)}</div>
+                            </div>
+                            <span class="pill-badge ${badgeClass}">${statusText}</span>
+                        </div>
+
+                        <div class="timer-box">
+                            ${timeHtml}
+                        </div>
+
+                        <div class="hoshino-progress-bar">
+                            <div class="hoshino-progress-fill" style="width: ${isExpiredMode ? 0 : pct}%; ${card.status === 2 ? 'background: #fbbf24' : ''}"></div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/[&<>"']/g, function(m) {
+                return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[m];
+            });
+        }
+    </script>
 </body>
 </html>
