@@ -61,22 +61,22 @@
             width: 100%;
             max-width: 440px;
             min-height: 100vh;
-            padding: 18px 14px;
+            padding: 10px 10px;
             display: flex;
             flex-direction: column;
-            gap: 14px;
+            gap: 8px;
         }
 
         /* Handmade Craft Header */
         .craft-header {
             background: #FFFFFF;
-            border-radius: 24px;
-            padding: 14px 18px;
+            border-radius: 12px;
+            padding: 8px 12px;
             display: flex;
             justify-content: space-between;
             align-items: center;
             box-shadow: var(--shadow-kawaii);
-            border: 3px dashed var(--border-dashed);
+            border: 2px dashed var(--border-dashed);
             position: relative;
         }
 
@@ -130,9 +130,9 @@
 
         .anno-cute-card {
             background: #FFFFFF;
-            border-radius: 18px;
-            padding: 12px 14px;
-            border: 2px solid #FCD34D;
+            border-radius: 10px;
+            padding: 8px 12px;
+            border: 1.5px solid #FCD34D;
             background: linear-gradient(180deg, #FFFFFF 0%, #FEFCE8 100%);
             box-shadow: var(--shadow-kawaii);
             position: relative;
@@ -246,8 +246,8 @@
         .tabs-pill-bar {
             display: flex;
             background: #FFFFFF;
-            padding: 6px;
-            border-radius: 20px;
+            padding: 4px;
+            border-radius: 10px;
             box-shadow: var(--shadow-kawaii);
             border: 2px solid var(--border-craft);
             gap: 4px;
@@ -259,10 +259,10 @@
             border: none;
             outline: none;
             color: var(--text-sub);
-            padding: 8px 0;
-            font-size: 0.88rem;
+            padding: 6px 0;
+            font-size: 0.82rem;
             font-weight: 800;
-            border-radius: 16px;
+            border-radius: 8px;
             cursor: pointer;
             transition: all 0.2s ease;
             font-family: inherit;
@@ -271,7 +271,7 @@
         .tab-pill.active {
             background: #FFE4E6;
             color: #E11D48;
-            border: 2px solid #FDA4AF;
+            border: 1.5px solid #FDA4AF;
             font-weight: 900;
         }
 
@@ -350,17 +350,27 @@
             font-weight: 700;
         }
 
-        .time-box-center {
-            text-align: center;
-            padding: 4px 0;
+        .card-row-1 {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .card-row-2 {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.75rem;
+            color: var(--text-sub);
+            margin-top: 2px;
         }
 
         .clock-val-cute {
-            font-size: 1.55rem;
+            font-size: 1.32rem;
             font-family: 'M PLUS Rounded 1c', 'Comfortaa', sans-serif;
             font-weight: 800;
-            letter-spacing: -0.5px;
-            line-height: 1.2;
+            letter-spacing: -0.4px;
+            line-height: 1.1;
             white-space: nowrap;
             display: inline-block;
         }
@@ -369,57 +379,29 @@
         .clock-val-cute.text-amber { color: var(--color-yellow-text); }
         .clock-val-cute.text-rose { color: var(--color-rose-text); }
 
-        .overdue-cute-banner {
+        .overdue-mini-alert {
             color: var(--color-rose-text);
             background: var(--color-rose-soft);
-            border: 1.5px solid var(--color-rose-border);
-            padding: 4px 8px;
-            border-radius: 14px;
-            font-size: 0.75rem;
-            font-weight: 800;
-            margin-top: 6px;
-            display: inline-block;
-        }
-
-        .stamp-timeline {
-            background: #FAF5EE;
-            border-radius: 12px;
-            padding: 6px 8px;
-            display: flex;
-            justify-content: space-between;
+            border: 1px solid var(--color-rose-border);
+            padding: 1px 6px;
+            border-radius: 8px;
             font-size: 0.72rem;
-            color: var(--text-sub);
-            border: 1.5px dashed var(--border-dashed);
-        }
-
-        .stamp-col {
-            display: flex;
-            flex-direction: column;
-        }
-
-        .stamp-lbl {
-            font-size: 0.62rem;
-            color: #B0A09E;
-            font-weight: 700;
-        }
-
-        .stamp-val {
-            color: var(--text-dark);
             font-weight: 800;
-            font-family: 'Comfortaa', sans-serif;
         }
 
         .progress-candy-bg {
-            height: 8px;
-            background: #F3EAE0;
-            border-radius: 8px;
+            height: 3px;
+            background: rgba(0, 0, 0, 0.06);
+            border-radius: 1.5px;
             overflow: hidden;
+            margin-top: 8px;
+            margin-bottom: 2px;
         }
 
         .progress-candy-fill {
             height: 100%;
-            background: linear-gradient(90deg, #FCD34D, #34D399);
-            border-radius: 8px;
+            background: #10B981;
+            border-radius: 1.5px;
             transition: width 0.5s ease-out;
         }
 
@@ -693,6 +675,17 @@
                 return true;
             });
 
+            // Sort: Overdue cards first!
+            filtered.sort((a, b) => {
+                const aOverdue = a.isOverdue || a.status === 3;
+                const bOverdue = b.isOverdue || b.status === 3;
+                if (aOverdue && !bOverdue) return -1;
+                if (!aOverdue && bOverdue) return 1;
+                if (a.status === 1 && b.status !== 1) return -1;
+                if (a.status !== 1 && b.status === 1) return 1;
+                return a.cardId.localeCompare(b.cardId);
+            });
+
             const grid = document.getElementById('cardsGrid');
             if (filtered.length === 0) {
                 grid.innerHTML = `
@@ -731,46 +724,29 @@
                     pct = Math.max(0, Math.min(100, (remainingSec / targetSec) * 100));
                 }
 
-                let timeHtml = '';
-                if (isExpiredMode) {
-                    timeHtml = `
-                        <div class="clock-val-cute text-rose">0秒</div>
-                        <div class="overdue-cute-banner">🚨 已超时 ${formatTime(card.overdueSeconds)}</div>
-                    `;
-                } else {
-                    timeHtml = `
-                        <div class="clock-val-cute ${timeColorClass}">
-                            ${formatTime(remainingSec)}
-                        </div>
-                    `;
-                }
-
                 return `
                     <div class="cute-card ${isExpiredMode ? 'card-overdue-mode' : ''}">
-                        <div>
-                            <div class="card-head-bar">
-                                <div class="card-name-title" title="${escapeHtml(card.name)}">${escapeHtml(card.name)}</div>
+                        <!-- Row 1: Title + Tag on Left, Timer on Right -->
+                        <div class="card-row-1">
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <span class="card-name-title" title="${escapeHtml(card.name)}">${escapeHtml(card.name)}</span>
                                 <span class="cute-tag ${tagClass}">${statusText}</span>
                             </div>
-                            <div class="card-uid-sub">UID: ${escapeHtml(card.cardId)}</div>
-                        </div>
-
-                        <div class="time-box-center">
-                            ${timeHtml}
-                        </div>
-
-                        <!-- Timeline Stamp -->
-                        <div class="stamp-timeline">
-                            <div class="stamp-col">
-                                <span class="stamp-lbl">▶ 开始</span>
-                                <span class="stamp-val">${card.startTimeStr}</span>
-                            </div>
-                            <div class="stamp-col" style="text-align: right;">
-                                <span class="stamp-lbl">🏁 到期</span>
-                                <span class="stamp-val">${card.endTimeStr}</span>
+                            <div class="clock-val-cute ${timeColorClass}">
+                                ${isExpiredMode ? '0秒' : formatTime(remainingSec)}
                             </div>
                         </div>
 
+                        <!-- Row 2: UID on Left, Timestamps + Overdue Mini Alert on Right -->
+                        <div class="card-row-2">
+                            <span class="card-uid-sub">UID: ${escapeHtml(card.cardId)}</span>
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <span class="stamp-val-text">${card.startTimeStr} → ${card.endTimeStr}</span>
+                                ${isExpiredMode ? `<span class="overdue-mini-alert">🚨 超时 ${formatTime(card.overdueSeconds)}</span>` : ''}
+                            </div>
+                        </div>
+
+                        <!-- Progress Bar at bottom -->
                         <div class="progress-candy-bg">
                             <div class="progress-candy-fill" style="width: ${isExpiredMode ? 0 : pct}%; ${card.status === 2 ? 'background: #FCD34D' : ''}"></div>
                         </div>
@@ -785,7 +761,7 @@
         }
 
         function adjustFontSize(element) {
-            let fontSize = 1.55; // Start size in rem
+            let fontSize = 1.32; // Start size in rem (aligned with CSS)
             element.style.fontSize = fontSize + 'rem';
             const parent = element.parentElement;
             if (!parent) return;
