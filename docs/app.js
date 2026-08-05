@@ -2,7 +2,7 @@ let currentFilter = 'all';
 let nfcNDEFReader = null;
 let activeNfcCardId = null;
 
-// Built-in fixed Gist ID (Configured to your created Gist)
+// Built-in fixed Gist ID
 const FIXED_GIST_ID = "6582c66b24bad75381f70abdae62e81b";
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -27,7 +27,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const nfcSection = document.getElementById('androidNfcSection');
         nfcSection.style.display = 'flex';
         document.getElementById('btnToggleWebNfc').addEventListener('click', toggleWebNfc);
-        
         showAndroidNfcBanner();
     }
 });
@@ -46,19 +45,14 @@ async function fetchCardsFromGist() {
     }
 
     try {
-        const res = await fetch(`https://api.github.com/gists/${FIXED_GIST_ID}?t=${Date.now()}`);
+        // Use raw gist URL directly to completely bypass GitHub API Unauthenticated Rate Limits (403 Rate Limit Exceeded)
+        const rawUrl = `https://gist.githubusercontent.com/Laster-dev/${FIXED_GIST_ID}/raw/cards_data.json?t=${Date.now()}`;
+        const res = await fetch(rawUrl);
         if (!res.ok) return;
-        const data = await res.json();
+        const rawCards = await res.json();
         
-        // Match cards_data.json or gistfile1.txt (fallback)
-        const fileObj = data.files['cards_data.json'] || data.files['gistfile1.txt'] || Object.values(data.files)[0];
-        const fileContent = fileObj?.content;
-
-        if (fileContent) {
-            const rawCards = JSON.parse(fileContent);
-            const computedCards = computeCardsState(rawCards);
-            renderDashboard(computedCards);
-        }
+        const computedCards = computeCardsState(rawCards);
+        renderDashboard(computedCards);
     } catch (err) {
         console.error('Failed to fetch from GitHub Gist:', err);
     }
@@ -259,6 +253,6 @@ function renderDashboard(cards) {
 function escapeHtml(str) {
     if (!str) return '';
     return str.replace(/[&<>"']/g, function(m) {
-        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[m];
+        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039}' }[m];
     });
 }
