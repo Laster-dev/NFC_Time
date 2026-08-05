@@ -12,24 +12,23 @@
         <header class="navbar">
             <div class="brand">
                 <span class="logo-icon">⏱️</span>
-                <h1>NFC 刷卡计时 Dashboard (GitHub Hosted)</h1>
+                <h1>NFC 刷卡计时 Dashboard</h1>
             </div>
             <div class="header-status">
                 <span class="pulse-indicator"></span>
-                <span id="serverStatusText">云端轮询中</span>
+                <span id="serverStatusText">云端实时同步中</span>
                 <span class="card-count-badge" id="totalCardsBadge">0 张卡片</span>
-                <button id="btnConfigGist" class="btn-config-sm">⚙️ 配置 Gist 数据源</button>
             </div>
         </header>
 
         <main class="content">
-            <!-- Android Web NFC Scanner Section -->
+            <!-- Android Web NFC Scanner Banner -->
             <div id="androidNfcSection" class="nfc-scan-card" style="display: none;">
                 <div class="nfc-scan-info">
                     <span class="nfc-icon">📲</span>
                     <div>
-                        <h3>安卓 Web 刷卡感知已就绪</h3>
-                        <p id="webNfcStatusText">点击“开始Web刷卡”，靠近NFC卡片可自动识别查找卡片。</p>
+                        <h3>安卓设备感知</h3>
+                        <p id="webNfcStatusText">点击“开始 Web 刷卡”靠近 NFC 卡片即可自动定位查找卡片。</p>
                     </div>
                 </div>
                 <button id="btnToggleWebNfc" class="btn-nfc-scan">开始 Web 刷卡</button>

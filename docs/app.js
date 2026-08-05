@@ -2,16 +2,10 @@ let currentFilter = 'all';
 let nfcNDEFReader = null;
 let activeNfcCardId = null;
 
-// Gist Configuration
-let gistId = localStorage.getItem('nfc_gist_id') || '';
+// Built-in fixed Gist ID (Auto configured)
+const FIXED_GIST_ID = "086c5513a0c4f42d45c6020dfca78457";
 
 document.addEventListener('DOMContentLoaded', () => {
-    document.getElementById('btnConfigGist').addEventListener('click', promptGistConfig);
-
-    if (!gistId) {
-        promptGistConfig();
-    }
-
     fetchCardsFromGist();
     setInterval(fetchCardsFromGist, 2000); // Poll GitHub Gist every 2 seconds
 
@@ -33,26 +27,27 @@ document.addEventListener('DOMContentLoaded', () => {
         const nfcSection = document.getElementById('androidNfcSection');
         nfcSection.style.display = 'flex';
         document.getElementById('btnToggleWebNfc').addEventListener('click', toggleWebNfc);
+        
+        // Auto toast / alert for Android users
+        showAndroidNfcBanner();
     }
 });
 
-function promptGistConfig() {
-    const input = prompt("请输入 GitHub Gist ID (用于读取卡片计时数据):", gistId);
-    if (input !== null) {
-        gistId = input.trim();
-        localStorage.setItem('nfc_gist_id', gistId);
-        fetchCardsFromGist();
+function showAndroidNfcBanner() {
+    const statusText = document.getElementById('webNfcStatusText');
+    if (statusText) {
+        statusText.textContent = '📲 检测到安卓设备！点击“开始Web刷卡”，靠近NFC卡片可自动识别查找卡片。';
     }
 }
 
 async function fetchCardsFromGist() {
-    if (!gistId) {
+    if (!FIXED_GIST_ID) {
         renderDashboard([]);
         return;
     }
 
     try {
-        const res = await fetch(`https://api.github.com/gists/${gistId}?t=${Date.now()}`);
+        const res = await fetch(`https://api.github.com/gists/${FIXED_GIST_ID}?t=${Date.now()}`);
         if (!res.ok) return;
         const data = await res.json();
         
@@ -143,7 +138,7 @@ function handleWebNfcSwiped(scannedCardId) {
             }, 3000);
             statusText.textContent = `✅ 找到对应卡片 UID: ${scannedCardId}`;
         } else {
-            statusText.textContent = `❓ Gist 数据源尚未注册此卡片 (${scannedCardId})。`;
+            statusText.textContent = `❓ 数据源中尚未注册此卡片 (${scannedCardId})。`;
         }
     });
 }
@@ -188,7 +183,7 @@ function renderDashboard(cards) {
     if (filtered.length === 0) {
         grid.innerHTML = `
             <div class="empty-state">
-                <p>${gistId ? '暂无卡片数据，请使用安卓 App 进行 NFC 刷卡。' : '⚠️ 请点击右上角“配置 Gist 数据源”填写 GitHub Gist ID'}</p>
+                <p>暂无卡片数据，请使用安卓 App 进行 NFC 刷卡。</p>
             </div>
         `;
         return;
