@@ -44,8 +44,10 @@ class MainActivity : AppCompatActivity() {
     private lateinit var rvCards: RecyclerView
     private val adapter = CardAdapter()
 
-    private val isoFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US).apply {
-        timeZone = TimeZone.getTimeZone("UTC")
+    private fun getIsoFormat(): SimpleDateFormat {
+        return SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US).apply {
+            timeZone = TimeZone.getTimeZone("UTC")
+        }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -71,6 +73,10 @@ class MainActivity : AppCompatActivity() {
 
         findViewById<Button>(R.id.btnAnnounce).setOnClickListener {
             startActivity(Intent(this, AnnouncementActivity::class.java))
+        }
+
+        findViewById<Button>(R.id.btnUnusedCards).setOnClickListener {
+            startActivity(Intent(this, UnusedCardsActivity::class.java))
         }
 
         adapter.onManageClick = { card ->
@@ -172,7 +178,9 @@ class MainActivity : AppCompatActivity() {
 
     private suspend fun refreshCards() {
         val allCards = apiClient.getAllCards()
-        adapter.setCards(allCards)
+        // Filter OUT status === 0 from Main Home Page display! Only show Active/Running/Paused/Expired cards!
+        val activeCards = allCards.filter { it.status != 0 }
+        adapter.setCards(activeCards)
     }
 
     private fun showGitHubSettingsDialog() {
@@ -238,10 +246,11 @@ class MainActivity : AppCompatActivity() {
         tvTitle.text = card.name
         tvUid.text = "UID: ${card.cardId}"
 
-        val startMs = try { isoFormat.parse(card.startTimeUtc ?: "")?.time } catch (e: Exception) { null }
+        val sdf = getIsoFormat()
+        val startMs = try { sdf.parse(card.startTimeUtc ?: "")?.time } catch (e: Exception) { null }
         if (startMs != null) {
-            val sdf = SimpleDateFormat("HH:mm:ss", Locale.getDefault())
-            tvStartTime.text = sdf.format(Date(startMs))
+            val clockSdf = SimpleDateFormat("HH:mm:ss", Locale.getDefault())
+            tvStartTime.text = clockSdf.format(Date(startMs))
         } else {
             tvStartTime.text = "--:--:--"
         }
@@ -324,7 +333,7 @@ class MainActivity : AppCompatActivity() {
 
         btnStop.setOnClickListener {
             apiClient.setTimerImmediate(card.cardId, 0, "stop")
-            Toast.makeText(this, "已停止计时", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "已停止计时，已转为未使用卡片", Toast.LENGTH_SHORT).show()
             dialog.dismiss()
             triggerLocalRefresh()
         }
@@ -392,10 +401,10 @@ class MainActivity : AppCompatActivity() {
         btnDeleteCard.setOnClickListener {
             AlertDialog.Builder(this)
                 .setTitle("设为未使用状态")
-                .setMessage("保留名称「${card.name}」，将其转为未使用状态？（Web端将不再显示此卡片）")
+                .setMessage("保留名称「${card.name}」，将其转为未使用状态？（移至未使用卡片档案库）")
                 .setPositiveButton("确认") { _, _ ->
                     apiClient.resetCardToUnusedImmediate(card.cardId)
-                    Toast.makeText(this@MainActivity, "卡片已重置为未使用状态", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this@MainActivity, "已移至未使用卡片档案库", Toast.LENGTH_SHORT).show()
                     dialog.dismiss()
                     triggerLocalRefresh()
                 }

@@ -20,25 +20,34 @@
             android:layout_weight="1"
             android:text="🟢 NFC 已就绪"
             android:textColor="#38BDF8"
-            android:textSize="14sp"
+            android:textSize="13sp"
             android:textStyle="bold" />
+
+        <Button
+            android:id="@+id/btnUnusedCards"
+            style="@style/Widget.Material3.Button.TonalButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="🎴 未使用卡片"
+            android:textSize="11sp" />
 
         <Button
             android:id="@+id/btnAnnounce"
             style="@style/Widget.Material3.Button.TonalButton"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_marginStart="4dp"
             android:text="📢 公告"
-            android:textSize="12sp" />
+            android:textSize="11sp" />
 
         <Button
             android:id="@+id/btnSettings"
             style="@style/Widget.Material3.Button.OutlinedButton"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginStart="6dp"
+            android:layout_marginStart="4dp"
             android:text="⚙️ 配置"
-            android:textSize="12sp" />
+            android:textSize="11sp" />
     </LinearLayout>
 
     <TextView
@@ -46,7 +55,7 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="16dp"
         android:layout_marginBottom="8dp"
-        android:text="所有倒计时卡片"
+        android:text="活动中/倒计时卡片"
         android:textColor="#94A3B8"
         android:textSize="12sp" />
 

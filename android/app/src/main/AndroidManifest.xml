@@ -42,6 +42,11 @@
             android:exported="false"
             android:label="公告管理" />
 
+        <activity
+            android:name=".UnusedCardsActivity"
+            android:exported="false"
+            android:label="未使用卡片档案库" />
+
     </application>
 
 </manifest>
