@@ -165,6 +165,15 @@ class GitHubApiClient(
         return card
     }
 
+    fun addTimeImmediate(cardId: String, addSeconds: Int): CardInfo? {
+        val list = getCachedCards()
+        val card = list.find { it.cardId.equals(cardId, ignoreCase = true) } ?: return null
+        card.targetDurationSeconds += addSeconds
+        card.savedRemainingSeconds += addSeconds
+        syncToRemoteAsync(list)
+        return card
+    }
+
     fun setTimerImmediate(cardId: String, durationSec: Int, action: String): CardInfo? {
         val list = getCachedCards()
         val card = list.find { it.cardId.equals(cardId, ignoreCase = true) } ?: return null
