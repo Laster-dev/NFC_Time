@@ -372,6 +372,26 @@ class MainActivity : AppCompatActivity() {
             triggerLocalRefresh()
         }
 
+        val etCustomAddMinutes = view.findViewById<EditText>(R.id.etCustomAddMinutes)
+        val btnCustomAddConfirm = view.findViewById<Button>(R.id.btnCustomAddConfirm)
+
+        btnCustomAddConfirm.setOnClickListener {
+            val minutesStr = etCustomAddMinutes.text.toString().trim()
+            if (minutesStr.isNotEmpty()) {
+                val mins = minutesStr.toIntOrNull()
+                if (mins != null && mins > 0) {
+                    apiClient.addTimeImmediate(card.cardId, mins * 60)
+                    Toast.makeText(this, "已成功加时 $mins 分钟", Toast.LENGTH_SHORT).show()
+                    dialog.dismiss()
+                    triggerLocalRefresh()
+                } else {
+                    Toast.makeText(this, "请输入正确的正整数分钟数", Toast.LENGTH_SHORT).show()
+                }
+            } else {
+                Toast.makeText(this, "请先输入要增加的分钟数", Toast.LENGTH_SHORT).show()
+            }
+        }
+
         btnPause.setOnClickListener {
             val action = if (card.status == 2) "resume" else "pause"
             apiClient.setTimerImmediate(card.cardId, 0, action)

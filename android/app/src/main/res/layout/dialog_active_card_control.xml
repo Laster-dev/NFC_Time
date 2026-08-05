@@ -131,44 +131,95 @@
         <Button
             android:id="@+id/btnAdd10Min"
             android:layout_width="0dp"
-            android:layout_height="44dp"
+            android:layout_height="48dp"
             android:layout_weight="1"
             android:backgroundTint="#2B394A"
             android:textColor="@color/tg_blue"
             android:text="+10分钟"
             android:textSize="14sp"
-            android:textStyle="bold" />
+            android:textStyle="bold"
+            android:insetTop="0dp"
+            android:insetBottom="0dp"
+            android:padding="0dp" />
 
         <Button
             android:id="@+id/btnAdd30Min"
             android:layout_width="0dp"
-            android:layout_height="44dp"
+            android:layout_height="48dp"
             android:layout_weight="1"
             android:layout_marginStart="6dp"
             android:backgroundTint="#2B394A"
             android:textColor="@color/tg_blue"
             android:text="+30分钟"
             android:textSize="14sp"
-            android:textStyle="bold" />
+            android:textStyle="bold"
+            android:insetTop="0dp"
+            android:insetBottom="0dp"
+            android:padding="0dp" />
 
         <Button
             android:id="@+id/btnAdd1Hour"
             android:layout_width="0dp"
-            android:layout_height="44dp"
+            android:layout_height="48dp"
             android:layout_weight="1"
             android:layout_marginStart="6dp"
             android:backgroundTint="#2B394A"
             android:textColor="@color/tg_blue"
             android:text="+1小时"
             android:textSize="14sp"
-            android:textStyle="bold" />
+            android:textStyle="bold"
+            android:insetTop="0dp"
+            android:insetBottom="0dp"
+            android:padding="0dp" />
+    </LinearLayout>
+
+    <!-- Custom Add Time Section -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:layout_marginBottom="8dp"
+        android:text="✍️ 自定义加时"
+        android:textColor="@color/tg_text_secondary"
+        android:textSize="13sp" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        android:orientation="horizontal">
+
+        <EditText
+            android:id="@+id/etCustomAddMinutes"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:background="@color/tg_background"
+            android:hint="输入分钟数"
+            android:inputType="number"
+            android:paddingHorizontal="14dp"
+            android:textColor="@color/tg_text_primary"
+            android:textColorHint="@color/tg_text_secondary"
+            android:textSize="15sp" />
+
+        <Button
+            android:id="@+id/btnCustomAddConfirm"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:layout_marginStart="8dp"
+            android:backgroundTint="@color/tg_blue"
+            android:textColor="#FFFFFF"
+            android:text="确认加时"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:insetTop="0dp"
+            android:insetBottom="0dp" />
     </LinearLayout>
 
     <!-- Main Control Action Buttons -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="18dp"
+        android:layout_marginTop="20dp"
         android:orientation="horizontal">
 
         <Button
@@ -179,7 +230,9 @@
             android:backgroundTint="@color/tg_status_orange"
             android:text="暂停"
             android:textSize="15sp"
-            android:textStyle="bold" />
+            android:textStyle="bold"
+            android:insetTop="0dp"
+            android:insetBottom="0dp" />
 
         <Button
             android:id="@+id/btnActiveStop"
@@ -190,7 +243,9 @@
             android:backgroundTint="@color/tg_status_red"
             android:text="停止计时"
             android:textSize="15sp"
-            android:textStyle="bold" />
+            android:textStyle="bold"
+            android:insetTop="0dp"
+            android:insetBottom="0dp" />
     </LinearLayout>
 
 </LinearLayout>
