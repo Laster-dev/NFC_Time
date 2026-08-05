@@ -27,6 +27,9 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
+import java.util.Locale
+import java.util.TimeZone
 
 class MainActivity : AppCompatActivity() {
 
@@ -38,6 +41,10 @@ class MainActivity : AppCompatActivity() {
     private lateinit var tvNfcStatus: TextView
     private lateinit var rvCards: RecyclerView
     private val adapter = CardAdapter()
+
+    private val isoFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US).apply {
+        timeZone = TimeZone.getTimeZone("UTC")
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -195,6 +202,13 @@ class MainActivity : AppCompatActivity() {
             .show()
     }
 
+    private fun formatClockTime(timestampMs: Long?): String {
+        if (timestampMs == null || timestampMs == 0L) return "--:--"
+        val date = java.util.Date(timestampMs)
+        val sdf = SimpleDateFormat("HH:mm", Locale.getDefault())
+        return sdf.format(date)
+    }
+
     private fun showCardControlDialog(card: CardInfo) {
         val view = LayoutInflater.from(this).inflate(R.layout.dialog_card_control, null)
         val dialog = AlertDialog.Builder(this)
@@ -203,6 +217,9 @@ class MainActivity : AppCompatActivity() {
 
         val tvUid = view.findViewById<TextView>(R.id.dialogCardUid)
         val etName = view.findViewById<EditText>(R.id.etCardName)
+        val llTimelineDetails = view.findViewById<LinearLayout>(R.id.llTimelineDetails)
+        val tvStartTime = view.findViewById<TextView>(R.id.tvStartTimeDetail)
+        val tvEndTime = view.findViewById<TextView>(R.id.tvEndTimeDetail)
         val npHours = view.findViewById<NumberPicker>(R.id.npHours)
         val npMinutes = view.findViewById<NumberPicker>(R.id.npMinutes)
         val btnRename = view.findViewById<Button>(R.id.btnRename)
@@ -213,6 +230,24 @@ class MainActivity : AppCompatActivity() {
 
         tvUid.text = "UID: ${card.cardId}"
         etName.setText(card.name)
+
+        // Show start & expected end time details if timer is active
+        if (card.startTimeUtc != null) {
+            llTimelineDetails.visibility = View.VISIBLE
+            val startMs = try { isoFormat.parse(card.startTimeUtc!!)?.time } catch (e: Exception) { null }
+            tvStartTime.text = formatClockTime(startMs)
+            if (startMs != null && card.targetDurationSeconds > 0) {
+                val endMs = startMs + (card.targetDurationSeconds * 1000L)
+                tvEndTime.text = formatClockTime(endMs)
+            } else {
+                tvEndTime.text = "--:--"
+            }
+        } else {
+            llTimelineDetails.visibility = View.GONE
+        }
+
+        // Toggle pause/resume text
+        btnPause.text = if (card.status == 2) "恢复" else "暂停"
 
         npHours.minValue = 0
         npHours.maxValue = 23
@@ -248,7 +283,7 @@ class MainActivity : AppCompatActivity() {
         btnPause.setOnClickListener {
             val action = if (card.status == 2) "resume" else "pause"
             apiClient.setTimerImmediate(card.cardId, 0, action)
-            Toast.makeText(this@MainActivity, if (action == "resume") "已恢复" else "已暂停", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this@MainActivity, if (action == "resume") "已恢复计时" else "已暂停计时", Toast.LENGTH_SHORT).show()
             dialog.dismiss()
             triggerLocalRefresh()
         }
@@ -277,7 +312,7 @@ class MainActivity : AppCompatActivity() {
         dialog.show()
     }
 
-    // RecyclerView Adapter for smooth UI tick
+    // RecyclerView Adapter
     class CardAdapter : RecyclerView.Adapter<CardAdapter.CardViewHolder>() {
         private var cards: List<CardInfo> = emptyList()
         var onManageClick: ((CardInfo) -> Unit)? = null

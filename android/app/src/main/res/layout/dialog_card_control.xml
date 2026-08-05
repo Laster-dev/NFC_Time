@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:background="#1E293B"
@@ -10,7 +11,7 @@
         android:id="@+id/dialogTitle"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="卡片设置 &amp; 计时控制"
+        android:text="卡片设置 &amp; 计时详情"
         android:textColor="#FFFFFF"
         android:textSize="18sp"
         android:textStyle="bold" />
@@ -24,6 +25,64 @@
         android:text="UID: 04:A2:3B"
         android:textColor="#94A3B8"
         android:textSize="12sp" />
+
+    <!-- Details Card Info (Shown when running/paused) -->
+    <LinearLayout
+        android:id="@+id/llTimelineDetails"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="16dp"
+        android:background="#0F172A"
+        android:orientation="vertical"
+        android:padding="12dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="▶ 开始时间:"
+                android:textColor="#94A3B8"
+                android:textSize="13sp" />
+
+            <TextView
+                android:id="@+id/tvStartTimeDetail"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="14:30"
+                android:textColor="#FFFFFF"
+                android:textSize="13sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:orientation="horizontal">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="🏁 预计到期:"
+                android:textColor="#94A3B8"
+                android:textSize="13sp" />
+
+            <TextView
+                android:id="@+id/tvEndTimeDetail"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="15:00"
+                android:textColor="#38BDF8"
+                android:textSize="13sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+    </LinearLayout>
 
     <!-- Name Input Field -->
     <TextView
@@ -61,14 +120,16 @@
 
     <!-- Scrollable NumberPicker Section for Hours and Minutes -->
     <TextView
+        android:id="@+id/tvPickerTitle"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginBottom="8dp"
-        android:text="滚动选择倒计时时长"
+        android:text="重设/修改倒计时时长"
         android:textColor="#94A3B8"
         android:textSize="12sp" />
 
     <LinearLayout
+        android:id="@+id/llPickerArea"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginBottom="20dp"
@@ -148,6 +209,6 @@
         android:layout_height="wrap_content"
         android:text="🗑️ 删除此卡片记录"
         android:textColor="#EF4444"
-        app:strokeColor="#EF4444" xmlns:app="http://schemas.android.com/apk/res-auto" />
+        app:strokeColor="#EF4444" />
 
 </LinearLayout>
