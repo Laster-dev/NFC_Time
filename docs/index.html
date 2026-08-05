@@ -3,61 +3,61 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>🐱 淘气卡片计时器 ⏱️</title>
+    <title>🌟 星野手作 | 桌面计时小屋 🌙</title>
     <link rel="stylesheet" href="style.css">
-    <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@600;700&family=ZCOOL+KuaiLe&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@600;700&family=Noto+Sans+SC:wght@500;700;900&display=swap" rel="stylesheet">
 </head>
 <body>
-    <div class="cute-app">
-        <!-- Cute Header -->
-        <header class="cute-header">
-            <div class="header-main">
-                <span class="header-cat">🐱</span>
+    <div class="hoshino-app">
+        <!-- Hoshino Starry Header -->
+        <header class="hoshino-header">
+            <div class="brand-box">
+                <span class="star-icon">✨</span>
                 <div>
-                    <h1 class="cute-title">卡片计时小卖部</h1>
-                    <p class="cute-subtitle">云端实时守候中~</p>
+                    <h1 class="hoshino-title">星野手作</h1>
+                    <p class="hoshino-subtitle">✦ 陪伴每一份温暖时光 ✦</p>
                 </div>
             </div>
-            <div class="cute-badge">
-                <span class="bubble-dot"></span>
-                <span id="cardCounter">0 张卡片</span>
+            <div class="moon-badge">
+                <span class="moon-twinkle">🌙</span>
+                <span id="cardCounter">0 份手作</span>
             </div>
         </header>
 
-        <!-- Cute Summary Pills -->
-        <div class="summary-chips">
+        <!-- Starlight Summary Pills -->
+        <div class="star-summary">
             <div class="chip chip-run">
-                <span class="chip-emoji">🏃</span>
+                <span class="chip-emoji">🌟</span>
                 <span class="chip-num" id="countRunning">0</span>
-                <span class="chip-txt">进行中</span>
+                <span class="chip-txt">制作中</span>
             </div>
             <div class="chip chip-pause">
-                <span class="chip-emoji">☕</span>
+                <span class="chip-emoji">🍵</span>
                 <span class="chip-num" id="countPaused">0</span>
-                <span class="chip-txt">歇一歇</span>
+                <span class="chip-txt">憩息中</span>
             </div>
             <div class="chip chip-stop">
-                <span class="chip-emoji">💤</span>
+                <span class="chip-emoji">🌸</span>
                 <span class="chip-num" id="countStopped">0</span>
-                <span class="chip-txt">还没开始</span>
+                <span class="chip-txt">准备中</span>
             </div>
             <div class="chip chip-expire">
-                <span class="chip-emoji">⏰</span>
+                <span class="chip-emoji">🔔</span>
                 <span class="chip-num" id="countExpired">0</span>
-                <span class="chip-txt">超时啦</span>
+                <span class="chip-txt">时间到啦</span>
             </div>
         </div>
 
-        <!-- Filter Buttons (Fixed Pointer Event Z-Index & Click Handler) -->
-        <nav class="filter-tab-bar">
-            <button type="button" class="tab-btn active" data-filter="all">🌟 全部卡片</button>
-            <button type="button" class="tab-btn" data-filter="running">🏃 运行中</button>
-            <button type="button" class="tab-btn" data-filter="expired">⏰ 已超时</button>
+        <!-- Starry Tab Bar Filter -->
+        <nav class="hoshino-tabs">
+            <button type="button" class="tab-btn active" data-filter="all">✨ 全部手作</button>
+            <button type="button" class="tab-btn" data-filter="running">🌟 制作中</button>
+            <button type="button" class="tab-btn" data-filter="expired">🔔 时间到</button>
         </nav>
 
-        <!-- Cute Card List Stream -->
-        <main class="card-list-stream" id="cardsGrid">
-            <!-- Dynamic cute cards -->
+        <!-- Hoshino Handmade Cards Stream -->
+        <main class="hoshino-card-stream" id="cardsGrid">
+            <!-- Dynamic Hoshino Cards -->
         </main>
     </div>
 
