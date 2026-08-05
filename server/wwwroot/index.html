@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NFC 计时监控中心 - Web Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="app-container">
+        <header class="navbar">
+            <div class="brand">
+                <span class="logo-icon">⏱️</span>
+                <h1>NFC 刷卡计时系统 Dashboard</h1>
+            </div>
+            <div class="header-status">
+                <span class="pulse-indicator"></span>
+                <span id="serverStatusText">实时监控中</span>
+                <span class="card-count-badge" id="totalCardsBadge">0 张卡片</span>
+            </div>
+        </header>
+
+        <main class="content">
+            <!-- Android Web NFC Scanner Section (Only shown on Android Chrome/Edge) -->
+            <div id="androidNfcSection" class="nfc-scan-card" style="display: none;">
+                <div class="nfc-scan-info">
+                    <span class="nfc-icon">📲</span>
+                    <div>
+                        <h3>安卓 Web 刷卡感知已就绪</h3>
+                        <p id="webNfcStatusText">点击“开始Web刷卡”，直接靠近NFC卡片即可自动查找定位对应卡片。</p>
+                    </div>
+                </div>
+                <button id="btnToggleWebNfc" class="btn-nfc-scan">开始 Web 刷卡</button>
+            </div>
+
+            <div class="stats-bar">
+                <div class="stat-card">
+                    <span class="stat-label">运行中</span>
+                    <span class="stat-value text-running" id="countRunning">0</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-label">已暂停</span>
+                    <span class="stat-value text-paused" id="countPaused">0</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-label">未开始/停止</span>
+                    <span class="stat-value text-stopped" id="countStopped">0</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-label">已超时</span>
+                    <span class="stat-value text-expired" id="countExpired">0</span>
+                </div>
+            </div>
+
+            <section class="cards-section">
+                <div class="section-header">
+                    <h2>卡片计时列表</h2>
+                    <div class="filter-controls">
+                        <button class="btn-filter active" data-filter="all">全部</button>
+                        <button class="btn-filter" data-filter="running">运行中</button>
+                        <button class="btn-filter" data-filter="expired">超时</button>
+                    </div>
+                </div>
+
+                <div class="cards-grid" id="cardsGrid">
+                    <!-- Cards dynamically rendered here -->
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

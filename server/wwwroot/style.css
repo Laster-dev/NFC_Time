@@ -1,0 +1,332 @@
+:root {
+    --bg-primary: #0f172a;
+    --bg-card: #1e293b;
+    --bg-card-hover: #334155;
+    --text-main: #f8fafc;
+    --text-muted: #94a3b8;
+    
+    --color-running: #10b981;
+    --color-running-glow: rgba(16, 185, 129, 0.2);
+    --color-paused: #f59e0b;
+    --color-stopped: #64748b;
+    --color-expired: #ef4444;
+    --color-expired-glow: rgba(239, 68, 68, 0.3);
+    
+    --border-radius: 12px;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    background-color: var(--bg-primary);
+    color: var(--text-main);
+    min-height: 100vh;
+    padding: 24px;
+}
+
+.app-container {
+    max-width: 1300px;
+    margin: 0 auto;
+}
+
+.navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 24px;
+    border-bottom: 1px solid #334155;
+    margin-bottom: 24px;
+}
+
+.brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.logo-icon {
+    font-size: 2rem;
+}
+
+.brand h1 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, #60a5fa, #a78bfa);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.header-status {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.9rem;
+    color: var(--text-muted);
+}
+
+.pulse-indicator {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background-color: var(--color-running);
+    box-shadow: 0 0 10px var(--color-running);
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { transform: scale(0.95); opacity: 0.8; }
+    50% { transform: scale(1.15); opacity: 1; }
+    100% { transform: scale(0.95); opacity: 0.8; }
+}
+
+.card-count-badge {
+    background: #334155;
+    padding: 4px 10px;
+    border-radius: 20px;
+    color: var(--text-main);
+    font-weight: 600;
+}
+
+/* Web NFC Card Styling */
+.nfc-scan-card {
+    background: linear-gradient(135deg, #1e293b, #0f172a);
+    border: 1px solid #38bdf8;
+    border-radius: var(--border-radius);
+    padding: 16px 20px;
+    margin-bottom: 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 0 15px rgba(56, 189, 248, 0.15);
+}
+
+.nfc-scan-info {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.nfc-icon {
+    font-size: 1.8rem;
+}
+
+.nfc-scan-info h3 {
+    font-size: 1.05rem;
+    color: #38bdf8;
+    margin-bottom: 4px;
+}
+
+.nfc-scan-info p {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+
+.btn-nfc-scan {
+    background: #38bdf8;
+    color: #0f172a;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-nfc-scan.active {
+    background: #ef4444;
+    color: #ffffff;
+}
+
+.highlight-swiped-card {
+    box-shadow: 0 0 25px #38bdf8 !important;
+    border-color: #38bdf8 !important;
+    transform: scale(1.03);
+    transition: all 0.3s ease-in-out;
+}
+
+.stats-bar {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    margin-bottom: 32px;
+}
+
+.stat-card {
+    background: var(--bg-card);
+    padding: 20px;
+    border-radius: var(--border-radius);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    border: 1px solid #334155;
+}
+
+.stat-label {
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.stat-value {
+    font-size: 2rem;
+    font-weight: 700;
+}
+
+.text-running { color: var(--color-running); }
+.text-paused { color: var(--color-paused); }
+.text-stopped { color: var(--color-stopped); }
+.text-expired { color: var(--color-expired); }
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.btn-filter {
+    background: var(--bg-card);
+    color: var(--text-muted);
+    border: 1px solid #334155;
+    padding: 8px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-filter.active, .btn-filter:hover {
+    background: #38bdf8;
+    color: #0f172a;
+    font-weight: 600;
+    border-color: #38bdf8;
+}
+
+.cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 20px;
+}
+
+.nfc-card {
+    background: var(--bg-card);
+    border-radius: var(--border-radius);
+    padding: 20px;
+    border: 1px solid #334155;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    position: relative;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.nfc-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+}
+
+.nfc-card.status-running {
+    border-left: 5px solid var(--color-running);
+}
+
+.nfc-card.status-paused {
+    border-left: 5px solid var(--color-paused);
+}
+
+.nfc-card.status-stopped {
+    border-left: 5px solid var(--color-stopped);
+}
+
+.nfc-card.status-expired {
+    border-left: 5px solid var(--color-expired);
+    background: linear-gradient(180deg, #1e293b 0%, #2a1b24 100%);
+    box-shadow: 0 0 15px var(--color-expired-glow);
+    animation: flash-border 2s infinite alternate;
+}
+
+@keyframes flash-border {
+    0% { border-color: var(--color-expired); }
+    100% { border-color: #f87171; }
+}
+
+.card-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+
+.card-title {
+    font-size: 1.15rem;
+    font-weight: 600;
+    color: #f1f5f9;
+}
+
+.card-uid {
+    font-size: 0.8rem;
+    font-family: monospace;
+    color: var(--text-muted);
+    background: #0f172a;
+    padding: 2px 6px;
+    border-radius: 4px;
+    margin-top: 4px;
+    display: inline-block;
+}
+
+.status-badge {
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.badge-running { background: rgba(16, 185, 129, 0.2); color: var(--color-running); }
+.badge-paused { background: rgba(245, 158, 11, 0.2); color: var(--color-paused); }
+.badge-stopped { background: rgba(100, 116, 139, 0.2); color: var(--color-stopped); }
+.badge-expired { background: rgba(239, 68, 68, 0.25); color: #f87171; }
+
+.card-timer-display {
+    text-align: center;
+    margin: 10px 0;
+}
+
+.time-main {
+    font-size: 2.4rem;
+    font-weight: 700;
+    font-family: monospace;
+    letter-spacing: 1px;
+}
+
+.overdue-alert {
+    color: #f87171;
+    font-weight: 700;
+    margin-top: 4px;
+    font-size: 0.95rem;
+}
+
+.progress-bar-bg {
+    height: 6px;
+    background: #0f172a;
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.progress-bar-fill {
+    height: 100%;
+    background: var(--color-running);
+    transition: width 0.5s ease-out;
+}
+
+.empty-state {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 60px;
+    color: var(--text-muted);
+    background: var(--bg-card);
+    border-radius: var(--border-radius);
+}

@@ -1,0 +1,11 @@
+# Build outputs & binaries
+server/bin/
+server/obj/
+android/app/build/
+android/.gradle/
+android/local.properties
+.idea/
+.vs/
+*.user
+swipe_payload.json
+timer_payload.json
