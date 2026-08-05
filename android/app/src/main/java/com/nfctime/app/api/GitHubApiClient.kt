@@ -16,7 +16,7 @@ import java.util.concurrent.TimeUnit
 
 data class CardInfo(
     val cardId: String,
-    var name: String,
+    var name: String = "",
     var targetDurationSeconds: Int = 0,
     var status: Int = 0, // 0: Stopped, 1: Running, 2: Paused, 3: Expired
     var startTimeUtc: String? = null,
@@ -63,10 +63,16 @@ class GitHubApiClient(
                     val body = resp.body?.string()
                     val jsonObj = gson.fromJson(body, JsonObject::class.java)
                     val files = jsonObj.getAsJsonObject("files")
-                    if (files != null && files.has("cards_data.json")) {
-                        val content = files.getAsJsonObject("cards_data.json").get("content").asString
-                        val list = gson.fromJson(content, Array<CardInfo>::class.java).toMutableList()
-                        return@withContext list
+                    if (files != null) {
+                        val fileObj = files.getAsJsonObject("cards_data.json")
+                            ?: files.getAsJsonObject("gistfile1.txt")
+                            ?: if (files.keySet().isNotEmpty()) files.getAsJsonObject(files.keySet().first()) else null
+
+                        if (fileObj != null && fileObj.has("content")) {
+                            val content = fileObj.get("content").asString
+                            val list = gson.fromJson(content, Array<CardInfo>::class.java).toMutableList()
+                            return@withContext list
+                        }
                     }
                 }
             }
