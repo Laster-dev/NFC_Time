@@ -3,57 +3,61 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>NFC 刷卡计时监控</title>
+    <title>🐱 淘气卡片计时器 ⏱️</title>
     <link rel="stylesheet" href="style.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@600;700&family=ZCOOL+KuaiLe&display=swap" rel="stylesheet">
 </head>
 <body>
-    <div class="mobile-app">
-        <!-- Header Zone -->
-        <header class="header">
-            <div class="brand-group">
-                <span class="brand-logo">⏱️</span>
+    <div class="cute-app">
+        <!-- Cute Header -->
+        <header class="cute-header">
+            <div class="header-main">
+                <span class="header-cat">🐱</span>
                 <div>
-                    <h1 class="brand-title">NFC 刷卡计时中心</h1>
-                    <p class="brand-subtitle">GitHub 云端实时感知</p>
+                    <h1 class="cute-title">卡片计时小卖部</h1>
+                    <p class="cute-subtitle">云端实时守候中~</p>
                 </div>
             </div>
-            <div class="live-pill">
-                <span class="live-dot"></span>
+            <div class="cute-badge">
+                <span class="bubble-dot"></span>
                 <span id="cardCounter">0 张卡片</span>
             </div>
         </header>
 
-        <!-- Stats Overview Cards -->
-        <div class="stats-scroll">
-            <div class="stat-pill stat-running">
-                <span class="stat-num" id="countRunning">0</span>
-                <span class="stat-label">运行中</span>
+        <!-- Cute Summary Pills -->
+        <div class="summary-chips">
+            <div class="chip chip-run">
+                <span class="chip-emoji">🏃</span>
+                <span class="chip-num" id="countRunning">0</span>
+                <span class="chip-txt">进行中</span>
             </div>
-            <div class="stat-pill stat-paused">
-                <span class="stat-num" id="countPaused">0</span>
-                <span class="stat-label">已暂停</span>
+            <div class="chip chip-pause">
+                <span class="chip-emoji">☕</span>
+                <span class="chip-num" id="countPaused">0</span>
+                <span class="chip-txt">歇一歇</span>
             </div>
-            <div class="stat-pill stat-stopped">
-                <span class="stat-num" id="countStopped">0</span>
-                <span class="stat-label">未开始</span>
+            <div class="chip chip-stop">
+                <span class="chip-emoji">💤</span>
+                <span class="chip-num" id="countStopped">0</span>
+                <span class="chip-txt">还没开始</span>
             </div>
-            <div class="stat-pill stat-expired">
-                <span class="stat-num" id="countExpired">0</span>
-                <span class="stat-label">已超时</span>
+            <div class="chip chip-expire">
+                <span class="chip-emoji">⏰</span>
+                <span class="chip-num" id="countExpired">0</span>
+                <span class="chip-txt">超时啦</span>
             </div>
         </div>
 
-        <!-- Filter Segmented Control -->
-        <div class="segment-control">
-            <button class="segment-btn active" data-filter="all">全部</button>
-            <button class="segment-btn" data-filter="running">运行中</button>
-            <button class="segment-btn" data-filter="expired">超时</button>
-        </div>
+        <!-- Filter Buttons (Fixed Pointer Event Z-Index & Click Handler) -->
+        <nav class="filter-tab-bar">
+            <button type="button" class="tab-btn active" data-filter="all">🌟 全部卡片</button>
+            <button type="button" class="tab-btn" data-filter="running">🏃 运行中</button>
+            <button type="button" class="tab-btn" data-filter="expired">⏰ 已超时</button>
+        </nav>
 
-        <!-- Card Stream List -->
-        <main class="card-stream" id="cardsGrid">
-            <!-- Dynamic Mobile Cards -->
+        <!-- Cute Card List Stream -->
+        <main class="card-list-stream" id="cardsGrid">
+            <!-- Dynamic cute cards -->
         </main>
     </div>
 

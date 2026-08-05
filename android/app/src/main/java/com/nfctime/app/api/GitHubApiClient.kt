@@ -53,7 +53,6 @@ class GitHubApiClient(
         token = newToken.trim()
     }
 
-    // Local Disk Cache for offline support
     private fun getCachedCards(): MutableList<CardInfo> {
         val json = prefs.getString("cached_json", "[]")
         return try {
@@ -104,7 +103,6 @@ class GitHubApiClient(
         return@withContext null
     }
 
-    // Asynchronous background upload to GitHub Gist
     private fun syncToRemoteAsync(cards: List<CardInfo>) {
         saveCachedCards(cards)
         if (gistId.isEmpty() || token.isEmpty()) return
@@ -218,5 +216,14 @@ class GitHubApiClient(
         card.name = newName
         syncToRemoteAsync(list)
         return card
+    }
+
+    fun deleteCardImmediate(cardId: String): Boolean {
+        val list = getCachedCards()
+        val removed = list.removeAll { it.cardId.equals(cardId, ignoreCase = true) }
+        if (removed) {
+            syncToRemoteAsync(list)
+        }
+        return removed
     }
 }

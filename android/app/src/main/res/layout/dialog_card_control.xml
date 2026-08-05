@@ -110,6 +110,7 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_marginBottom="12dp"
         android:orientation="horizontal">
 
         <Button
@@ -135,8 +136,18 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:layout_marginStart="6dp"
-            android:backgroundTint="#EF4444"
+            android:backgroundTint="#64748B"
             android:text="停止" />
     </LinearLayout>
+
+    <!-- Delete Card Button -->
+    <Button
+        android:id="@+id/btnDeleteCard"
+        style="@style/Widget.Material3.Button.OutlinedButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="🗑️ 删除此卡片记录"
+        android:textColor="#EF4444"
+        app:strokeColor="#EF4444" xmlns:app="http://schemas.android.com/apk/res-auto" />
 
 </LinearLayout>

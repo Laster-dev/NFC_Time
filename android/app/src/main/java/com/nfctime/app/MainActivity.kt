@@ -128,7 +128,6 @@ class MainActivity : AppCompatActivity() {
         val cardId = uidBytes.joinToString(":") { String.format("%02X", it) }
         tvNfcStatus.text = "✨ 已刷卡! UID: $cardId"
 
-        // Immediate offline card creation + background GitHub sync
         val card = apiClient.swipeCardImmediate(cardId)
         Toast.makeText(this@MainActivity, "刷卡成功: ${card.name}", Toast.LENGTH_SHORT).show()
         showCardControlDialog(card)
@@ -140,7 +139,7 @@ class MainActivity : AppCompatActivity() {
         pollJob = lifecycleScope.launch {
             while (isActive) {
                 refreshCards()
-                delay(1000) // Smooth 1-second refresh on mobile screen
+                delay(1000)
             }
         }
     }
@@ -210,11 +209,11 @@ class MainActivity : AppCompatActivity() {
         val btnStart = view.findViewById<Button>(R.id.btnStart)
         val btnPause = view.findViewById<Button>(R.id.btnPause)
         val btnStop = view.findViewById<Button>(R.id.btnStop)
+        val btnDeleteCard = view.findViewById<Button>(R.id.btnDeleteCard)
 
         tvUid.text = "UID: ${card.cardId}"
         etName.setText(card.name)
 
-        // Setup Scrollable NumberPicker for Hours (0-23) and Minutes (0-59)
         npHours.minValue = 0
         npHours.maxValue = 23
         npMinutes.minValue = 0
@@ -261,10 +260,24 @@ class MainActivity : AppCompatActivity() {
             triggerLocalRefresh()
         }
 
+        btnDeleteCard.setOnClickListener {
+            AlertDialog.Builder(this)
+                .setTitle("确认删除")
+                .setMessage("确定要彻底删除卡片「${card.name}」的计时记录吗？")
+                .setPositiveButton("删除") { _, _ ->
+                    apiClient.deleteCardImmediate(card.cardId)
+                    Toast.makeText(this@MainActivity, "卡片记录已删除", Toast.LENGTH_SHORT).show()
+                    dialog.dismiss()
+                    triggerLocalRefresh()
+                }
+                .setNegativeButton("取消", null)
+                .show()
+        }
+
         dialog.show()
     }
 
-    // RecyclerView Adapter for smooth 1-second UI tick
+    // RecyclerView Adapter for smooth UI tick
     class CardAdapter : RecyclerView.Adapter<CardAdapter.CardViewHolder>() {
         private var cards: List<CardInfo> = emptyList()
         var onManageClick: ((CardInfo) -> Unit)? = null

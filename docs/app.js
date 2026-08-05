@@ -1,43 +1,24 @@
 let currentFilter = 'all';
-let nfcNDEFReader = null;
-let activeNfcCardId = null;
 
 // Built-in fixed Gist ID (Configured to your created Gist)
 const FIXED_GIST_ID = "6582c66b24bad75381f70abdae62e81b";
 
 document.addEventListener('DOMContentLoaded', () => {
-    fetchCardsFromGist();
-    setInterval(fetchCardsFromGist, 2000); // Poll GitHub Gist every 2 seconds
-
-    // Filter handlers
-    document.querySelectorAll('.btn-filter').forEach(btn => {
+    // Tab Button Click Listeners (Fixing non-responsive filter clicks)
+    const tabBtns = document.querySelectorAll('.tab-btn');
+    tabBtns.forEach(btn => {
         btn.addEventListener('click', (e) => {
-            document.querySelectorAll('.btn-filter').forEach(b => b.classList.remove('active'));
-            e.target.classList.add('active');
-            currentFilter = e.target.dataset.filter;
+            tabBtns.forEach(b => b.classList.remove('active'));
+            const target = e.currentTarget;
+            target.classList.add('active');
+            currentFilter = target.getAttribute('data-filter') || 'all';
             fetchCardsFromGist();
         });
     });
 
-    // Detect Android & Web NFC support
-    const isAndroid = /Android/i.test(navigator.userAgent);
-    const hasWebNFC = 'NDEFReader' in window;
-
-    if (isAndroid && hasWebNFC) {
-        const nfcSection = document.getElementById('androidNfcSection');
-        nfcSection.style.display = 'flex';
-        document.getElementById('btnToggleWebNfc').addEventListener('click', toggleWebNfc);
-        
-        showAndroidNfcBanner();
-    }
+    fetchCardsFromGist();
+    setInterval(fetchCardsFromGist, 2000); // Poll GitHub Gist every 2 seconds
 });
-
-function showAndroidNfcBanner() {
-    const statusText = document.getElementById('webNfcStatusText');
-    if (statusText) {
-        statusText.textContent = '📲 检测到安卓设备！点击“开始Web刷卡”，靠近NFC卡片可自动识别查找卡片。';
-    }
-}
 
 async function fetchCardsFromGist() {
     if (!FIXED_GIST_ID) {
@@ -46,18 +27,31 @@ async function fetchCardsFromGist() {
     }
 
     try {
+        // Fetch with raw URL or Gist API to avoid GitHub caching issues
         const res = await fetch(`https://api.github.com/gists/${FIXED_GIST_ID}?t=${Date.now()}`);
-        if (!res.ok) return;
+        if (!res.ok) {
+            console.warn("Gist fetch HTTP error: ", res.status);
+            return;
+        }
         const data = await res.json();
         
-        // Match cards_data.json or gistfile1.txt (fallback)
-        const fileObj = data.files['cards_data.json'] || data.files['gistfile1.txt'] || Object.values(data.files)[0];
+        // Find matching file
+        const files = data.files || {};
+        const fileObj = files['cards_data.json'] || files['gistfile1.txt'] || Object.values(files)[0];
         const fileContent = fileObj?.content;
 
         if (fileContent) {
-            const rawCards = JSON.parse(fileContent);
+            let rawCards = [];
+            try {
+                rawCards = JSON.parse(fileContent);
+            } catch (parseErr) {
+                console.error("JSON parse error: ", parseErr);
+                rawCards = [];
+            }
             const computedCards = computeCardsState(rawCards);
             renderDashboard(computedCards);
+        } else {
+            renderDashboard([]);
         }
     } catch (err) {
         console.error('Failed to fetch from GitHub Gist:', err);
@@ -93,59 +87,6 @@ function computeCardsState(cards) {
     });
 }
 
-async function toggleWebNfc() {
-    const btn = document.getElementById('btnToggleWebNfc');
-    const statusText = document.getElementById('webNfcStatusText');
-
-    if (nfcNDEFReader) {
-        nfcNDEFReader = null;
-        btn.textContent = '开始 Web 刷卡';
-        btn.classList.remove('active');
-        statusText.textContent = '点击“开始Web刷卡”，靠近NFC卡片可自动识别查找卡片。';
-        return;
-    }
-
-    try {
-        nfcNDEFReader = new NDEFReader();
-        await nfcNDEFReader.scan();
-
-        btn.textContent = '停止 Web 刷卡';
-        btn.classList.add('active');
-        statusText.textContent = '🟢 正在监听 NFC 刷卡中... 请将卡片贴近手机背面。';
-
-        nfcNDEFReader.addEventListener('reading', ({ serialNumber }) => {
-            if (serialNumber) {
-                const formattedId = serialNumber.toUpperCase();
-                handleWebNfcSwiped(formattedId);
-            }
-        });
-
-    } catch (error) {
-        console.error("Web NFC Error: ", error);
-        statusText.textContent = '⚠️ Web NFC 权限拒绝或不支持。';
-    }
-}
-
-function handleWebNfcSwiped(scannedCardId) {
-    const statusText = document.getElementById('webNfcStatusText');
-    statusText.textContent = `✨ 感应到卡片 UID: ${scannedCardId}，正在查找卡片...`;
-
-    activeNfcCardId = scannedCardId;
-    fetchCardsFromGist().then(() => {
-        const cardElement = document.getElementById(`card-${scannedCardId}`);
-        if (cardElement) {
-            cardElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            cardElement.classList.add('highlight-swiped-card');
-            setTimeout(() => {
-                cardElement.classList.remove('highlight-swiped-card');
-            }, 3000);
-            statusText.textContent = `✅ 找到对应卡片 UID: ${scannedCardId}`;
-        } else {
-            statusText.textContent = `❓ 数据源中尚未注册此卡片 (${scannedCardId})。`;
-        }
-    });
-}
-
 function formatTime(totalSeconds) {
     const isNegative = totalSeconds < 0;
     const absSeconds = Math.abs(Math.floor(totalSeconds));
@@ -170,12 +111,13 @@ function renderDashboard(cards) {
         else stopped++;
     });
 
-    document.getElementById('totalCardsBadge').textContent = `${cards.length} 张卡片`;
+    document.getElementById('cardCounter').textContent = `${cards.length} 张卡片`;
     document.getElementById('countRunning').textContent = running;
     document.getElementById('countPaused').textContent = paused;
     document.getElementById('countStopped').textContent = stopped;
     document.getElementById('countExpired').textContent = expired;
 
+    // Filter cards
     const filtered = cards.filter(c => {
         if (currentFilter === 'running') return c.status === 1 && !c.isOverdue;
         if (currentFilter === 'expired') return c.isOverdue || c.status === 3;
@@ -185,30 +127,32 @@ function renderDashboard(cards) {
     const grid = document.getElementById('cardsGrid');
     if (filtered.length === 0) {
         grid.innerHTML = `
-            <div class="empty-state">
-                <p>暂无卡片数据，请使用安卓 App 进行 NFC 刷卡。</p>
+            <div class="empty-cute-view">
+                <div class="empty-cute-emoji">🐾</div>
+                <p>暂时没有卡片在计时中哦~<br>快去手机端刷卡试试吧！</p>
             </div>
         `;
         return;
     }
 
     grid.innerHTML = filtered.map(card => {
-        let statusClass = 'status-stopped';
-        let statusBadgeClass = 'badge-stopped';
-        let statusText = '未开始';
+        let isExpiredMode = card.isOverdue || card.status === 3;
+        let badgeClass = 'badge-gray';
+        let statusText = '💤 还没开始';
+        let timeColorClass = '';
 
-        if (card.isOverdue || card.status === 3) {
-            statusClass = 'status-expired';
-            statusBadgeClass = 'badge-expired';
-            statusText = '⚠️ 已超时';
+        if (isExpiredMode) {
+            badgeClass = 'badge-pink-red';
+            statusText = '⏰ 已超时';
+            timeColorClass = 'text-red';
         } else if (card.status === 1) {
-            statusClass = 'status-running';
-            statusBadgeClass = 'badge-running';
-            statusText = '进行中';
+            badgeClass = 'badge-mint';
+            statusText = '🏃 进行中';
+            timeColorClass = 'text-mint';
         } else if (card.status === 2) {
-            statusClass = 'status-paused';
-            statusBadgeClass = 'badge-paused';
-            statusText = '已暂停';
+            badgeClass = 'badge-yellow';
+            statusText = '☕ 歇一歇';
+            timeColorClass = 'text-yellow';
         }
 
         const remainingSec = card.remainingSeconds;
@@ -219,37 +163,35 @@ function renderDashboard(cards) {
         }
 
         let timeHtml = '';
-        if (card.isOverdue) {
+        if (isExpiredMode) {
             timeHtml = `
-                <div class="time-main text-expired">00:00</div>
-                <div class="overdue-alert">🚨 超时: ${formatTime(card.overdueSeconds)}</div>
+                <div class="cute-time-val text-red">00:00</div>
+                <div class="overdue-cute-alert">🚨 超时小长跑: ${formatTime(card.overdueSeconds)}</div>
             `;
         } else {
             timeHtml = `
-                <div class="time-main ${card.status === 1 ? 'text-running' : (card.status === 2 ? 'text-paused' : '')}">
+                <div class="cute-time-val ${timeColorClass}">
                     ${formatTime(remainingSec)}
                 </div>
             `;
         }
 
-        const isHighlighted = activeNfcCardId && activeNfcCardId.replace(/:/g, '').toUpperCase() === card.cardId.replace(/:/g, '').toUpperCase();
-
         return `
-            <div class="nfc-card ${statusClass} ${isHighlighted ? 'highlight-swiped-card' : ''}" id="card-${card.cardId.toUpperCase()}">
-                <div class="card-top">
+            <div class="cute-card-item ${isExpiredMode ? 'card-expired-theme' : ''}">
+                <div class="card-top-bar">
                     <div>
-                        <div class="card-title">${escapeHtml(card.name)}</div>
-                        <div class="card-uid">UID: ${escapeHtml(card.cardId)}</div>
+                        <div class="card-title-text">${escapeHtml(card.name)}</div>
+                        <div class="card-uid-sub">UID: ${escapeHtml(card.cardId)}</div>
                     </div>
-                    <span class="status-badge ${statusBadgeClass}">${statusText}</span>
+                    <span class="pill-badge ${badgeClass}">${statusText}</span>
                 </div>
 
-                <div class="card-timer-display">
+                <div class="timer-cute-box">
                     ${timeHtml}
                 </div>
 
-                <div class="progress-bar-bg">
-                    <div class="progress-bar-fill" style="width: ${card.isOverdue ? 0 : pct}%; ${card.status === 2 ? 'background: #f59e0b' : ''}"></div>
+                <div class="cute-progress-bar">
+                    <div class="cute-progress-fill" style="width: ${isExpiredMode ? 0 : pct}%; ${card.status === 2 ? 'background: #fbbd23' : ''}"></div>
                 </div>
             </div>
         `;
