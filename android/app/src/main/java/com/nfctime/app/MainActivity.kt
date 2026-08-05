@@ -11,8 +11,8 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
-import android.widget.CheckBox
 import android.widget.EditText
+import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.NumberPicker
 import android.widget.TextView
@@ -61,21 +61,20 @@ class MainActivity : AppCompatActivity() {
         rvCards.layoutManager = LinearLayoutManager(this)
         rvCards.adapter = adapter
 
-        // Load saved GitHub Gist credentials
         val prefs = getSharedPreferences("nfc_prefs", Context.MODE_PRIVATE)
         val savedGistId = prefs.getString("gist_id", "") ?: ""
         val savedToken = prefs.getString("github_token", "") ?: ""
         apiClient.updateConfig(savedGistId, savedToken)
 
-        findViewById<Button>(R.id.btnSettings).setOnClickListener {
+        findViewById<ImageView>(R.id.btnNavSettings).setOnClickListener {
             showGitHubSettingsDialog()
         }
 
-        findViewById<Button>(R.id.btnAnnounce).setOnClickListener {
+        findViewById<ImageView>(R.id.btnNavAnnounce).setOnClickListener {
             startActivity(Intent(this, AnnouncementActivity::class.java))
         }
 
-        findViewById<Button>(R.id.btnUnusedCards).setOnClickListener {
+        findViewById<ImageView>(R.id.btnNavUnused).setOnClickListener {
             startActivity(Intent(this, UnusedCardsActivity::class.java))
         }
 
@@ -90,7 +89,7 @@ class MainActivity : AppCompatActivity() {
     private fun initNfc() {
         nfcAdapter = NfcAdapter.getDefaultAdapter(this)
         if (nfcAdapter == null) {
-            tvNfcStatus.text = "⚠️ 此设备不支持 NFC"
+            tvNfcStatus.text = "⚠️ 设备不支持 NFC"
             return
         }
         if (!nfcAdapter!!.isEnabled) {
@@ -178,7 +177,6 @@ class MainActivity : AppCompatActivity() {
 
     private suspend fun refreshCards() {
         val allCards = apiClient.getAllCards()
-        // Filter OUT status === 0 from Main Home Page display! Only show Active/Running/Paused/Expired cards!
         val activeCards = allCards.filter { it.status != 0 }
         adapter.setCards(activeCards)
     }
@@ -275,21 +273,19 @@ class MainActivity : AppCompatActivity() {
 
                 if (isOverdue) {
                     tvStatusBadge.text = "⚠️ 已超时"
-                    tvStatusBadge.setTextColor(0xFFEF4444.toInt())
-                    tvStatusBadge.setBackgroundColor(0x33EF4444.toInt())
+                    tvStatusBadge.setTextColor(0xFFFF5252.toInt())
 
                     tvRemaining.text = "00:00:00"
-                    tvRemaining.setTextColor(0xFFEF4444.toInt())
+                    tvRemaining.setTextColor(0xFFFF5252.toInt())
 
                     tvOverdueAlert.visibility = View.VISIBLE
                     tvOverdueAlert.text = "🚨 已超时: ${formatTime(overdueSeconds)}"
                 } else {
                     tvStatusBadge.text = if (card.status == 2) "已暂停" else "进行中"
-                    tvStatusBadge.setTextColor(if (card.status == 2) 0xFFF59E0B.toInt() else 0xFF10B981.toInt())
-                    tvStatusBadge.setBackgroundColor(if (card.status == 2) 0x33F59E0B.toInt() else 0x3310B981.toInt())
+                    tvStatusBadge.setTextColor(if (card.status == 2) 0xFFE58032.toInt() else 0xFF45B880.toInt())
 
                     tvRemaining.text = formatTime(remaining)
-                    tvRemaining.setTextColor(if (card.status == 2) 0xFFF59E0B.toInt() else 0xFF10B981.toInt())
+                    tvRemaining.setTextColor(if (card.status == 2) 0xFFE58032.toInt() else 0xFF45B880.toInt())
 
                     tvOverdueAlert.visibility = View.GONE
                 }
@@ -333,7 +329,7 @@ class MainActivity : AppCompatActivity() {
 
         btnStop.setOnClickListener {
             apiClient.setTimerImmediate(card.cardId, 0, "stop")
-            Toast.makeText(this, "已停止计时，已转为未使用卡片", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "已停止计时", Toast.LENGTH_SHORT).show()
             dialog.dismiss()
             triggerLocalRefresh()
         }
@@ -401,7 +397,7 @@ class MainActivity : AppCompatActivity() {
         btnDeleteCard.setOnClickListener {
             AlertDialog.Builder(this)
                 .setTitle("设为未使用状态")
-                .setMessage("保留名称「${card.name}」，将其转为未使用状态？（移至未使用卡片档案库）")
+                .setMessage("保留名称「${card.name}」，将其转为未使用状态？")
                 .setPositiveButton("确认") { _, _ ->
                     apiClient.resetCardToUnusedImmediate(card.cardId)
                     Toast.makeText(this@MainActivity, "已移至未使用卡片档案库", Toast.LENGTH_SHORT).show()
@@ -453,39 +449,36 @@ class MainActivity : AppCompatActivity() {
             private val tvUid: TextView = itemView.findViewById(R.id.tvCardUid)
             private val tvBadge: TextView = itemView.findViewById(R.id.tvStatusBadge)
             private val tvTime: TextView = itemView.findViewById(R.id.tvTimeDisplay)
-            private val btnManage: Button = itemView.findViewById(R.id.btnCardAction)
+            private val tvAvatarChar: TextView = itemView.findViewById(R.id.tvAvatarChar)
 
             fun bind(card: CardInfo, onManageClick: ((CardInfo) -> Unit)?) {
                 tvName.text = card.name
                 tvUid.text = "UID: ${card.cardId}"
+                tvAvatarChar.text = if (card.name.isNotEmpty()) card.name.take(1) else "卡"
 
                 if (card.isOverdue || card.status == 3) {
-                    tvBadge.text = "⚠️ 超时"
-                    tvBadge.setBackgroundColor(0x33EF4444.toInt())
-                    tvBadge.setTextColor(0xFFF87171.toInt())
-                    tvTime.text = "🚨 超时: ${formatTime(card.overdueSeconds)}"
-                    tvTime.setTextColor(0xFFF87171.toInt())
+                    tvBadge.text = "⚠️ 已超时"
+                    tvBadge.setTextColor(0xFFFF5252.toInt())
+                    tvTime.text = formatTime(card.overdueSeconds)
+                    tvTime.setTextColor(0xFFFF5252.toInt())
                 } else if (card.status == 1) {
                     tvBadge.text = "进行中"
-                    tvBadge.setBackgroundColor(0x3310B981.toInt())
-                    tvBadge.setTextColor(0xFF10B981.toInt())
+                    tvBadge.setTextColor(0xFF45B880.toInt())
                     tvTime.text = formatTime(card.remainingSeconds)
-                    tvTime.setTextColor(0xFF10B981.toInt())
+                    tvTime.setTextColor(0xFF45B880.toInt())
                 } else if (card.status == 2) {
                     tvBadge.text = "已暂停"
-                    tvBadge.setBackgroundColor(0x33F59E0B.toInt())
-                    tvBadge.setTextColor(0xFFF59E0B.toInt())
+                    tvBadge.setTextColor(0xFFE58032.toInt())
                     tvTime.text = formatTime(card.remainingSeconds)
-                    tvTime.setTextColor(0xFFF59E0B.toInt())
+                    tvTime.setTextColor(0xFFE58032.toInt())
                 } else {
                     tvBadge.text = "未使用"
-                    tvBadge.setBackgroundColor(0x3364748B.toInt())
-                    tvBadge.setTextColor(0xFF94A3B8.toInt())
+                    tvBadge.setTextColor(0xFF7F91A4.toInt())
                     tvTime.text = "00:00"
-                    tvTime.setTextColor(0xFF94A3B8.toInt())
+                    tvTime.setTextColor(0xFF7F91A4.toInt())
                 }
 
-                btnManage.setOnClickListener { onManageClick?.invoke(card) }
+                itemView.setOnClickListener { onManageClick?.invoke(card) }
             }
 
             private fun formatTime(sec: Double): String {

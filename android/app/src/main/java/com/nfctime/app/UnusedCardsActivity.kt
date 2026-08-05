@@ -135,20 +135,19 @@ class UnusedCardsActivity : AppCompatActivity() {
             private val tvUid: TextView = itemView.findViewById(R.id.tvCardUid)
             private val tvBadge: TextView = itemView.findViewById(R.id.tvStatusBadge)
             private val tvTime: TextView = itemView.findViewById(R.id.tvTimeDisplay)
-            private val btnManage: Button = itemView.findViewById(R.id.btnCardAction)
+            private val tvAvatarChar: TextView = itemView.findViewById(R.id.tvAvatarChar)
 
             fun bind(card: CardInfo, onEditClick: ((CardInfo) -> Unit)?) {
                 tvName.text = card.name
                 tvUid.text = "UID: ${card.cardId}"
+                tvAvatarChar.text = if (card.name.isNotEmpty()) card.name.take(1) else "卡"
                 tvBadge.text = "未使用"
-                tvBadge.setBackgroundColor(0x3364748B.toInt())
-                tvBadge.setTextColor(0xFF94A3B8.toInt())
+                tvBadge.setTextColor(0xFF7F91A4.toInt())
 
                 tvTime.text = "未开始"
-                tvTime.setTextColor(0xFF94A3B8.toInt())
+                tvTime.setTextColor(0xFF7F91A4.toInt())
 
-                btnManage.text = "✏️ 设置/开始"
-                btnManage.setOnClickListener { onEditClick?.invoke(card) }
+                itemView.setOnClickListener { onEditClick?.invoke(card) }
             }
         }
     }

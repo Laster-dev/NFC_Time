@@ -2,62 +2,94 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#0F172A"
-    android:orientation="vertical"
-    android:padding="16dp">
+    android:background="@color/tg_background"
+    android:orientation="vertical">
 
-    <!-- Top Action Bar -->
+    <!-- Telegram Header Bar -->
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="56dp"
+        android:background="@color/tg_surface"
         android:gravity="center_vertical"
-        android:orientation="horizontal">
+        android:orientation="horizontal"
+        android:paddingHorizontal="16dp">
 
         <TextView
-            android:id="@+id/tvNfcStatus"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="🟢 NFC 已就绪"
-            android:textColor="#38BDF8"
-            android:textSize="13sp"
+            android:text="星野手作 · 计时管理"
+            android:textColor="@color/tg_text_primary"
+            android:textSize="18sp"
             android:textStyle="bold" />
 
-        <Button
-            android:id="@+id/btnUnusedCards"
-            style="@style/Widget.Material3.Button.TonalButton"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="🎴 未使用卡片"
-            android:textSize="11sp" />
+        <ImageView
+            android:id="@+id/btnNavUnused"
+            android:layout_width="38dp"
+            android:layout_height="38dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:clickable="true"
+            android:focusable="true"
+            android:padding="8dp"
+            android:src="@android:drawable/ic_menu_sort_by_size"
+            android:tint="@color/tg_text_secondary" />
 
-        <Button
-            android:id="@+id/btnAnnounce"
-            style="@style/Widget.Material3.Button.TonalButton"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+        <ImageView
+            android:id="@+id/btnNavAnnounce"
+            android:layout_width="38dp"
+            android:layout_height="38dp"
             android:layout_marginStart="4dp"
-            android:text="📢 公告"
-            android:textSize="11sp" />
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:clickable="true"
+            android:focusable="true"
+            android:padding="8dp"
+            android:src="@android:drawable/ic_dialog_alert"
+            android:tint="@color/tg_text_secondary" />
 
-        <Button
-            android:id="@+id/btnSettings"
-            style="@style/Widget.Material3.Button.OutlinedButton"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+        <ImageView
+            android:id="@+id/btnNavSettings"
+            android:layout_width="38dp"
+            android:layout_height="38dp"
             android:layout_marginStart="4dp"
-            android:text="⚙️ 配置"
-            android:textSize="11sp" />
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:clickable="true"
+            android:focusable="true"
+            android:padding="8dp"
+            android:src="@android:drawable/ic_menu_preferences"
+            android:tint="@color/tg_text_secondary" />
     </LinearLayout>
 
-    <TextView
-        android:layout_width="wrap_content"
+    <!-- NFC Status Strip -->
+    <LinearLayout
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
-        android:layout_marginBottom="8dp"
-        android:text="活动中/倒计时卡片"
-        android:textColor="#94A3B8"
-        android:textSize="12sp" />
+        android:background="#1C2733"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingHorizontal="16dp"
+        android:paddingVertical="8dp">
+
+        <TextView
+            android:id="@+id/tvNfcStatus"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="🟢 NFC 已就绪，随时可刷卡"
+            android:textColor="@color/tg_blue"
+            android:textSize="13sp" />
+    </LinearLayout>
+
+    <!-- Content Header -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/tg_background"
+        android:paddingHorizontal="16dp"
+        android:paddingTop="12dp"
+        android:paddingBottom="6dp"
+        android:text="活动中/计时卡片"
+        android:textColor="@color/tg_text_secondary"
+        android:textSize="13sp"
+        android:textStyle="bold" />
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/rvCards"

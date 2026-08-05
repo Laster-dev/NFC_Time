@@ -1,12 +1,12 @@
-<resources xmlns:tools="http://schemas.android.com/tools">
-    <!-- Base application theme. Inherit MaterialComponents DayNight Theme -->
+<resources>
+    <!-- Telegram Dark Theme -->
     <style name="Theme.NFCTime" parent="Theme.MaterialComponents.DayNight.NoActionBar">
-        <item name="colorPrimary">#10B981</item>
-        <item name="colorPrimaryVariant">#059669</item>
-        <item name="colorOnPrimary">#FFFFFF</item>
-        <item name="colorSecondary">#38BDF8</item>
-        <item name="colorSecondaryVariant">#0284C7</item>
-        <item name="colorOnSecondary">#000000</item>
-        <item name="android:statusBarColor">#0F172A</item>
+        <item name="colorPrimary">@color/tg_blue</item>
+        <item name="colorPrimaryVariant">@color/tg_blue_dark</item>
+        <item name="colorOnPrimary">@color/tg_text_primary</item>
+        <item name="colorSecondary">@color/tg_blue</item>
+        <item name="android:windowBackground">@color/tg_background</item>
+        <item name="android:statusBarColor">@color/tg_background</item>
+        <item name="android:navigationBarColor">@color/tg_background</item>
     </style>
 </resources>

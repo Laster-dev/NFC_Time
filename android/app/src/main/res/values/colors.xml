@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Telegram Style Color Palette -->
+    <color name="tg_background">#17212B</color>
+    <color name="tg_surface">#242F3D</color>
+    <color name="tg_surface_hover">#2B394A</color>
+    <color name="tg_blue">#5288C1</color>
+    <color name="tg_blue_dark">#2AABEE</color>
+    <color name="tg_text_primary">#FFFFFF</color>
+    <color name="tg_text_secondary">#7F91A4</color>
+    <color name="tg_border">#10171D</color>
+
+    <color name="tg_status_green">#45B880</color>
+    <color name="tg_status_orange">#E58032</color>
+    <color name="tg_status_red">#FF5252</color>
+</resources>
