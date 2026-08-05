@@ -11,9 +11,9 @@
 
     <application
         android:allowBackup="true"
-        android:label="NFC计时"
+        android:label="星野手作"
         android:supportsRtl="true"
-        android:theme="@style/Theme.AppCompat.Light.NoActionBar">
+        android:theme="@style/Theme.AppCompat.DayNight.NoActionBar">
 
         <activity
             android:name=".MainActivity"
