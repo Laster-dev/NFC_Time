@@ -4,41 +4,67 @@ echo ===================================================
 echo             NFC App Build Script
 echo ===================================================
 echo.
-set BUILD_DIR=%~dp0android
-if not exist \ %BUILD_DIR%\ set BUILD_DIR=.\android
-if not exist \%BUILD_DIR%\ set BUILD_DIR=android
-if not exist \%BUILD_DIR%\ (
-    echo [Error] android directory not found!
-    pause
-    exit /b 1
+
+rem 1. Auto detect JAVA_HOME
+if not defined JAVA_HOME (
+    if exist "C:\Program Files\Android\Android Studio\jbr" (
+        set "JAVA_HOME=C:\Program Files\Android\Android Studio\jbr"
+    ) else if exist "C:\Program Files\Android\openjdk\jdk-21.0.8" (
+        set "JAVA_HOME=C:\Program Files\Android\openjdk\jdk-21.0.8"
+    )
 )
-cd /d \%BUILD_DIR%\
-echo [1/2] Checking Android SDK environment...
-if defined ANDROID_HOME (
-    echo  - Found ANDROID_HOME: %ANDROID_HOME%
-) else if defined ANDROID_SDK_ROOT (
-    echo  - Found ANDROID_SDK_ROOT: %ANDROID_SDK_ROOT%
+
+if defined JAVA_HOME (
+    echo [1/3] JAVA_HOME Path: %JAVA_HOME%
 ) else (
-    echo  - Tip: ANDROID_HOME not set in system environment variables.
+    echo [1/3] Warning: JAVA_HOME not detected.
 )
+
+rem 2. Auto detect ANDROID_HOME / ANDROID_SDK_ROOT
+if not defined ANDROID_HOME (
+    if exist "%LOCALAPPDATA%\Android\Sdk" (
+        set "ANDROID_HOME=%LOCALAPPDATA%\Android\Sdk"
+    ) else if exist "C:\Users\admin\AppData\Local\Android\Sdk" (
+        set "ANDROID_HOME=C:\Users\admin\AppData\Local\Android\Sdk"
+    )
+)
+
+if defined ANDROID_HOME (
+    echo [2/3] ANDROID_HOME Path: %ANDROID_HOME%
+) else (
+    echo [2/3] Tip: ANDROID_HOME not set in system environment variables.
+)
+
 echo.
-echo [2/2] Building Android Debug APK...
+echo [3/3] Building Android Debug APK...
 echo.
+
+set SCRIPT_DIR=%~dp0
+cd /d "%SCRIPT_DIR%android"
+
 call gradlew.bat assembleDebug
+
 if %errorlevel% neq 0 (
     echo.
-    echo [Build Failed] Please check if Android SDK / JDK or Android Studio is configured.
+    echo ===================================================
+    echo [Build Note]
+    echo If this is the first time running without gradle-wrapper.jar,
+    echo please open the 'android' folder in Android Studio once to allow
+    echo it to automatically download Gradle dependencies.
+    echo ===================================================
     echo.
     pause
     exit /b %errorlevel%
 )
+
 echo.
 echo ===================================================
 echo [Build Success] APK generated successfully!
-echo File path: android\\app\\build\\outputs\\apk\\debug\\app-debug.apk
+echo File path: android\app\build\outputs\apk\debug\app-debug.apk
 echo ===================================================
 echo.
-if exist \app\\build\\outputs\\apk\\debug\\app-debug.apk\ (
-    explorer /select,\app\\build\\outputs\\apk\\debug\\app-debug.apk\
+
+if exist "app\build\outputs\apk\debug\app-debug.apk" (
+    explorer /select,"app\build\outputs\apk\debug\app-debug.apk"
 )
 pause
