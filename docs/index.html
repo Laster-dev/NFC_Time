@@ -356,10 +356,10 @@
         }
 
         .clock-val-cute {
-            font-size: 1.15rem;
+            font-size: 1.55rem;
             font-family: 'M PLUS Rounded 1c', 'Comfortaa', sans-serif;
             font-weight: 800;
-            letter-spacing: -0.3px;
+            letter-spacing: -0.5px;
             line-height: 1.2;
             white-space: nowrap;
             display: inline-block;
@@ -774,9 +774,24 @@
                         <div class="progress-candy-bg">
                             <div class="progress-candy-fill" style="width: ${isExpiredMode ? 0 : pct}%; ${card.status === 2 ? 'background: #FCD34D' : ''}"></div>
                         </div>
-                    </div>
-                `;
             }).join('');
+
+            // Dynamically adjust font size to prevent overflow or wrapping
+            document.querySelectorAll('.clock-val-cute').forEach(el => {
+                adjustFontSize(el);
+            });
+        }
+
+        function adjustFontSize(element) {
+            let fontSize = 1.55; // Start size in rem
+            element.style.fontSize = fontSize + 'rem';
+            const parent = element.parentElement;
+            if (!parent) return;
+            const maxAllowedWidth = parent.clientWidth - 12; // 6px safety padding on each side
+            while (element.scrollWidth > maxAllowedWidth && fontSize > 0.7) {
+                fontSize -= 0.05;
+                element.style.fontSize = fontSize.toFixed(2) + 'rem';
+            }
         }
 
         function escapeHtml(str) {
