@@ -1,10 +1,13 @@
 let currentFilter = 'all';
 
-// Built-in fixed Gist ID (Configured to your created Gist)
+// Built-in fixed Gist ID
 const FIXED_GIST_ID = "6582c66b24bad75381f70abdae62e81b";
 
+// GitHub Raw URL (CDN) for unlimited, rate-limit free reading!
+const RAW_GIST_URL = `https://gist.githubusercontent.com/raw/${FIXED_GIST_ID}/cards_data.json`;
+
 document.addEventListener('DOMContentLoaded', () => {
-    // Tab Button Click Listeners (Fixing non-responsive filter clicks)
+    // Tab Button Click Listeners
     const tabBtns = document.querySelectorAll('.tab-btn');
     tabBtns.forEach(btn => {
         btn.addEventListener('click', (e) => {
@@ -17,28 +20,18 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     fetchCardsFromGist();
-    setInterval(fetchCardsFromGist, 2000); // Poll GitHub Gist every 2 seconds
+    setInterval(fetchCardsFromGist, 3000); // 3-second polling interval
 });
 
 async function fetchCardsFromGist() {
-    if (!FIXED_GIST_ID) {
-        renderDashboard([]);
-        return;
-    }
-
     try {
-        // Fetch with raw URL or Gist API to avoid GitHub caching issues
-        const res = await fetch(`https://api.github.com/gists/${FIXED_GIST_ID}?t=${Date.now()}`);
+        // Use raw CDN link with timestamp bypass to avoid GitHub API Rate Limit (403 Limit Exceeded)
+        const res = await fetch(`${RAW_GIST_URL}?t=${Date.now()}`);
         if (!res.ok) {
-            console.warn("Gist fetch HTTP error: ", res.status);
+            console.warn("Raw fetch HTTP error: ", res.status);
             return;
         }
-        const data = await res.json();
-        
-        // Find matching file
-        const files = data.files || {};
-        const fileObj = files['cards_data.json'] || files['gistfile1.txt'] || Object.values(files)[0];
-        const fileContent = fileObj?.content;
+        const fileContent = await res.text();
 
         if (fileContent) {
             let rawCards = [];
@@ -54,7 +47,7 @@ async function fetchCardsFromGist() {
             renderDashboard([]);
         }
     } catch (err) {
-        console.error('Failed to fetch from GitHub Gist:', err);
+        console.error('Failed to fetch from Raw Gist CDN:', err);
     }
 }
 
@@ -201,6 +194,6 @@ function renderDashboard(cards) {
 function escapeHtml(str) {
     if (!str) return '';
     return str.replace(/[&<>"']/g, function(m) {
-        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[m];
+        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039}' }[m];
     });
 }
