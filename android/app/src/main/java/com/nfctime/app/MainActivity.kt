@@ -227,7 +227,19 @@ class MainActivity : AppCompatActivity() {
 
     private suspend fun refreshCards(forceFetch: Boolean) {
         val allCards = apiClient.getAllCards(forceFetch)
-        val activeCards = allCards.filter { it.status != 0 }
+        val activeCards = allCards.filter { it.status != 0 }.toMutableList()
+
+        // Sort: Overdue cards first, followed by running, then paused
+        activeCards.sortWith(Comparator { a, b ->
+            val aOverdue = a.isOverdue || a.status == 3
+            val bOverdue = b.isOverdue || b.status == 3
+            if (aOverdue && !bOverdue) return@Comparator -1
+            if (!aOverdue && bOverdue) return@Comparator 1
+            if (a.status == 1 && b.status != 1) return@Comparator -1
+            if (a.status != 1 && b.status == 1) return@Comparator 1
+            return@Comparator a.cardId.compareTo(b.cardId, ignoreCase = true)
+        })
+
         adapter.setCards(activeCards)
     }
 
