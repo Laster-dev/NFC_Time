@@ -5,6 +5,14 @@ import android.content.Context
 import android.content.Intent
 import android.nfc.NfcAdapter
 import android.nfc.Tag
+import android.nfc.tech.IsoDep
+import android.nfc.tech.MifareClassic
+import android.nfc.tech.MifareUltralight
+import android.nfc.tech.Ndef
+import android.nfc.tech.NfcA
+import android.nfc.tech.NfcB
+import android.nfc.tech.NfcF
+import android.nfc.tech.NfcV
 import android.os.Build
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -95,7 +103,7 @@ class MainActivity : AppCompatActivity() {
         if (!nfcAdapter!!.isEnabled) {
             tvNfcStatus.text = "⚠️ NFC 未开启，请在系统设置中启用 NFC"
         } else {
-            tvNfcStatus.text = "🟢 NFC 已就绪，随时可刷卡"
+            tvNfcStatus.text = "🟢 NFC 已就绪，随时可贴卡"
         }
 
         val flags = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
@@ -109,13 +117,38 @@ class MainActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
-        nfcAdapter?.enableForegroundDispatch(this, pendingIntent, null, null)
+        enableForegroundDispatchSafely()
         startPolling()
+    }
+
+    private fun enableForegroundDispatchSafely() {
+        try {
+            if (nfcAdapter != null && nfcAdapter!!.isEnabled && pendingIntent != null) {
+                // Register for all tech lists to ensure no card type is missed
+                val techList = arrayOf(
+                    arrayOf(NfcA::class.java.name),
+                    arrayOf(NfcB::class.java.name),
+                    arrayOf(NfcF::class.java.name),
+                    arrayOf(NfcV::class.java.name),
+                    arrayOf(IsoDep::class.java.name),
+                    arrayOf(MifareClassic::class.java.name),
+                    arrayOf(MifareUltralight::class.java.name),
+                    arrayOf(Ndef::class.java.name)
+                )
+                nfcAdapter?.enableForegroundDispatch(this, pendingIntent, null, techList)
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
     }
 
     override fun onPause() {
         super.onPause()
-        nfcAdapter?.disableForegroundDispatch(this)
+        try {
+            nfcAdapter?.disableForegroundDispatch(this)
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
         pollJob?.cancel()
     }
 
@@ -144,10 +177,10 @@ class MainActivity : AppCompatActivity() {
     private fun processNfcTag(tag: Tag) {
         val uidBytes = tag.id
         val cardId = uidBytes.joinToString(":") { String.format("%02X", it) }
-        tvNfcStatus.text = "✨ 已感应! UID: $cardId"
+        tvNfcStatus.text = "✨ 贴卡成功! UID: $cardId"
 
         val card = apiClient.swipeCardImmediate(cardId)
-        Toast.makeText(this@MainActivity, "刷卡成功: ${card.name}", Toast.LENGTH_SHORT).show()
+        Toast.makeText(this@MainActivity, "感应成功: ${card.name}", Toast.LENGTH_SHORT).show()
         
         openCardDialogByState(card)
         triggerLocalRefresh()
