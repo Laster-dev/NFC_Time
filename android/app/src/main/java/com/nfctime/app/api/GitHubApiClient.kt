@@ -21,12 +21,25 @@ data class CardInfo(
     val cardId: String,
     var name: String = "",
     var targetDurationSeconds: Int = 0,
-    var status: Int = 0, // 0: Stopped/Unused, 1: Running, 2: Paused, 3: Expired
+    var status: Int = 0, // 0: Unused/Stopped, 1: Running, 2: Paused, 3: Expired
     var startTimeUtc: String? = null,
     var savedRemainingSeconds: Int = 0,
     var remainingSeconds: Double = 0.0,
     var overdueSeconds: Double = 0.0,
     var isOverdue: Boolean = false
+)
+
+data class Announcement(
+    val id: String = System.currentTimeMillis().toString(),
+    var title: String = "",
+    var content: String = "",
+    var isForce: Boolean = false,
+    var publishTimeUtc: String = ""
+)
+
+data class GistData(
+    val cards: MutableList<CardInfo> = mutableListOf(),
+    val announcements: MutableList<Announcement> = mutableListOf()
 )
 
 class GitHubApiClient(
@@ -67,6 +80,20 @@ class GitHubApiClient(
         prefs.edit().putString("cached_json", json).apply()
     }
 
+    fun getCachedAnnouncements(): MutableList<Announcement> {
+        val json = prefs.getString("cached_anno_json", "[]")
+        return try {
+            gson.fromJson(json, Array<Announcement>::class.java).toMutableList()
+        } catch (e: Exception) {
+            mutableListOf()
+        }
+    }
+
+    private fun saveCachedAnnouncements(announcements: List<Announcement>) {
+        val json = gson.toJson(announcements)
+        prefs.edit().putString("cached_anno_json", json).apply()
+    }
+
     private suspend fun fetchRemoteCards(): MutableList<CardInfo>? = withContext(Dispatchers.IO) {
         if (gistId.isEmpty()) return@withContext null
         try {
@@ -92,8 +119,16 @@ class GitHubApiClient(
                             val content = fileObj.get("content").asString
                             val list = gson.fromJson(content, Array<CardInfo>::class.java).toMutableList()
                             saveCachedCards(list)
-                            return@withContext list
                         }
+
+                        val annoFileObj = files.getAsJsonObject("announcements.json")
+                        if (annoFileObj != null && annoFileObj.has("content")) {
+                            val annoContent = annoFileObj.get("content").asString
+                            val annoList = gson.fromJson(annoContent, Array<Announcement>::class.java).toMutableList()
+                            saveCachedAnnouncements(annoList)
+                        }
+
+                        return@withContext getCachedCards()
                     }
                 }
             }
@@ -103,15 +138,20 @@ class GitHubApiClient(
         return@withContext null
     }
 
-    private fun syncToRemoteAsync(cards: List<CardInfo>) {
+    private fun syncAllToRemoteAsync(cards: List<CardInfo>, announcements: List<Announcement>) {
         saveCachedCards(cards)
+        saveCachedAnnouncements(announcements)
         if (gistId.isEmpty() || token.isEmpty()) return
 
         CoroutineScope(Dispatchers.IO).launch {
             try {
                 val cardsJsonStr = gson.toJson(cards)
-                val fileContentObj = JsonObject().apply { addProperty("content", cardsJsonStr) }
-                val filesObj = JsonObject().apply { add("cards_data.json", fileContentObj) }
+                val annosJsonStr = gson.toJson(announcements)
+
+                val filesObj = JsonObject().apply {
+                    add("cards_data.json", JsonObject().apply { addProperty("content", cardsJsonStr) })
+                    add("announcements.json", JsonObject().apply { addProperty("content", annosJsonStr) })
+                }
                 val rootObj = JsonObject().apply { add("files", filesObj) }
 
                 val req = Request.Builder()
@@ -154,7 +194,6 @@ class GitHubApiClient(
         return@withContext list
     }
 
-    // Swipe card: retains pre-saved name if found, else creates new unused card entry
     fun swipeCardImmediate(cardId: String): CardInfo {
         val list = getCachedCards()
         var card = list.find { it.cardId.equals(cardId, ignoreCase = true) }
@@ -162,7 +201,7 @@ class GitHubApiClient(
             card = CardInfo(cardId = cardId, name = "卡片_$cardId", status = 0)
             list.add(card)
         }
-        syncToRemoteAsync(list)
+        syncAllToRemoteAsync(list, getCachedAnnouncements())
         return card
     }
 
@@ -171,7 +210,7 @@ class GitHubApiClient(
         val card = list.find { it.cardId.equals(cardId, ignoreCase = true) } ?: return null
         card.targetDurationSeconds += addSeconds
         card.savedRemainingSeconds += addSeconds
-        syncToRemoteAsync(list)
+        syncAllToRemoteAsync(list, getCachedAnnouncements())
         return card
     }
 
@@ -210,13 +249,13 @@ class GitHubApiClient(
                 }
             }
             "stop" -> {
-                card.status = 0 // Stopped / Unused
+                card.status = 0 // Stopped
                 card.savedRemainingSeconds = card.targetDurationSeconds
                 card.startTimeUtc = null
             }
         }
 
-        syncToRemoteAsync(list)
+        syncAllToRemoteAsync(list, getCachedAnnouncements())
         return card
     }
 
@@ -224,18 +263,38 @@ class GitHubApiClient(
         val list = getCachedCards()
         val card = list.find { it.cardId.equals(cardId, ignoreCase = true) } ?: return null
         card.name = newName
-        syncToRemoteAsync(list)
+        syncAllToRemoteAsync(list, getCachedAnnouncements())
         return card
     }
 
-    // Soft Delete: Reset status to 0 (Unused/Stopped) while preserving card's name & UID record!
     fun resetCardToUnusedImmediate(cardId: String): Boolean {
         val list = getCachedCards()
         val card = list.find { it.cardId.equals(cardId, ignoreCase = true) } ?: return false
         card.status = 0
         card.startTimeUtc = null
         card.savedRemainingSeconds = card.targetDurationSeconds
-        syncToRemoteAsync(list)
+        syncAllToRemoteAsync(list, getCachedAnnouncements())
         return true
+    }
+
+    // Announcement Management Methods
+    fun addOrUpdateAnnouncement(anno: Announcement) {
+        val annos = getCachedAnnouncements()
+        val index = annos.indexOfFirst { it.id == anno.id }
+        if (anno.publishTimeUtc.isEmpty()) {
+            anno.publishTimeUtc = isoFormat.format(Date())
+        }
+        if (index >= 0) {
+            annos[index] = anno
+        } else {
+            annos.add(0, anno) // Add to top
+        }
+        syncAllToRemoteAsync(getCachedCards(), annos)
+    }
+
+    fun deleteAnnouncement(id: String) {
+        val annos = getCachedAnnouncements()
+        annos.removeAll { it.id == id }
+        syncAllToRemoteAsync(getCachedCards(), annos)
     }
 }

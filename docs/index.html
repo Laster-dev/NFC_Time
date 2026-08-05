@@ -121,6 +121,127 @@
             font-weight: 800;
         }
 
+        /* Announcement Section in Web (Normal non-force list) */
+        .anno-board-area {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .anno-cute-card {
+            background: #FFFFFF;
+            border-radius: 18px;
+            padding: 12px 14px;
+            border: 2px solid #FDE68A;
+            background: linear-gradient(180deg, #FFFFFF 0%, #FEFCE8 100%);
+            box-shadow: var(--shadow-kawaii);
+            position: relative;
+        }
+
+        .anno-card-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 4px;
+        }
+
+        .anno-card-title {
+            font-size: 0.95rem;
+            font-weight: 900;
+            color: #D97706;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .anno-card-time {
+            font-size: 0.65rem;
+            color: #9E8E8C;
+            font-family: 'Comfortaa', sans-serif;
+        }
+
+        .anno-card-content {
+            font-size: 0.82rem;
+            color: var(--text-dark);
+            line-height: 1.4;
+            white-space: pre-wrap;
+        }
+
+        /* Forced Announcement Modal Overlay */
+        .force-modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(45, 35, 39, 0.7);
+            backdrop-filter: blur(4px);
+            z-index: 9999;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .force-modal-box {
+            background: #FFFFFF;
+            width: 100%;
+            max-width: 360px;
+            border-radius: 26px;
+            padding: 22px 20px;
+            border: 4px solid #FDA4AF;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.25);
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            text-align: center;
+            animation: modal-bounce 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        @keyframes modal-bounce {
+            0% { transform: scale(0.7); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .force-modal-header {
+            font-size: 1.2rem;
+            font-weight: 900;
+            color: #E11D48;
+        }
+
+        .force-modal-body {
+            font-size: 0.92rem;
+            color: var(--text-dark);
+            line-height: 1.5;
+            background: #FFF1F2;
+            padding: 14px;
+            border-radius: 16px;
+            border: 2px dashed #FECDD3;
+            text-align: left;
+            white-space: pre-wrap;
+        }
+
+        .force-close-btn {
+            background: #E11D48;
+            color: #FFFFFF;
+            border: none;
+            outline: none;
+            padding: 12px 0;
+            border-radius: 18px;
+            font-size: 0.95rem;
+            font-weight: 900;
+            font-family: inherit;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(225, 29, 72, 0.3);
+            transition: all 0.2s;
+        }
+
+        .force-close-btn:disabled {
+            background: #9CA3AF;
+            box-shadow: none;
+            cursor: not-allowed;
+        }
+
         /* Cute Tabs Filter */
         .tabs-pill-bar {
             display: flex;
@@ -246,7 +367,6 @@
         .clock-val-cute.text-amber { color: var(--color-yellow-text); }
         .clock-val-cute.text-rose { color: var(--color-rose-text); }
 
-        /* Cute Overdue Banner with Ticking Time */
         .overdue-cute-banner {
             color: var(--color-rose-text);
             background: var(--color-rose-soft);
@@ -259,7 +379,6 @@
             display: inline-block;
         }
 
-        /* Timeline Box */
         .stamp-timeline {
             background: #FAF5EE;
             border-radius: 12px;
@@ -333,6 +452,11 @@
             <div class="hand-badge" id="cardCounter">0 份手作</div>
         </header>
 
+        <!-- Announcement Board Container (Normal non-force announcements) -->
+        <div class="anno-board-area" id="annoBoardArea">
+            <!-- Dynamic normal announcements -->
+        </div>
+
         <!-- Cute Filter Tabs -->
         <nav class="tabs-pill-bar">
             <button type="button" class="tab-pill active" data-filter="all">✨ 全部手作</button>
@@ -346,12 +470,24 @@
         </main>
     </div>
 
+    <!-- Forced Announcement Modal (Hidden by default) -->
+    <div class="force-modal-overlay" id="forceAnnoModal" style="display: none;">
+        <div class="force-modal-box">
+            <div class="force-modal-header" id="forceModalTitle">📢 重要公告</div>
+            <div class="force-modal-body" id="forceModalContent">...</div>
+            <button type="button" class="force-close-btn" id="forceCloseBtn" disabled>阅读倒计时 (3s)</button>
+        </div>
+    </div>
+
     <script>
         let currentFilter = 'all';
         let cachedCardsData = [];
+        let cachedAnnouncements = [];
+        let forceShownMap = new Set(); // Avoid repeated popup in same session
 
         const FIXED_GIST_ID = "6582c66b24bad75381f70abdae62e81b";
-        const RAW_GIST_URL = `https://gist.githubusercontent.com/raw/${FIXED_GIST_ID}/cards_data.json`;
+        const RAW_GIST_CARDS = `https://gist.githubusercontent.com/raw/${FIXED_GIST_ID}/cards_data.json`;
+        const RAW_GIST_ANNOS = `https://gist.githubusercontent.com/raw/${FIXED_GIST_ID}/announcements.json`;
 
         document.addEventListener('DOMContentLoaded', () => {
             const tabPills = document.querySelectorAll('.tab-pill');
@@ -365,28 +501,111 @@
                 });
             });
 
-            fetchCardsFromGist();
-            setInterval(fetchCardsFromGist, 5000); // Poll Gist every 5s
+            fetchAllFromGist();
+            setInterval(fetchAllFromGist, 5000); // Poll Gist every 5s
             setInterval(tickLocalTimers, 1000);     // Tick UI timer every 1s
         });
 
-        async function fetchCardsFromGist() {
+        async function fetchAllFromGist() {
             try {
-                const res = await fetch(`${RAW_GIST_URL}?t=${Date.now()}`);
-                if (!res.ok) return;
-                const fileContent = await res.text();
+                // Fetch cards and announcements in parallel
+                const [cardsRes, annosRes] = await Promise.all([
+                    fetch(`${RAW_GIST_CARDS}?t=${Date.now()}`),
+                    fetch(`${RAW_GIST_ANNOS}?t=${Date.now()}`).catch(() => null)
+                ]);
 
-                if (fileContent) {
-                    try {
-                        cachedCardsData = JSON.parse(fileContent);
-                    } catch (parseErr) {
-                        cachedCardsData = [];
+                if (cardsRes && cardsRes.ok) {
+                    const cardsText = await cardsRes.text();
+                    if (cardsText) {
+                        try { cachedCardsData = JSON.parse(cardsText); } catch (e) { cachedCardsData = []; }
                     }
                     renderDashboard(cachedCardsData);
                 }
+
+                if (annosRes && annosRes.ok) {
+                    const annosText = await annosRes.text();
+                    if (annosText) {
+                        try { cachedAnnouncements = JSON.parse(annosText); } catch (e) { cachedAnnouncements = []; }
+                    }
+                    renderAnnouncements(cachedAnnouncements);
+                }
             } catch (err) {
-                console.error('Failed to fetch from Raw Gist CDN:', err);
+                console.error('Failed to fetch Gist data:', err);
             }
+        }
+
+        function renderAnnouncements(annos) {
+            if (!Array.isArray(annos) || annos.length === 0) {
+                document.getElementById('annoBoardArea').innerHTML = '';
+                return;
+            }
+
+            // 1. Separate forced vs normal announcements
+            const forcedAnnos = annos.filter(a => a.isForce);
+            const normalAnnos = annos.filter(a => !a.isForce);
+
+            // Render normal announcements on board
+            const board = document.getElementById('annoBoardArea');
+            if (normalAnnos.length > 0) {
+                board.innerHTML = normalAnnos.map(a => `
+                    <div class="anno-cute-card">
+                        <div class="anno-card-head">
+                            <span class="anno-card-title">📢 ${escapeHtml(a.title)}</span>
+                            <span class="anno-card-time">${formatAnnoTime(a.publishTimeUtc)}</span>
+                        </div>
+                        <div class="anno-card-content">${escapeHtml(a.content)}</div>
+                    </div>
+                `).join('');
+            } else {
+                board.innerHTML = '';
+            }
+
+            // 2. Handle forced popup (Show latest forced announcement if not popped yet)
+            if (forcedAnnos.length > 0) {
+                const latestForce = forcedAnnos[0];
+                if (!forceShownMap.has(latestForce.id)) {
+                    showForceModal(latestForce);
+                }
+            }
+        }
+
+        function showForceModal(anno) {
+            forceShownMap.add(anno.id);
+            const modal = document.getElementById('forceAnnoModal');
+            const titleEl = document.getElementById('forceModalTitle');
+            const contentEl = document.getElementById('forceModalContent');
+            const btn = document.getElementById('forceCloseBtn');
+
+            titleEl.textContent = `📢 ${anno.title}`;
+            contentEl.textContent = anno.content;
+            btn.disabled = true;
+
+            modal.style.display = 'flex';
+
+            let count = 3;
+            btn.textContent = `阅读倒计时 (${count}s)`;
+
+            const timer = setInterval(() => {
+                count--;
+                if (count > 0) {
+                    btn.textContent = `阅读倒计时 (${count}s)`;
+                } else {
+                    clearInterval(timer);
+                    btn.disabled = false;
+                    btn.textContent = `知晓并关闭`;
+                    btn.onclick = () => {
+                        modal.style.display = 'none';
+                    };
+                }
+            }, 1000);
+        }
+
+        function formatAnnoTime(utcStr) {
+            if (!utcStr) return '';
+            const date = new Date(utcStr);
+            if (isNaN(date.getTime())) return utcStr;
+            const pad = n => n.toString().padStart(2, '0');
+            return `${pad(date.getMonth() + 1)}/${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
         }
 
         function tickLocalTimers() {

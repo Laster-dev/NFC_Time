@@ -11,6 +11,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
+import android.widget.CheckBox
 import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.NumberPicker
@@ -66,6 +67,10 @@ class MainActivity : AppCompatActivity() {
 
         findViewById<Button>(R.id.btnSettings).setOnClickListener {
             showGitHubSettingsDialog()
+        }
+
+        findViewById<Button>(R.id.btnAnnounce).setOnClickListener {
+            startActivity(Intent(this, AnnouncementActivity::class.java))
         }
 
         adapter.onManageClick = { card ->
@@ -144,11 +149,9 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun openCardDialogByState(card: CardInfo) {
-        // If card is currently running (1) or expired (3) or overdue, show Active Dialog
         if (card.status == 1 || card.status == 3 || card.isOverdue) {
             showActiveRunningCardDialog(card)
         } else {
-            // Unused / stopped card (status == 0) -> shows full setup dialog (with preserved name)
             showCardControlDialog(card)
         }
     }
@@ -167,7 +170,6 @@ class MainActivity : AppCompatActivity() {
         lifecycleScope.launch { refreshCards() }
     }
 
-    // Only show active cards (status != 0) on RecyclerView list
     private suspend fun refreshCards() {
         val allCards = apiClient.getAllCards()
         adapter.setCards(allCards)
@@ -215,7 +217,6 @@ class MainActivity : AppCompatActivity() {
             .show()
     }
 
-    // Active Card Control Dialog
     private fun showActiveRunningCardDialog(card: CardInfo) {
         val view = LayoutInflater.from(this).inflate(R.layout.dialog_active_card_control, null)
         val dialog = AlertDialog.Builder(this)
@@ -331,7 +332,6 @@ class MainActivity : AppCompatActivity() {
         dialog.show()
     }
 
-    // Dialog for unused / stopped cards (status == 0)
     private fun showCardControlDialog(card: CardInfo) {
         val view = LayoutInflater.from(this).inflate(R.layout.dialog_card_control, null)
         val dialog = AlertDialog.Builder(this)
@@ -418,13 +418,11 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    // RecyclerView Adapter: Shows cards in MainActivity
     class CardAdapter : RecyclerView.Adapter<CardAdapter.CardViewHolder>() {
         private var cards: List<CardInfo> = emptyList()
         var onManageClick: ((CardInfo) -> Unit)? = null
 
         fun setCards(newCards: List<CardInfo>) {
-            // Show active cards (status != 0) first, but keep full list manageable
             cards = newCards
             notifyDataSetChanged()
         }
