@@ -18,7 +18,7 @@ import java.util.TimeZone
 import java.util.concurrent.TimeUnit
 
 data class CardInfo(
-    val cardId: String,
+    val cardId: String = "",
     var name: String = "",
     var targetDurationSeconds: Int = 0,
     var status: Int = 0, // 0: Unused/Stopped, 1: Running, 2: Paused, 3: Expired
@@ -37,11 +37,6 @@ data class Announcement(
     var publishTimeUtc: String = ""
 )
 
-data class GistData(
-    val cards: MutableList<CardInfo> = mutableListOf(),
-    val announcements: MutableList<Announcement> = mutableListOf()
-)
-
 class GitHubApiClient(
     private val context: Context,
     private var gistId: String = "",
@@ -55,8 +50,11 @@ class GitHubApiClient(
 
     private val gson = Gson()
     private val jsonType = "application/json; charset=utf-8".toMediaType()
-    private val isoFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US).apply {
-        timeZone = TimeZone.getTimeZone("UTC")
+
+    private fun getIsoFormat(): SimpleDateFormat {
+        return SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US).apply {
+            timeZone = TimeZone.getTimeZone("UTC")
+        }
     }
 
     private val prefs = context.getSharedPreferences("offline_cards_cache", Context.MODE_PRIVATE)
@@ -67,31 +65,43 @@ class GitHubApiClient(
     }
 
     fun getCachedCards(): MutableList<CardInfo> {
-        val json = prefs.getString("cached_json", "[]")
+        val json = prefs.getString("cached_json", "[]") ?: "[]"
         return try {
-            gson.fromJson(json, Array<CardInfo>::class.java).toMutableList()
+            val list = gson.fromJson(json, Array<CardInfo>::class.java)
+            list?.toMutableList() ?: mutableListOf()
         } catch (e: Exception) {
+            e.printStackTrace()
             mutableListOf()
         }
     }
 
     private fun saveCachedCards(cards: List<CardInfo>) {
-        val json = gson.toJson(cards)
-        prefs.edit().putString("cached_json", json).apply()
+        try {
+            val json = gson.toJson(cards)
+            prefs.edit().putString("cached_json", json).apply()
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
     }
 
     fun getCachedAnnouncements(): MutableList<Announcement> {
-        val json = prefs.getString("cached_anno_json", "[]")
+        val json = prefs.getString("cached_anno_json", "[]") ?: "[]"
         return try {
-            gson.fromJson(json, Array<Announcement>::class.java).toMutableList()
+            val list = gson.fromJson(json, Array<Announcement>::class.java)
+            list?.toMutableList() ?: mutableListOf()
         } catch (e: Exception) {
+            e.printStackTrace()
             mutableListOf()
         }
     }
 
     private fun saveCachedAnnouncements(announcements: List<Announcement>) {
-        val json = gson.toJson(announcements)
-        prefs.edit().putString("cached_anno_json", json).apply()
+        try {
+            val json = gson.toJson(announcements)
+            prefs.edit().putString("cached_anno_json", json).apply()
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
     }
 
     private suspend fun fetchRemoteCards(): MutableList<CardInfo>? = withContext(Dispatchers.IO) {
@@ -107,8 +117,8 @@ class GitHubApiClient(
 
             client.newCall(reqBuilder.build()).execute().use { resp ->
                 if (resp.isSuccessful) {
-                    val body = resp.body?.string()
-                    val jsonObj = gson.fromJson(body, JsonObject::class.java)
+                    val body = resp.body?.string() ?: return@use
+                    val jsonObj = gson.fromJson(body, JsonObject::class.java) ?: return@use
                     val files = jsonObj.getAsJsonObject("files")
                     if (files != null) {
                         val fileObj = files.getAsJsonObject("cards_data.json")
@@ -117,15 +127,19 @@ class GitHubApiClient(
 
                         if (fileObj != null && fileObj.has("content")) {
                             val content = fileObj.get("content").asString
-                            val list = gson.fromJson(content, Array<CardInfo>::class.java).toMutableList()
-                            saveCachedCards(list)
+                            val list = gson.fromJson(content, Array<CardInfo>::class.java)
+                            if (list != null) {
+                                saveCachedCards(list.toList())
+                            }
                         }
 
                         val annoFileObj = files.getAsJsonObject("announcements.json")
                         if (annoFileObj != null && annoFileObj.has("content")) {
                             val annoContent = annoFileObj.get("content").asString
-                            val annoList = gson.fromJson(annoContent, Array<Announcement>::class.java).toMutableList()
-                            saveCachedAnnouncements(annoList)
+                            val annoList = gson.fromJson(annoContent, Array<Announcement>::class.java)
+                            if (annoList != null) {
+                                saveCachedAnnouncements(annoList.toList())
+                            }
                         }
 
                         return@withContext getCachedCards()
@@ -171,12 +185,13 @@ class GitHubApiClient(
         val remoteList = fetchRemoteCards()
         val list = remoteList ?: getCachedCards()
         val now = System.currentTimeMillis()
+        val sdf = getIsoFormat()
 
         list.forEach { card ->
             var remaining = card.savedRemainingSeconds.toDouble()
-            if (card.status == 1 && card.startTimeUtc != null) {
+            if (card.status == 1 && !card.startTimeUtc.isNull_Empty()) {
                 try {
-                    val startMs = isoFormat.parse(card.startTimeUtc!!)?.time ?: now
+                    val startMs = sdf.parse(card.startTimeUtc!!)?.time ?: now
                     val elapsedSec = (now - startMs) / 1000.0
                     remaining = card.savedRemainingSeconds - elapsedSec
                     if (remaining <= 0) {
@@ -193,6 +208,8 @@ class GitHubApiClient(
         }
         return@withContext list
     }
+
+    private fun String?.isNull_Empty(): Boolean = this == null || this.trim().isEmpty()
 
     fun swipeCardImmediate(cardId: String): CardInfo {
         val list = getCachedCards()
@@ -217,7 +234,7 @@ class GitHubApiClient(
     fun setTimerImmediate(cardId: String, durationSec: Int, action: String): CardInfo? {
         val list = getCachedCards()
         val card = list.find { it.cardId.equals(cardId, ignoreCase = true) } ?: return null
-        val nowIso = isoFormat.format(Date())
+        val nowIso = getIsoFormat().format(Date())
 
         when (action.lowercase()) {
             "start" -> {
@@ -233,7 +250,9 @@ class GitHubApiClient(
             "pause" -> {
                 if (card.status == 1) {
                     val now = System.currentTimeMillis()
-                    val startMs = if (card.startTimeUtc != null) isoFormat.parse(card.startTimeUtc!!)?.time ?: now else now
+                    val startMs = if (!card.startTimeUtc.isNull_Empty()) {
+                        try { getIsoFormat().parse(card.startTimeUtc!!)?.time ?: now } catch (e: Exception) { now }
+                    } else now
                     val elapsedSec = (now - startMs) / 1000.0
                     val rem = Math.max(0.0, card.savedRemainingSeconds - elapsedSec)
 
@@ -277,17 +296,16 @@ class GitHubApiClient(
         return true
     }
 
-    // Announcement Management Methods
     fun addOrUpdateAnnouncement(anno: Announcement) {
         val annos = getCachedAnnouncements()
         val index = annos.indexOfFirst { it.id == anno.id }
         if (anno.publishTimeUtc.isEmpty()) {
-            anno.publishTimeUtc = isoFormat.format(Date())
+            anno.publishTimeUtc = getIsoFormat().format(Date())
         }
         if (index >= 0) {
             annos[index] = anno
         } else {
-            annos.add(0, anno) // Add to top
+            annos.add(0, anno)
         }
         syncAllToRemoteAsync(getCachedCards(), annos)
     }
