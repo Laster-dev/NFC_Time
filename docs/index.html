@@ -2,71 +2,58 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NFC 计时监控中心 (GitHub 版)</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>NFC 刷卡计时监控</title>
     <link rel="stylesheet" href="style.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 </head>
 <body>
-    <div class="app-container">
-        <header class="navbar">
-            <div class="brand">
-                <span class="logo-icon">⏱️</span>
-                <h1>NFC 刷卡计时 Dashboard</h1>
+    <div class="mobile-app">
+        <!-- Header Zone -->
+        <header class="header">
+            <div class="brand-group">
+                <span class="brand-logo">⏱️</span>
+                <div>
+                    <h1 class="brand-title">NFC 刷卡计时中心</h1>
+                    <p class="brand-subtitle">GitHub 云端实时感知</p>
+                </div>
             </div>
-            <div class="header-status">
-                <span class="pulse-indicator"></span>
-                <span id="serverStatusText">云端实时同步中</span>
-                <span class="card-count-badge" id="totalCardsBadge">0 张卡片</span>
+            <div class="live-pill">
+                <span class="live-dot"></span>
+                <span id="cardCounter">0 张卡片</span>
             </div>
         </header>
 
-        <main class="content">
-            <!-- Android Web NFC Scanner Banner -->
-            <div id="androidNfcSection" class="nfc-scan-card" style="display: none;">
-                <div class="nfc-scan-info">
-                    <span class="nfc-icon">📲</span>
-                    <div>
-                        <h3>安卓设备感知</h3>
-                        <p id="webNfcStatusText">点击“开始 Web 刷卡”靠近 NFC 卡片即可自动定位查找卡片。</p>
-                    </div>
-                </div>
-                <button id="btnToggleWebNfc" class="btn-nfc-scan">开始 Web 刷卡</button>
+        <!-- Stats Overview Cards -->
+        <div class="stats-scroll">
+            <div class="stat-pill stat-running">
+                <span class="stat-num" id="countRunning">0</span>
+                <span class="stat-label">运行中</span>
             </div>
-
-            <div class="stats-bar">
-                <div class="stat-card">
-                    <span class="stat-label">运行中</span>
-                    <span class="stat-value text-running" id="countRunning">0</span>
-                </div>
-                <div class="stat-card">
-                    <span class="stat-label">已暂停</span>
-                    <span class="stat-value text-paused" id="countPaused">0</span>
-                </div>
-                <div class="stat-card">
-                    <span class="stat-label">未开始/停止</span>
-                    <span class="stat-value text-stopped" id="countStopped">0</span>
-                </div>
-                <div class="stat-card">
-                    <span class="stat-label">已超时</span>
-                    <span class="stat-value text-expired" id="countExpired">0</span>
-                </div>
+            <div class="stat-pill stat-paused">
+                <span class="stat-num" id="countPaused">0</span>
+                <span class="stat-label">已暂停</span>
             </div>
+            <div class="stat-pill stat-stopped">
+                <span class="stat-num" id="countStopped">0</span>
+                <span class="stat-label">未开始</span>
+            </div>
+            <div class="stat-pill stat-expired">
+                <span class="stat-num" id="countExpired">0</span>
+                <span class="stat-label">已超时</span>
+            </div>
+        </div>
 
-            <section class="cards-section">
-                <div class="section-header">
-                    <h2>卡片计时列表</h2>
-                    <div class="filter-controls">
-                        <button class="btn-filter active" data-filter="all">全部</button>
-                        <button class="btn-filter" data-filter="running">运行中</button>
-                        <button class="btn-filter" data-filter="expired">超时</button>
-                    </div>
-                </div>
+        <!-- Filter Segmented Control -->
+        <div class="segment-control">
+            <button class="segment-btn active" data-filter="all">全部</button>
+            <button class="segment-btn" data-filter="running">运行中</button>
+            <button class="segment-btn" data-filter="expired">超时</button>
+        </div>
 
-                <div class="cards-grid" id="cardsGrid">
-                    <!-- Cards dynamically rendered here -->
-                </div>
-            </section>
+        <!-- Card Stream List -->
+        <main class="card-stream" id="cardsGrid">
+            <!-- Dynamic Mobile Cards -->
         </main>
     </div>
 

@@ -13,6 +13,7 @@ import android.view.ViewGroup
 import android.widget.Button
 import android.widget.EditText
 import android.widget.LinearLayout
+import android.widget.NumberPicker
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
@@ -31,7 +32,7 @@ class MainActivity : AppCompatActivity() {
 
     private var nfcAdapter: NfcAdapter? = null
     private var pendingIntent: PendingIntent? = null
-    private val apiClient = GitHubApiClient()
+    private lateinit var apiClient: GitHubApiClient
     private var pollJob: Job? = null
 
     private lateinit var tvNfcStatus: TextView
@@ -41,6 +42,8 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+
+        apiClient = GitHubApiClient(this)
 
         tvNfcStatus = findViewById(R.id.tvNfcStatus)
         rvCards = findViewById(R.id.rvCards)
@@ -125,18 +128,11 @@ class MainActivity : AppCompatActivity() {
         val cardId = uidBytes.joinToString(":") { String.format("%02X", it) }
         tvNfcStatus.text = "✨ 已刷卡! UID: $cardId"
 
-        lifecycleScope.launch {
-            Toast.makeText(this@MainActivity, "正在同步 GitHub Gist...", Toast.LENGTH_SHORT).show()
-            val card = apiClient.swipeCard(cardId)
-            if (card != null) {
-                Toast.makeText(this@MainActivity, "刷卡成功: ${card.name}", Toast.LENGTH_SHORT).show()
-                showCardControlDialog(card)
-                refreshCards()
-            } else {
-                Toast.makeText(this@MainActivity, "请先设置正确的 GitHub Gist ID 和 Token", Toast.LENGTH_LONG).show()
-                showGitHubSettingsDialog()
-            }
-        }
+        // Immediate offline card creation + background GitHub sync
+        val card = apiClient.swipeCardImmediate(cardId)
+        Toast.makeText(this@MainActivity, "刷卡成功: ${card.name}", Toast.LENGTH_SHORT).show()
+        showCardControlDialog(card)
+        triggerLocalRefresh()
     }
 
     private fun startPolling() {
@@ -144,9 +140,13 @@ class MainActivity : AppCompatActivity() {
         pollJob = lifecycleScope.launch {
             while (isActive) {
                 refreshCards()
-                delay(2000)
+                delay(1000) // Smooth 1-second refresh on mobile screen
             }
         }
+    }
+
+    private fun triggerLocalRefresh() {
+        lifecycleScope.launch { refreshCards() }
     }
 
     private suspend fun refreshCards() {
@@ -190,7 +190,7 @@ class MainActivity : AppCompatActivity() {
 
                 apiClient.updateConfig(gistId, token)
                 Toast.makeText(this, "已保存 GitHub 云端配置", Toast.LENGTH_SHORT).show()
-                lifecycleScope.launch { refreshCards() }
+                triggerLocalRefresh()
             }
             .setNegativeButton("取消", null)
             .show()
@@ -204,7 +204,8 @@ class MainActivity : AppCompatActivity() {
 
         val tvUid = view.findViewById<TextView>(R.id.dialogCardUid)
         val etName = view.findViewById<EditText>(R.id.etCardName)
-        val etDuration = view.findViewById<EditText>(R.id.etDurationMinutes)
+        val npHours = view.findViewById<NumberPicker>(R.id.npHours)
+        val npMinutes = view.findViewById<NumberPicker>(R.id.npMinutes)
         val btnRename = view.findViewById<Button>(R.id.btnRename)
         val btnStart = view.findViewById<Button>(R.id.btnStart)
         val btnPause = view.findViewById<Button>(R.id.btnPause)
@@ -212,68 +213,58 @@ class MainActivity : AppCompatActivity() {
 
         tvUid.text = "UID: ${card.cardId}"
         etName.setText(card.name)
-        if (card.targetDurationSeconds > 0) {
-            etDuration.setText((card.targetDurationSeconds / 60).toString())
-        }
 
-        view.findViewById<Button>(R.id.btnPreset5).setOnClickListener { etDuration.setText("5") }
-        view.findViewById<Button>(R.id.btnPreset15).setOnClickListener { etDuration.setText("15") }
-        view.findViewById<Button>(R.id.btnPreset30).setOnClickListener { etDuration.setText("30") }
-        view.findViewById<Button>(R.id.btnPreset60).setOnClickListener { etDuration.setText("60") }
+        // Setup Scrollable NumberPicker for Hours (0-23) and Minutes (0-59)
+        npHours.minValue = 0
+        npHours.maxValue = 23
+        npMinutes.minValue = 0
+        npMinutes.maxValue = 59
+
+        val initialSec = card.targetDurationSeconds
+        val initialH = initialSec / 3600
+        val initialM = (initialSec % 3600) / 60
+        npHours.value = Math.min(23, initialH)
+        npMinutes.value = initialM
 
         btnRename.setOnClickListener {
             val newName = etName.text.toString().trim()
             if (newName.isNotEmpty()) {
-                lifecycleScope.launch {
-                    val updated = apiClient.renameCard(card.cardId, newName)
-                    if (updated != null) {
-                        Toast.makeText(this@MainActivity, "卡片已重命名为: $newName", Toast.LENGTH_SHORT).show()
-                        refreshCards()
-                    }
-                }
+                apiClient.renameCardImmediate(card.cardId, newName)
+                Toast.makeText(this@MainActivity, "卡片已重命名为: $newName", Toast.LENGTH_SHORT).show()
+                triggerLocalRefresh()
             }
         }
 
         btnStart.setOnClickListener {
-            val mins = etDuration.text.toString().toIntOrNull() ?: 0
-            val durationSec = mins * 60
-            lifecycleScope.launch {
-                val updated = apiClient.setTimer(card.cardId, durationSec, "start")
-                if (updated != null) {
-                    Toast.makeText(this@MainActivity, "倒计时已开始!", Toast.LENGTH_SHORT).show()
-                    dialog.dismiss()
-                    refreshCards()
-                }
-            }
+            val hours = npHours.value
+            val minutes = npMinutes.value
+            val totalSeconds = (hours * 3600) + (minutes * 60)
+
+            apiClient.setTimerImmediate(card.cardId, totalSeconds, "start")
+            Toast.makeText(this@MainActivity, "倒计时已开始!", Toast.LENGTH_SHORT).show()
+            dialog.dismiss()
+            triggerLocalRefresh()
         }
 
         btnPause.setOnClickListener {
-            lifecycleScope.launch {
-                val action = if (card.status == 2) "resume" else "pause"
-                val updated = apiClient.setTimer(card.cardId, 0, action)
-                if (updated != null) {
-                    Toast.makeText(this@MainActivity, if (action == "resume") "已恢复" else "已暂停", Toast.LENGTH_SHORT).show()
-                    dialog.dismiss()
-                    refreshCards()
-                }
-            }
+            val action = if (card.status == 2) "resume" else "pause"
+            apiClient.setTimerImmediate(card.cardId, 0, action)
+            Toast.makeText(this@MainActivity, if (action == "resume") "已恢复" else "已暂停", Toast.LENGTH_SHORT).show()
+            dialog.dismiss()
+            triggerLocalRefresh()
         }
 
         btnStop.setOnClickListener {
-            lifecycleScope.launch {
-                val updated = apiClient.setTimer(card.cardId, 0, "stop")
-                if (updated != null) {
-                    Toast.makeText(this@MainActivity, "已停止计时", Toast.LENGTH_SHORT).show()
-                    dialog.dismiss()
-                    refreshCards()
-                }
-            }
+            apiClient.setTimerImmediate(card.cardId, 0, "stop")
+            Toast.makeText(this@MainActivity, "已停止计时", Toast.LENGTH_SHORT).show()
+            dialog.dismiss()
+            triggerLocalRefresh()
         }
 
         dialog.show()
     }
 
-    // RecyclerView Adapter
+    // RecyclerView Adapter for smooth 1-second UI tick
     class CardAdapter : RecyclerView.Adapter<CardAdapter.CardViewHolder>() {
         private var cards: List<CardInfo> = emptyList()
         var onManageClick: ((CardInfo) -> Unit)? = null
@@ -337,9 +328,14 @@ class MainActivity : AppCompatActivity() {
 
             private fun formatTime(sec: Double): String {
                 val totalSec = Math.abs(sec.toInt())
-                val m = totalSec / 60
+                val h = totalSec / 3600
+                val m = (totalSec % 3600) / 60
                 val s = totalSec % 60
-                return String.format("%02d:%02d", m, s)
+                return if (h > 0) {
+                    String.format("%02d:%02d:%02d", h, m, s)
+                } else {
+                    String.format("%02d:%02d", m, s)
+                }
             }
         }
     }

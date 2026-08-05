@@ -1,341 +1,259 @@
 :root {
-    --bg-primary: #0f172a;
-    --bg-card: #1e293b;
-    --bg-card-hover: #334155;
-    --text-main: #f8fafc;
-    --text-muted: #94a3b8;
+    --bg-main: #0b0f19;
+    --bg-card: #151c2c;
+    --bg-card-elevated: #1e293b;
+    --text-primary: #f8fafc;
+    --text-secondary: #94a3b8;
     
     --color-running: #10b981;
-    --color-running-glow: rgba(16, 185, 129, 0.2);
+    --color-running-bg: rgba(16, 185, 129, 0.15);
     --color-paused: #f59e0b;
+    --color-paused-bg: rgba(245, 158, 11, 0.15);
     --color-stopped: #64748b;
+    --color-stopped-bg: rgba(100, 116, 139, 0.15);
     --color-expired: #ef4444;
-    --color-expired-glow: rgba(239, 68, 68, 0.3);
+    --color-expired-bg: rgba(239, 68, 68, 0.2);
     
-    --border-radius: 12px;
+    --border-card: rgba(255, 255, 255, 0.08);
 }
 
 * {
     box-sizing: border-box;
     margin: 0;
     padding: 0;
+    -webkit-tap-highlight-color: transparent;
 }
 
 body {
-    font-family: 'Inter', system-ui, -apple-system, sans-serif;
-    background-color: var(--bg-primary);
-    color: var(--text-main);
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background-color: var(--bg-main);
+    color: var(--text-primary);
     min-height: 100vh;
-    padding: 24px;
+    display: flex;
+    justify-content: center;
 }
 
-.app-container {
-    max-width: 1300px;
-    margin: 0 auto;
+.mobile-app {
+    width: 100%;
+    max-width: 480px; /* Pure Mobile Boundary */
+    min-height: 100vh;
+    padding: 20px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
 }
 
-.navbar {
+.header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding-bottom: 24px;
-    border-bottom: 1px solid #334155;
-    margin-bottom: 24px;
+    padding-bottom: 8px;
 }
 
-.brand {
+.brand-group {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 10px;
 }
 
-.logo-icon {
-    font-size: 2rem;
+.brand-logo {
+    font-size: 1.8rem;
 }
 
-.brand h1 {
-    font-size: 1.4rem;
-    font-weight: 700;
-    background: linear-gradient(135deg, #60a5fa, #a78bfa);
+.brand-title {
+    font-size: 1.15rem;
+    font-weight: 800;
+    background: linear-gradient(135deg, #38bdf8, #818cf8);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
 }
 
-.header-status {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    font-size: 0.9rem;
-    color: var(--text-muted);
+.brand-subtitle {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
 }
 
-.pulse-indicator {
-    width: 10px;
-    height: 10px;
+.live-pill {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--bg-card-elevated);
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    border: 1px solid var(--border-card);
+}
+
+.live-dot {
+    width: 8px;
+    height: 8px;
     border-radius: 50%;
     background-color: var(--color-running);
-    box-shadow: 0 0 10px var(--color-running);
-    animation: pulse 2s infinite;
+    box-shadow: 0 0 8px var(--color-running);
+    animation: blink 1.5s infinite alternate;
 }
 
-@keyframes pulse {
-    0% { transform: scale(0.95); opacity: 0.8; }
-    50% { transform: scale(1.15); opacity: 1; }
-    100% { transform: scale(0.95); opacity: 0.8; }
+@keyframes blink {
+    0% { opacity: 0.4; transform: scale(0.8); }
+    100% { opacity: 1; transform: scale(1.1); }
 }
 
-.card-count-badge {
-    background: #334155;
-    padding: 4px 10px;
-    border-radius: 20px;
-    color: var(--text-main);
-    font-weight: 600;
-}
-
-.btn-config-sm {
-    background: #334155;
-    color: #38bdf8;
-    border: 1px solid #38bdf8;
-    padding: 4px 10px;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 0.8rem;
-}
-
-.nfc-scan-card {
-    background: linear-gradient(135deg, #1e293b, #0f172a);
-    border: 1px solid #38bdf8;
-    border-radius: var(--border-radius);
-    padding: 16px 20px;
-    margin-bottom: 24px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    box-shadow: 0 0 15px rgba(56, 189, 248, 0.15);
-}
-
-.nfc-scan-info {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-}
-
-.nfc-icon {
-    font-size: 1.8rem;
-}
-
-.nfc-scan-info h3 {
-    font-size: 1.05rem;
-    color: #38bdf8;
-    margin-bottom: 4px;
-}
-
-.nfc-scan-info p {
-    font-size: 0.85rem;
-    color: var(--text-muted);
-}
-
-.btn-nfc-scan {
-    background: #38bdf8;
-    color: #0f172a;
-    border: none;
-    padding: 10px 20px;
-    border-radius: 8px;
-    font-weight: 700;
-    cursor: pointer;
-    transition: all 0.2s;
-}
-
-.btn-nfc-scan.active {
-    background: #ef4444;
-    color: #ffffff;
-}
-
-.highlight-swiped-card {
-    box-shadow: 0 0 25px #38bdf8 !important;
-    border-color: #38bdf8 !important;
-    transform: scale(1.03);
-    transition: all 0.3s ease-in-out;
-}
-
-.stats-bar {
+.stats-scroll {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 16px;
-    margin-bottom: 32px;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
 }
 
-.stat-card {
+.stat-pill {
     background: var(--bg-card);
-    padding: 20px;
-    border-radius: var(--border-radius);
+    border: 1px solid var(--border-card);
+    border-radius: 12px;
+    padding: 12px 6px;
     display: flex;
     flex-direction: column;
-    gap: 8px;
-    border: 1px solid #334155;
+    align-items: center;
+    gap: 4px;
+}
+
+.stat-num {
+    font-size: 1.25rem;
+    font-weight: 800;
 }
 
 .stat-label {
-    color: var(--text-muted);
-    font-size: 0.85rem;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
+    font-size: 0.7rem;
+    color: var(--text-secondary);
 }
 
-.stat-value {
-    font-size: 2rem;
-    font-weight: 700;
-}
+.stat-running .stat-num { color: var(--color-running); }
+.stat-paused .stat-num { color: var(--color-paused); }
+.stat-stopped .stat-num { color: var(--color-stopped); }
+.stat-expired .stat-num { color: var(--color-expired); }
 
-.text-running { color: var(--color-running); }
-.text-paused { color: var(--color-paused); }
-.text-stopped { color: var(--color-stopped); }
-.text-expired { color: var(--color-expired); }
-
-.section-header {
+.segment-control {
     display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 20px;
+    background: var(--bg-card);
+    padding: 4px;
+    border-radius: 12px;
+    border: 1px solid var(--border-card);
 }
 
-.btn-filter {
-    background: var(--bg-card);
-    color: var(--text-muted);
-    border: 1px solid #334155;
-    padding: 8px 16px;
+.segment-btn {
+    flex: 1;
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    padding: 8px 0;
+    font-size: 0.85rem;
+    font-weight: 600;
     border-radius: 8px;
     cursor: pointer;
     transition: all 0.2s;
 }
 
-.btn-filter.active, .btn-filter:hover {
+.segment-btn.active {
     background: #38bdf8;
     color: #0f172a;
-    font-weight: 600;
-    border-color: #38bdf8;
 }
 
-.cards-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-    gap: 20px;
-}
-
-.nfc-card {
-    background: var(--bg-card);
-    border-radius: var(--border-radius);
-    padding: 20px;
-    border: 1px solid #334155;
+.card-stream {
     display: flex;
     flex-direction: column;
-    gap: 14px;
+    gap: 12px;
+}
+
+.card-item {
+    background: var(--bg-card);
+    border: 1px solid var(--border-card);
+    border-radius: 16px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
     position: relative;
-    transition: transform 0.2s, box-shadow 0.2s;
+    overflow: hidden;
 }
 
-.nfc-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+.card-item.card-expired-mode {
+    border-color: rgba(239, 68, 68, 0.4);
+    background: linear-gradient(180deg, #151c2c 0%, #29121a 100%);
 }
 
-.nfc-card.status-running {
-    border-left: 5px solid var(--color-running);
-}
-
-.nfc-card.status-paused {
-    border-left: 5px solid var(--color-paused);
-}
-
-.nfc-card.status-stopped {
-    border-left: 5px solid var(--color-stopped);
-}
-
-.nfc-card.status-expired {
-    border-left: 5px solid var(--color-expired);
-    background: linear-gradient(180deg, #1e293b 0%, #2a1b24 100%);
-    box-shadow: 0 0 15px var(--color-expired-glow);
-    animation: flash-border 2s infinite alternate;
-}
-
-@keyframes flash-border {
-    0% { border-color: var(--color-expired); }
-    100% { border-color: #f87171; }
-}
-
-.card-top {
+.card-header-row {
     display: flex;
     justify-content: space-between;
-    align-items: flex-start;
+    align-items: center;
 }
 
-.card-title {
-    font-size: 1.15rem;
-    font-weight: 600;
-    color: #f1f5f9;
+.card-name {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--text-primary);
 }
 
-.card-uid {
-    font-size: 0.8rem;
+.card-uid-tag {
+    font-size: 0.7rem;
     font-family: monospace;
-    color: var(--text-muted);
-    background: #0f172a;
+    color: var(--text-secondary);
+    background: rgba(0,0,0,0.3);
     padding: 2px 6px;
     border-radius: 4px;
-    margin-top: 4px;
+    margin-top: 2px;
     display: inline-block;
 }
 
-.status-badge {
+.badge-tag {
     padding: 4px 10px;
-    border-radius: 12px;
+    border-radius: 20px;
     font-size: 0.75rem;
     font-weight: 700;
-    text-transform: uppercase;
 }
 
-.badge-running { background: rgba(16, 185, 129, 0.2); color: var(--color-running); }
-.badge-paused { background: rgba(245, 158, 11, 0.2); color: var(--color-paused); }
-.badge-stopped { background: rgba(100, 116, 139, 0.2); color: var(--color-stopped); }
-.badge-expired { background: rgba(239, 68, 68, 0.25); color: #f87171; }
+.badge-running { background: var(--color-running-bg); color: var(--color-running); }
+.badge-paused { background: var(--color-paused-bg); color: var(--color-paused); }
+.badge-stopped { background: var(--color-stopped-bg); color: var(--color-stopped); }
+.badge-expired { background: var(--color-expired-bg); color: #f87171; }
 
-.card-timer-display {
+.timer-hero {
     text-align: center;
-    margin: 10px 0;
+    padding: 8px 0;
 }
 
-.time-main {
-    font-size: 2.4rem;
-    font-weight: 700;
+.time-val {
+    font-size: 2.2rem;
+    font-weight: 800;
     font-family: monospace;
     letter-spacing: 1px;
 }
 
-.overdue-alert {
+.overdue-msg {
     color: #f87171;
+    font-size: 0.85rem;
     font-weight: 700;
-    margin-top: 4px;
-    font-size: 0.95rem;
+    margin-top: 2px;
 }
 
-.progress-bar-bg {
+.progress-track {
     height: 6px;
-    background: #0f172a;
+    background: rgba(0,0,0,0.4);
     border-radius: 3px;
     overflow: hidden;
 }
 
-.progress-bar-fill {
+.progress-fill {
     height: 100%;
     background: var(--color-running);
-    transition: width 0.5s ease-out;
+    border-radius: 3px;
+    transition: width 0.4s ease-out;
 }
 
-.empty-state {
-    grid-column: 1 / -1;
+.empty-view {
     text-align: center;
-    padding: 60px;
-    color: var(--text-muted);
+    padding: 40px 20px;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
     background: var(--bg-card);
-    border-radius: var(--border-radius);
+    border-radius: 16px;
+    border: 1px dashed var(--border-card);
 }

@@ -1,8 +1,11 @@
 package com.nfctime.app.api
 
+import android.content.Context
 import com.google.gson.Gson
 import com.google.gson.JsonObject
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
@@ -27,13 +30,14 @@ data class CardInfo(
 )
 
 class GitHubApiClient(
+    private val context: Context,
     private var gistId: String = "",
     private var token: String = ""
 ) {
 
     private val client = OkHttpClient.Builder()
-        .connectTimeout(10, TimeUnit.SECONDS)
-        .readTimeout(10, TimeUnit.SECONDS)
+        .connectTimeout(5, TimeUnit.SECONDS)
+        .readTimeout(5, TimeUnit.SECONDS)
         .build()
 
     private val gson = Gson()
@@ -42,13 +46,30 @@ class GitHubApiClient(
         timeZone = TimeZone.getTimeZone("UTC")
     }
 
+    private val prefs = context.getSharedPreferences("offline_cards_cache", Context.MODE_PRIVATE)
+
     fun updateConfig(newGistId: String, newToken: String) {
         gistId = newGistId.trim()
         token = newToken.trim()
     }
 
-    private suspend fun fetchRawCards(): MutableList<CardInfo> = withContext(Dispatchers.IO) {
-        if (gistId.isEmpty()) return@withContext mutableListOf()
+    // Local Disk Cache for offline support
+    private fun getCachedCards(): MutableList<CardInfo> {
+        val json = prefs.getString("cached_json", "[]")
+        return try {
+            gson.fromJson(json, Array<CardInfo>::class.java).toMutableList()
+        } catch (e: Exception) {
+            mutableListOf()
+        }
+    }
+
+    private fun saveCachedCards(cards: List<CardInfo>) {
+        val json = gson.toJson(cards)
+        prefs.edit().putString("cached_json", json).apply()
+    }
+
+    private suspend fun fetchRemoteCards(): MutableList<CardInfo>? = withContext(Dispatchers.IO) {
+        if (gistId.isEmpty()) return@withContext null
         try {
             val reqBuilder = Request.Builder()
                 .url("https://api.github.com/gists/$gistId")
@@ -71,6 +92,7 @@ class GitHubApiClient(
                         if (fileObj != null && fileObj.has("content")) {
                             val content = fileObj.get("content").asString
                             val list = gson.fromJson(content, Array<CardInfo>::class.java).toMutableList()
+                            saveCachedCards(list)
                             return@withContext list
                         }
                     }
@@ -79,42 +101,39 @@ class GitHubApiClient(
         } catch (e: Exception) {
             e.printStackTrace()
         }
-        return@withContext mutableListOf()
+        return@withContext null
     }
 
-    private suspend fun saveCardsToGist(cards: List<CardInfo>): Boolean = withContext(Dispatchers.IO) {
-        if (gistId.isEmpty() || token.isEmpty()) return@withContext false
-        try {
-            val cardsJsonStr = gson.toJson(cards)
+    // Asynchronous background upload to GitHub Gist
+    private fun syncToRemoteAsync(cards: List<CardInfo>) {
+        saveCachedCards(cards)
+        if (gistId.isEmpty() || token.isEmpty()) return
 
-            val fileContentObj = JsonObject().apply {
-                addProperty("content", cardsJsonStr)
-            }
-            val filesObj = JsonObject().apply {
-                add("cards_data.json", fileContentObj)
-            }
-            val rootObj = JsonObject().apply {
-                add("files", filesObj)
-            }
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                val cardsJsonStr = gson.toJson(cards)
+                val fileContentObj = JsonObject().apply { addProperty("content", cardsJsonStr) }
+                val filesObj = JsonObject().apply { add("cards_data.json", fileContentObj) }
+                val rootObj = JsonObject().apply { add("files", filesObj) }
 
-            val req = Request.Builder()
-                .url("https://api.github.com/gists/$gistId")
-                .patch(rootObj.toString().toRequestBody(jsonType))
-                .addHeader("Authorization", "Bearer $token")
-                .build()
+                val req = Request.Builder()
+                    .url("https://api.github.com/gists/$gistId")
+                    .patch(rootObj.toString().toRequestBody(jsonType))
+                    .addHeader("Authorization", "Bearer $token")
+                    .build()
 
-            client.newCall(req).execute().use { resp ->
-                return@withContext resp.isSuccessful
+                client.newCall(req).execute().close()
+            } catch (e: Exception) {
+                e.printStackTrace()
             }
-        } catch (e: Exception) {
-            e.printStackTrace()
         }
-        return@withContext false
     }
 
     suspend fun getAllCards(): List<CardInfo> = withContext(Dispatchers.IO) {
-        val list = fetchRawCards()
+        val remoteList = fetchRemoteCards()
+        val list = remoteList ?: getCachedCards()
         val now = System.currentTimeMillis()
+
         list.forEach { card ->
             var remaining = card.savedRemainingSeconds.toDouble()
             if (card.status == 1 && card.startTimeUtc != null) {
@@ -137,21 +156,20 @@ class GitHubApiClient(
         return@withContext list
     }
 
-    suspend fun swipeCard(cardId: String): CardInfo? = withContext(Dispatchers.IO) {
-        val list = fetchRawCards()
+    fun swipeCardImmediate(cardId: String): CardInfo {
+        val list = getCachedCards()
         var card = list.find { it.cardId.equals(cardId, ignoreCase = true) }
         if (card == null) {
             card = CardInfo(cardId = cardId, name = "卡片_$cardId", status = 0)
             list.add(card)
-            saveCardsToGist(list)
         }
-        return@withContext card
+        syncToRemoteAsync(list)
+        return card
     }
 
-    suspend fun setTimer(cardId: String, durationSec: Int, action: String): CardInfo? = withContext(Dispatchers.IO) {
-        val list = fetchRawCards()
-        val card = list.find { it.cardId.equals(cardId, ignoreCase = true) } ?: return@withContext null
-
+    fun setTimerImmediate(cardId: String, durationSec: Int, action: String): CardInfo? {
+        val list = getCachedCards()
+        val card = list.find { it.cardId.equals(cardId, ignoreCase = true) } ?: return null
         val nowIso = isoFormat.format(Date())
 
         when (action.lowercase()) {
@@ -167,8 +185,12 @@ class GitHubApiClient(
             }
             "pause" -> {
                 if (card.status == 1) {
-                    val computed = getAllCards().find { it.cardId.equals(cardId, ignoreCase = true) }
-                    card.savedRemainingSeconds = Math.max(0, computed?.remainingSeconds?.toInt() ?: 0)
+                    val now = System.currentTimeMillis()
+                    val startMs = if (card.startTimeUtc != null) isoFormat.parse(card.startTimeUtc!!)?.time ?: now else now
+                    val elapsedSec = (now - startMs) / 1000.0
+                    val rem = Math.max(0.0, card.savedRemainingSeconds - elapsedSec)
+
+                    card.savedRemainingSeconds = rem.toInt()
                     card.status = 2 // Paused
                     card.startTimeUtc = null
                 }
@@ -186,15 +208,15 @@ class GitHubApiClient(
             }
         }
 
-        saveCardsToGist(list)
-        return@withContext card
+        syncToRemoteAsync(list)
+        return card
     }
 
-    suspend fun renameCard(cardId: String, newName: String): CardInfo? = withContext(Dispatchers.IO) {
-        val list = fetchRawCards()
-        val card = list.find { it.cardId.equals(cardId, ignoreCase = true) } ?: return@withContext null
+    fun renameCardImmediate(cardId: String, newName: String): CardInfo? {
+        val list = getCachedCards()
+        val card = list.find { it.cardId.equals(cardId, ignoreCase = true) } ?: return null
         card.name = newName
-        saveCardsToGist(list)
-        return@withContext card
+        syncToRemoteAsync(list)
+        return card
     }
 }
