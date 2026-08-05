@@ -2,8 +2,8 @@ let currentFilter = 'all';
 let nfcNDEFReader = null;
 let activeNfcCardId = null;
 
-// Built-in fixed Gist ID (Auto configured)
-const FIXED_GIST_ID = "086c5513a0c4f42d45c6020dfca78457";
+// Built-in fixed Gist ID (Configured to your created Gist)
+const FIXED_GIST_ID = "6582c66b24bad75381f70abdae62e81b";
 
 document.addEventListener('DOMContentLoaded', () => {
     fetchCardsFromGist();
@@ -28,7 +28,6 @@ document.addEventListener('DOMContentLoaded', () => {
         nfcSection.style.display = 'flex';
         document.getElementById('btnToggleWebNfc').addEventListener('click', toggleWebNfc);
         
-        // Auto toast / alert for Android users
         showAndroidNfcBanner();
     }
 });
@@ -51,7 +50,10 @@ async function fetchCardsFromGist() {
         if (!res.ok) return;
         const data = await res.json();
         
-        const fileContent = data.files['cards_data.json']?.content;
+        // Match cards_data.json or gistfile1.txt (fallback)
+        const fileObj = data.files['cards_data.json'] || data.files['gistfile1.txt'] || Object.values(data.files)[0];
+        const fileContent = fileObj?.content;
+
         if (fileContent) {
             const rawCards = JSON.parse(fileContent);
             const computedCards = computeCardsState(rawCards);
@@ -63,6 +65,7 @@ async function fetchCardsFromGist() {
 }
 
 function computeCardsState(cards) {
+    if (!Array.isArray(cards)) return [];
     const now = Date.now();
 
     return cards.map(c => {
