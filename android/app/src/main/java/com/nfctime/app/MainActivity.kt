@@ -288,6 +288,8 @@ class MainActivity : AppCompatActivity() {
         val tvRemaining = view.findViewById<TextView>(R.id.tvActiveRemainingBig)
         val tvOverdueAlert = view.findViewById<TextView>(R.id.tvActiveOverdueAlert)
         val tvStartTime = view.findViewById<TextView>(R.id.tvActiveStartTime)
+        val tvEndTime = view.findViewById<TextView>(R.id.tvActiveEndTime)
+        val tvTargetDuration = view.findViewById<TextView>(R.id.tvActiveTargetDuration)
         val btnAdd10 = view.findViewById<Button>(R.id.btnAdd10Min)
         val btnAdd30 = view.findViewById<Button>(R.id.btnAdd30Min)
         val btnAdd1H = view.findViewById<Button>(R.id.btnAdd1Hour)
@@ -302,9 +304,13 @@ class MainActivity : AppCompatActivity() {
         if (startMs != null) {
             val clockSdf = SimpleDateFormat("HH:mm:ss", Locale.getDefault())
             tvStartTime.text = clockSdf.format(Date(startMs))
+            val endMs = startMs + (card.targetDurationSeconds * 1000L)
+            tvEndTime.text = clockSdf.format(Date(endMs))
         } else {
             tvStartTime.text = "--:--:--"
+            tvEndTime.text = "--:--:--"
         }
+        tvTargetDuration.text = formatTime(card.targetDurationSeconds.toDouble())
 
         var dialogTickJob: Job? = null
         dialogTickJob = lifecycleScope.launch {
