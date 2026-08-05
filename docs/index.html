@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>🌟 星野手作 | 萌趣时光小屋 🐱</title>
-    <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@700&family=ZCOOL+KuaiLe&family=M+PLUS+Rounded+1c:wght@700;800;900&display=swap" rel="stylesheet">
     <style>
         :root {
             /* Warm Creamy Craft Palette */
@@ -43,7 +43,8 @@
         }
 
         body {
-            font-family: 'Comfortaa', -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+            /* Ultra-Cute Round Fonts: M PLUS Rounded 1c & Comfortaa & ZCOOL KuaiLe */
+            font-family: 'M PLUS Rounded 1c', 'Comfortaa', 'ZCOOL KuaiLe', system-ui, -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
             background-color: var(--bg-page);
             background-image: 
                 radial-gradient(#F3E5D8 1.5px, transparent 1.5px),
@@ -96,14 +97,16 @@
         }
 
         .shop-name {
-            font-size: 1.3rem;
-            font-weight: 700;
+            font-size: 1.35rem;
+            font-weight: 900;
             color: var(--text-dark);
             line-height: 1.1;
+            font-family: 'M PLUS Rounded 1c', 'ZCOOL KuaiLe', sans-serif;
         }
 
         .shop-slogan {
             font-size: 0.72rem;
+            font-weight: 700;
             color: var(--text-sub);
             margin-top: 3px;
         }
@@ -115,7 +118,7 @@
             padding: 6px 12px;
             border-radius: 18px;
             font-size: 0.8rem;
-            font-weight: 700;
+            font-weight: 800;
         }
 
         /* Cute Tabs Filter */
@@ -136,8 +139,8 @@
             outline: none;
             color: var(--text-sub);
             padding: 8px 0;
-            font-size: 0.85rem;
-            font-weight: 700;
+            font-size: 0.88rem;
+            font-weight: 800;
             border-radius: 16px;
             cursor: pointer;
             transition: all 0.2s ease;
@@ -148,7 +151,7 @@
             background: #FFE4E6;
             color: #E11D48;
             border: 2px solid #FDA4AF;
-            font-weight: 700;
+            font-weight: 900;
         }
 
         /* Dual Column Hand-crafted Card Grid */
@@ -196,8 +199,8 @@
         }
 
         .card-name-title {
-            font-size: 0.98rem;
-            font-weight: 700;
+            font-size: 1.05rem;
+            font-weight: 800;
             color: var(--text-dark);
             white-space: nowrap;
             overflow: hidden;
@@ -208,8 +211,8 @@
         .cute-tag {
             padding: 3px 8px;
             border-radius: 12px;
-            font-size: 0.7rem;
-            font-weight: 700;
+            font-size: 0.72rem;
+            font-weight: 800;
             border: 1.5px solid transparent;
         }
 
@@ -219,10 +222,11 @@
         .tag-rose { background: var(--color-rose-soft); border-color: var(--color-rose-border); color: var(--color-rose-text); }
 
         .card-uid-sub {
-            font-size: 0.65rem;
+            font-size: 0.68rem;
             color: var(--text-sub);
             margin-top: 1px;
-            font-family: monospace;
+            font-family: 'Comfortaa', monospace;
+            font-weight: 700;
         }
 
         .time-box-center {
@@ -231,9 +235,9 @@
         }
 
         .clock-val-cute {
-            font-size: 1.75rem;
-            font-family: 'Comfortaa', monospace;
-            font-weight: 700;
+            font-size: 1.85rem;
+            font-family: 'Comfortaa', 'M PLUS Rounded 1c', monospace;
+            font-weight: 800;
             letter-spacing: -0.5px;
             line-height: 1;
         }
@@ -249,8 +253,8 @@
             border: 1.5px solid var(--color-rose-border);
             padding: 4px 8px;
             border-radius: 14px;
-            font-size: 0.72rem;
-            font-weight: 700;
+            font-size: 0.75rem;
+            font-weight: 800;
             margin-top: 6px;
             display: inline-block;
         }
@@ -262,7 +266,7 @@
             padding: 6px 8px;
             display: flex;
             justify-content: space-between;
-            font-size: 0.7rem;
+            font-size: 0.72rem;
             color: var(--text-sub);
             border: 1.5px dashed var(--border-dashed);
         }
@@ -275,11 +279,13 @@
         .stamp-lbl {
             font-size: 0.62rem;
             color: #B0A09E;
+            font-weight: 700;
         }
 
         .stamp-val {
             color: var(--text-dark);
-            font-weight: 700;
+            font-weight: 800;
+            font-family: 'Comfortaa', sans-serif;
         }
 
         .progress-candy-bg {
@@ -519,7 +525,7 @@
                 }
 
                 return `
-                    <div class="cute-card ${isExpiredMode ? 'card-overdue-mode' : ''}">
+                    <div class="cute-card ${isExpiredMode ? 'card-expired-theme' : ''}">
                         <div>
                             <div class="card-head-bar">
                                 <div class="card-name-title" title="${escapeHtml(card.name)}">${escapeHtml(card.name)}</div>
