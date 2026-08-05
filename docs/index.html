@@ -24,8 +24,8 @@
             --text-title: #2d2327;
             --text-sub: #8c7a82;
             
-            --shadow-kawaii: 0 10px 25px rgba(255, 107, 139, 0.12);
-            --shadow-card: 0 8px 20px rgba(0, 0, 0, 0.04);
+            --shadow-kawaii: 0 4px 12px rgba(255, 107, 139, 0.1);
+            --shadow-card: 0 4px 12px rgba(0, 0, 0, 0.03);
         }
 
         * {
@@ -39,10 +39,10 @@
             font-family: 'Comfortaa', 'ZCOOL KuaiLe', -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
             background-color: var(--bg-hoshino);
             background-image: 
-                radial-gradient(#ffd6e0 1.5px, transparent 1.5px),
-                radial-gradient(#ffd6e0 1.5px, #fff5f8 1.5px);
-            background-size: 24px 24px;
-            background-position: 0 0, 12px 12px;
+                radial-gradient(#ffd6e0 1.2px, transparent 1.2px),
+                radial-gradient(#ffd6e0 1.2px, #fff5f8 1.2px);
+            background-size: 20px 20px;
+            background-position: 0 0, 10px 10px;
             color: var(--text-title);
             min-height: 100vh;
             display: flex;
@@ -51,102 +51,75 @@
 
         .hoshino-container {
             width: 100%;
-            max-width: 440px;
+            max-width: 480px;
             min-height: 100vh;
-            padding: 20px 16px;
+            padding: 12px;
             display: flex;
             flex-direction: column;
-            gap: 16px;
+            gap: 10px;
         }
 
-        /* Kawaii Header */
+        /* Compact Header */
         .hoshino-header {
             background: #ffffff;
-            border-radius: 28px;
-            padding: 16px 20px;
+            border-radius: 18px;
+            padding: 10px 14px;
             display: flex;
             justify-content: space-between;
             align-items: center;
             box-shadow: var(--shadow-kawaii);
-            border: 3px solid #ffdeee;
+            border: 2px solid #ffdeee;
         }
 
         .brand-group {
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 8px;
         }
 
         .brand-avatar {
-            font-size: 2.2rem;
-            animation: float-anim 3s ease-in-out infinite;
-        }
-
-        @keyframes float-anim {
-            0%, 100% { transform: translateY(0) rotate(-3deg); }
-            50% { transform: translateY(-5px) rotate(3deg); }
+            font-size: 1.5rem;
         }
 
         .hoshino-title {
-            font-size: 1.35rem;
+            font-size: 1.1rem;
             font-weight: 800;
             color: var(--primary-pink-deep);
-            letter-spacing: 1px;
+            line-height: 1.1;
         }
 
         .hoshino-sub {
-            font-size: 0.72rem;
+            font-size: 0.65rem;
             color: var(--text-sub);
-            margin-top: 2px;
         }
 
         .counter-badge {
             background: var(--primary-pink-soft);
             color: var(--primary-pink-deep);
-            padding: 8px 14px;
-            border-radius: 20px;
-            font-size: 0.8rem;
+            padding: 4px 10px;
+            border-radius: 14px;
+            font-size: 0.75rem;
             font-weight: 700;
-            border: 2px solid #ffccd8;
+            border: 1px solid #ffccd8;
         }
 
-        /* Summary Chips */
-        .summary-grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 8px;
-        }
-
-        .summary-card {
-            background: #ffffff;
-            border-radius: 20px;
-            padding: 12px 4px;
+        /* High-Density Dual Column Control Bar: Filter Tabs + Quick Summary */
+        .control-bar {
             display: flex;
-            flex-direction: column;
             align-items: center;
-            gap: 2px;
+            justify-content: space-between;
+            gap: 8px;
+            background: #ffffff;
+            padding: 4px;
+            border-radius: 16px;
             box-shadow: var(--shadow-card);
-            border: 2px solid #ffeef2;
+            border: 1.5px solid #ffeef2;
         }
 
-        .sum-icon { font-size: 1.1rem; }
-        .sum-num { font-size: 1.25rem; font-weight: 800; }
-        .sum-txt { font-size: 0.68rem; color: var(--text-sub); }
-
-        .sum-run .sum-num { color: var(--color-mint); }
-        .sum-pause .sum-num { color: var(--color-amber); }
-        .sum-stop .sum-num { color: var(--color-slate); }
-        .sum-expire .sum-num { color: var(--color-rose); }
-
-        /* Filter Tabs Bar */
         .tabs-nav {
             display: flex;
-            background: #ffffff;
-            padding: 6px;
-            border-radius: 22px;
-            box-shadow: var(--shadow-card);
-            border: 2px solid #ffeef2;
-            gap: 4px;
+            gap: 2px;
+            flex: 1;
         }
 
         .tab-item {
@@ -155,74 +128,87 @@
             border: none;
             outline: none;
             color: var(--text-sub);
-            padding: 10px 0;
-            font-size: 0.85rem;
+            padding: 6px 0;
+            font-size: 0.78rem;
             font-weight: 700;
-            border-radius: 16px;
+            border-radius: 12px;
             cursor: pointer;
-            transition: all 0.25s ease;
+            transition: all 0.2s ease;
         }
 
         .tab-item.active {
             background: linear-gradient(135deg, #ff7597, #ff4772);
             color: #ffffff;
-            box-shadow: 0 4px 12px rgba(255, 71, 114, 0.3);
         }
 
-        /* Cute Card List */
-        .card-stream {
+        .quick-stats-strip {
             display: flex;
-            flex-direction: column;
-            gap: 16px;
-            padding-bottom: 30px;
+            gap: 6px;
+            padding-right: 6px;
+            font-size: 0.72rem;
+            font-weight: 700;
         }
 
-        .kawaii-card {
+        .q-stat {
+            display: flex;
+            align-items: center;
+            gap: 2px;
+            padding: 2px 6px;
+            border-radius: 8px;
+        }
+
+        .q-stat.q-run { background: var(--color-mint-bg); color: var(--color-mint); }
+        .q-stat.q-expire { background: var(--color-rose-bg); color: var(--color-rose); }
+
+        /* High-Density Dual-Column Cards Grid (2 Cards per Row) */
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            padding-bottom: 20px;
+        }
+
+        .compact-card {
             background: #ffffff;
-            border-radius: 26px;
-            padding: 20px;
+            border-radius: 18px;
+            padding: 12px 10px;
             display: flex;
             flex-direction: column;
-            gap: 14px;
+            justify-content: space-between;
+            gap: 8px;
             box-shadow: var(--shadow-card);
-            border: 3px solid #ffedf2;
-            transition: transform 0.2s, box-shadow 0.2s;
+            border: 2px solid #ffedf2;
             position: relative;
+            overflow: hidden;
         }
 
-        .kawaii-card.card-expired-mode {
+        .compact-card.card-expired-mode {
             border-color: #ffb3c1;
             background: linear-gradient(180deg, #ffffff 0%, #fff0f3 100%);
         }
 
-        .card-top {
+        .card-head {
             display: flex;
             justify-content: space-between;
-            align-items: flex-start;
+            align-items: center;
         }
 
-        .card-title-name {
-            font-size: 1.18rem;
+        .card-name {
+            font-size: 0.92rem;
             font-weight: 800;
             color: var(--text-title);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 100px;
         }
 
-        .card-uid-pill {
-            font-size: 0.72rem;
-            font-family: monospace;
-            color: var(--text-sub);
-            background: #f1f5f9;
-            padding: 3px 8px;
+        .badge-mini {
+            padding: 2px 6px;
             border-radius: 10px;
-            display: inline-block;
-            margin-top: 4px;
-        }
-
-        .badge-tag {
-            padding: 6px 14px;
-            border-radius: 20px;
-            font-size: 0.78rem;
+            font-size: 0.65rem;
             font-weight: 800;
+            white-space: nowrap;
         }
 
         .badge-mint { background: var(--color-mint-bg); color: var(--color-mint); }
@@ -230,96 +216,106 @@
         .badge-slate { background: #f1f5f9; color: var(--color-slate); }
         .badge-rose { background: var(--color-rose-bg); color: var(--color-rose); }
 
+        .card-uid-micro {
+            font-size: 0.65rem;
+            font-family: monospace;
+            color: #a1929a;
+            margin-top: -4px;
+        }
+
         .timer-center {
             text-align: center;
-            padding: 4px 0;
+            padding: 2px 0;
         }
 
-        .time-display-big {
-            font-size: 2.5rem;
+        .time-val-compact {
+            font-size: 1.65rem;
             font-weight: 800;
             font-family: monospace;
-            letter-spacing: 1px;
+            letter-spacing: -0.5px;
+            line-height: 1;
         }
 
-        .time-display-big.text-mint { color: var(--color-mint); }
-        .time-display-big.text-amber { color: var(--color-amber); }
-        .time-display-big.text-rose { color: var(--color-rose); }
+        .time-val-compact.text-mint { color: var(--color-mint); }
+        .time-val-compact.text-amber { color: var(--color-amber); }
+        .time-val-compact.text-rose { color: var(--color-rose); }
 
-        .overdue-banner {
+        .overdue-banner-compact {
             color: var(--color-rose);
             font-weight: 800;
-            font-size: 0.92rem;
-            margin-top: 4px;
+            font-size: 0.72rem;
+            margin-top: 2px;
         }
 
-        /* Timeline Box for Start and End Time */
-        .timeline-box {
+        /* High-Density Timeline Footer */
+        .timeline-compact {
             background: #fff8fa;
-            border-radius: 16px;
-            padding: 10px 14px;
+            border-radius: 10px;
+            padding: 4px 6px;
             display: flex;
             justify-content: space-between;
-            font-size: 0.78rem;
+            font-size: 0.68rem;
             color: var(--text-sub);
             border: 1px dashed #ffd6e0;
         }
 
-        .timeline-item {
+        .tl-item {
             display: flex;
             flex-direction: column;
-            gap: 2px;
         }
 
-        .timeline-label {
-            font-size: 0.7rem;
+        .tl-label {
+            font-size: 0.6rem;
             color: #b09ba5;
+            transform: scale(0.9);
+            transform-origin: left center;
         }
 
-        .timeline-val {
+        .tl-val {
             font-weight: 700;
             color: var(--text-title);
         }
 
-        .progress-bar-wrap {
-            height: 10px;
+        .progress-compact {
+            height: 6px;
             background: #f1f5f9;
-            border-radius: 10px;
+            border-radius: 6px;
             overflow: hidden;
         }
 
-        .progress-bar-fill {
+        .progress-fill {
             height: 100%;
             background: linear-gradient(90deg, #ff9ebb, #10b981);
-            border-radius: 10px;
+            border-radius: 6px;
             transition: width 0.5s ease-out;
         }
 
-        .empty-cute-view {
+        .empty-view {
+            grid-column: span 2;
             text-align: center;
-            padding: 60px 20px;
+            padding: 40px 10px;
             background: #ffffff;
-            border-radius: 28px;
+            border-radius: 20px;
             box-shadow: var(--shadow-card);
             color: var(--text-sub);
             border: 2px dashed #ffd6e0;
         }
 
         .empty-icon {
-            font-size: 3.5rem;
-            margin-bottom: 12px;
+            font-size: 2.5rem;
+            margin-bottom: 6px;
         }
     </style>
 </head>
 <body>
     <div class="hoshino-container">
-        <!-- Header -->
+        <!-- Compact Header -->
         <header class="hoshino-header">
             <div class="brand-group">
                 <span class="brand-avatar">🌸</span>
                 <div>
                     <h1 class="hoshino-title">星野手作</h1>
-                    <p class="hoshino-sub">✦ 陪伴每一份温暖时光 ✦</p>
+                    <p class="hoshino-sub">✦ 计时工坊 ✦</p>
                 </div>
             </div>
             <div class="counter-badge">
@@ -327,40 +323,23 @@
             </div>
         </header>
 
-        <!-- Summary -->
-        <div class="summary-grid">
-            <div class="summary-card sum-run">
-                <span class="sum-icon">🌟</span>
-                <span class="sum-num" id="countRunning">0</span>
-                <span class="sum-txt">制作中</span>
-            </div>
-            <div class="summary-card sum-pause">
-                <span class="sum-icon">🍵</span>
-                <span class="sum-num" id="countPaused">0</span>
-                <span class="sum-txt">憩息中</span>
-            </div>
-            <div class="summary-card sum-stop">
-                <span class="sum-icon">🌸</span>
-                <span class="sum-num" id="countStopped">0</span>
-                <span class="sum-txt">准备中</span>
-            </div>
-            <div class="summary-card sum-expire">
-                <span class="sum-icon">🔔</span>
-                <span class="sum-num" id="countExpired">0</span>
-                <span class="sum-txt">时间到</span>
+        <!-- Compact Control Bar: Filter Tabs + Live Quick Stats -->
+        <div class="control-bar">
+            <nav class="tabs-nav">
+                <button type="button" class="tab-item active" data-filter="all">✨ 全部</button>
+                <button type="button" class="tab-item" data-filter="running">🌟 制作中</button>
+                <button type="button" class="tab-item" data-filter="expired">🔔 时间到</button>
+            </nav>
+
+            <div class="quick-stats-strip">
+                <div class="q-stat q-run">🏃 <span id="countRunning">0</span></div>
+                <div class="q-stat q-expire">⏰ <span id="countExpired">0</span></div>
             </div>
         </div>
 
-        <!-- Filter Nav -->
-        <nav class="tabs-nav">
-            <button type="button" class="tab-item active" data-filter="all">✨ 全部手作</button>
-            <button type="button" class="tab-item" data-filter="running">🌟 制作中</button>
-            <button type="button" class="tab-item" data-filter="expired">🔔 时间到</button>
-        </nav>
-
-        <!-- Stream Cards -->
-        <main class="card-stream" id="cardsGrid">
-            <!-- Dynamic cards -->
+        <!-- High Density Dual Column Grid (2 Cards Per Row) -->
+        <main class="card-grid" id="cardsGrid">
+            <!-- Dynamic Compact Cards -->
         </main>
     </div>
 
@@ -486,18 +465,14 @@
         function renderDashboard(rawCards) {
             const cards = computeCardsState(rawCards);
 
-            let running = 0, paused = 0, stopped = 0, expired = 0;
+            let running = 0, expired = 0;
             cards.forEach(c => {
                 if (c.isOverdue || c.status === 3) expired++;
                 else if (c.status === 1) running++;
-                else if (c.status === 2) paused++;
-                else stopped++;
             });
 
             document.getElementById('cardCounter').textContent = `${cards.length} 份手作`;
             document.getElementById('countRunning').textContent = running;
-            document.getElementById('countPaused').textContent = paused;
-            document.getElementById('countStopped').textContent = stopped;
             document.getElementById('countExpired').textContent = expired;
 
             const filtered = cards.filter(c => {
@@ -509,9 +484,9 @@
             const grid = document.getElementById('cardsGrid');
             if (filtered.length === 0) {
                 grid.innerHTML = `
-                    <div class="empty-cute-view">
+                    <div class="empty-view">
                         <div class="empty-icon">🌸</div>
-                        <p>暂无手作在制作中哦~<br>期待下一次美好相遇 ✨</p>
+                        <p>暂无手作在制作中哦~<br>期待美好发生 ✨</p>
                     </div>
                 `;
                 return;
@@ -520,20 +495,20 @@
             grid.innerHTML = filtered.map(card => {
                 let isExpiredMode = card.isOverdue || card.status === 3;
                 let badgeClass = 'badge-slate';
-                let statusText = '🌸 准备中';
+                let statusText = '准备中';
                 let timeColorClass = '';
 
                 if (isExpiredMode) {
                     badgeClass = 'badge-rose';
-                    statusText = '🔔 时间到';
+                    statusText = '时间到';
                     timeColorClass = 'text-rose';
                 } else if (card.status === 1) {
                     badgeClass = 'badge-mint';
-                    statusText = '🌟 制作中';
+                    statusText = '制作中';
                     timeColorClass = 'text-mint';
                 } else if (card.status === 2) {
                     badgeClass = 'badge-amber';
-                    statusText = '🍵 憩息中';
+                    statusText = '憩息中';
                     timeColorClass = 'text-amber';
                 }
 
@@ -547,45 +522,45 @@
                 let timeHtml = '';
                 if (isExpiredMode) {
                     timeHtml = `
-                        <div class="time-display-big text-rose">00:00</div>
-                        <div class="overdue-banner">🚨 已超时: ${formatTime(card.overdueSeconds)}</div>
+                        <div class="time-val-compact text-rose">00:00</div>
+                        <div class="overdue-banner-compact">超时: ${formatTime(card.overdueSeconds)}</div>
                     `;
                 } else {
                     timeHtml = `
-                        <div class="time-display-big ${timeColorClass}">
+                        <div class="time-val-compact ${timeColorClass}">
                             ${formatTime(remainingSec)}
                         </div>
                     `;
                 }
 
                 return `
-                    <div class="kawaii-card ${isExpiredMode ? 'card-expired-theme' : ''}">
-                        <div class="card-top">
-                            <div>
-                                <div class="card-title-name">${escapeHtml(card.name)}</div>
-                                <div class="card-uid-pill">UID: ${escapeHtml(card.cardId)}</div>
+                    <div class="compact-card ${isExpiredMode ? 'card-expired-mode' : ''}">
+                        <div>
+                            <div class="card-head">
+                                <div class="card-name" title="${escapeHtml(card.name)}">${escapeHtml(card.name)}</div>
+                                <span class="badge-mini ${badgeClass}">${statusText}</span>
                             </div>
-                            <span class="badge-tag ${badgeClass}">${statusText}</span>
+                            <div class="card-uid-micro">UID: ${escapeHtml(card.cardId)}</div>
                         </div>
 
                         <div class="timer-center">
                             ${timeHtml}
                         </div>
 
-                        <!-- Timeline (Start & Expected End Time) -->
-                        <div class="timeline-box">
-                            <div class="timeline-item">
-                                <span class="timeline-label">▶ 开始时间</span>
-                                <span class="timeline-val">${card.startTimeStr}</span>
+                        <!-- Compact Timeline -->
+                        <div class="timeline-compact">
+                            <div class="tl-item">
+                                <span class="tl-label">开始</span>
+                                <span class="tl-val">${card.startTimeStr}</span>
                             </div>
-                            <div class="timeline-item" style="text-align: right;">
-                                <span class="timeline-label">🏁 预计到期</span>
-                                <span class="timeline-val">${card.endTimeStr}</span>
+                            <div class="tl-item" style="text-align: right;">
+                                <span class="tl-label">到期</span>
+                                <span class="tl-val">${card.endTimeStr}</span>
                             </div>
                         </div>
 
-                        <div class="progress-bar-wrap">
-                            <div class="progress-bar-fill" style="width: ${isExpiredMode ? 0 : pct}%; ${card.status === 2 ? 'background: #f59e0b' : ''}"></div>
+                        <div class="progress-compact">
+                            <div class="progress-fill" style="width: ${isExpiredMode ? 0 : pct}%; ${card.status === 2 ? 'background: #f59e0b' : ''}"></div>
                         </div>
                     </div>
                 `;
