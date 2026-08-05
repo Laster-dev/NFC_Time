@@ -13,7 +13,7 @@
         android:allowBackup="true"
         android:label="星野手作"
         android:supportsRtl="true"
-        android:theme="@style/Theme.AppCompat.DayNight.NoActionBar">
+        android:theme="@style/Theme.NFCTime">
 
         <activity
             android:name=".MainActivity"

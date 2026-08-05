@@ -1,0 +1,12 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- Base application theme. Inherit MaterialComponents DayNight Theme -->
+    <style name="Theme.NFCTime" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <item name="colorPrimary">#10B981</item>
+        <item name="colorPrimaryVariant">#059669</item>
+        <item name="colorOnPrimary">#FFFFFF</item>
+        <item name="colorSecondary">#38BDF8</item>
+        <item name="colorSecondaryVariant">#0284C7</item>
+        <item name="colorOnSecondary">#000000</item>
+        <item name="android:statusBarColor">#0F172A</item>
+    </style>
+</resources>
