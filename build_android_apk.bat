@@ -22,11 +22,7 @@ if defined ANDROID_HOME (
 echo.
 echo [2/2] Building Android Debug APK...
 echo.
-if exist \gradlew.bat\ (
-    call gradlew.bat assembleDebug
-) else (
-    call gradle assembleDebug
-)
+call gradlew.bat assembleDebug
 if %errorlevel% neq 0 (
     echo.
     echo [Build Failed] Please check if Android SDK / JDK or Android Studio is configured.
