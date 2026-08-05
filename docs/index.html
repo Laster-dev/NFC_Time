@@ -172,7 +172,7 @@
         }
 
         .hoshino-card.card-overdue {
-            border-color: #F87171;
+            border-color: #E76F51;
             background: #FFFDFD;
         }
 
@@ -217,7 +217,7 @@
         }
 
         .time-clock-big {
-            font-size: 1.6rem;
+            font-size: 1.55rem;
             font-weight: 700;
             font-family: "SF Mono", Consolas, monospace;
             letter-spacing: -0.5px;
@@ -228,11 +228,15 @@
         .time-clock-big.text-amber { color: var(--status-amber); }
         .time-clock-big.text-rose { color: var(--status-rose); }
 
-        .overdue-txt-sub {
+        .overdue-highlight {
             color: var(--status-rose);
-            font-weight: 700;
-            font-size: 0.7rem;
-            margin-top: 3px;
+            font-weight: 800;
+            font-size: 0.78rem;
+            margin-top: 4px;
+            background: var(--status-rose-bg);
+            padding: 3px 6px;
+            border-radius: 4px;
+            display: inline-block;
         }
 
         .timeline-strip {
@@ -499,7 +503,7 @@
                 if (isExpiredMode) {
                     timeHtml = `
                         <div class="time-clock-big text-rose">00:00</div>
-                        <div class="overdue-txt-sub">超时: ${formatTime(card.overdueSeconds)}</div>
+                        <div class="overdue-highlight">🚨 已超时 ${formatTime(card.overdueSeconds)}</div>
                     `;
                 } else {
                     timeHtml = `
@@ -546,7 +550,7 @@
         function escapeHtml(str) {
             if (!str) return '';
             return str.replace(/[&<>"']/g, function(m) {
-                return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[m];
+                return { '&': '&amp;', '<': '&lt;'> '&gt;', '"': '&quot;', "'": '&#039;' }[m];
             });
         }
     </script>
