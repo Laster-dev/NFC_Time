@@ -420,10 +420,98 @@
             font-size: 3rem;
             margin-bottom: 8px;
         }
+
+        /* Telegram Styled Bottom Nav */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100%;
+            max-width: 440px;
+            height: 60px;
+            background: rgba(255, 253, 249, 0.96);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-top: 2px solid var(--border-craft);
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            z-index: 9999;
+            box-shadow: 0 -4px 16px rgba(158, 142, 140, 0.06);
+            border-bottom-left-radius: 12px;
+            border-bottom-right-radius: 12px;
+        }
+
+        .nav-item {
+            flex: 1;
+            height: 100%;
+            background: transparent;
+            border: none;
+            outline: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 2px;
+            color: var(--text-sub);
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: inherit;
+        }
+
+        .nav-item-icon {
+            font-size: 1.25rem;
+            transition: transform 0.2s;
+        }
+
+        .nav-item-text {
+            font-size: 0.72rem;
+            font-weight: 800;
+        }
+
+        .nav-item.active {
+            color: #E11D48;
+        }
+
+        .nav-item.active .nav-item-icon {
+            transform: scale(1.15) translateY(-1px);
+        }
+
+        .tab-section {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .alarm-btn {
+            background: #FFE4E6;
+            border: 1px solid #FDA4AF;
+            color: #E11D48;
+            border-radius: 6px;
+            padding: 2px 6px;
+            font-size: 0.7rem;
+            font-weight: 800;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            line-height: 1;
+            margin-left: 6px;
+        }
+
+        .alarm-btn:hover {
+            background: #FECDD3;
+            transform: scale(1.05);
+        }
+
+        .alarm-btn:active {
+            transform: scale(0.95);
+        }
     </style>
 </head>
 <body>
-    <div class="kawaii-workshop">
+    <div class="kawaii-workshop" style="padding-bottom: 75px;">
         <!-- Craft Header -->
         <header class="craft-header">
             <div class="header-left">
@@ -436,22 +524,71 @@
             <div class="hand-badge" id="cardCounter">0 份手作</div>
         </header>
 
-        <!-- Announcement Board Container -->
-        <div class="anno-board-area" id="annoBoardArea">
-            <!-- Dynamic announcements -->
-        </div>
+        <!-- Section 1: Timer Content -->
+        <section id="sec-timer" class="tab-section">
+            <!-- Announcement Board Container -->
+            <div class="anno-board-area" id="annoBoardArea">
+                <!-- Dynamic announcements -->
+            </div>
 
-        <!-- Cute Filter Tabs -->
-        <nav class="tabs-pill-bar">
-            <button type="button" class="tab-pill active" data-filter="all">✨ 全部手作</button>
-            <button type="button" class="tab-pill" data-filter="running">🏃 制作中</button>
-            <button type="button" class="tab-pill" data-filter="expired">⏰ 时间到啦</button>
+            <!-- Cute Filter Tabs -->
+            <nav class="tabs-pill-bar">
+                <button type="button" class="tab-pill active" data-filter="all">✨ 全部手作</button>
+                <button type="button" class="tab-pill" data-filter="running">🏃 制作中</button>
+                <button type="button" class="tab-pill" data-filter="expired">⏰ 时间到啦</button>
+            </nav>
+
+            <!-- Dual Column Cards Grid -->
+            <main class="card-grid" id="cardsGrid">
+                <!-- Dynamic Cute Cards -->
+            </main>
+        </section>
+
+        <!-- Section 2: Song Content -->
+        <section id="sec-music" class="tab-section" style="display: none;">
+            <div class="music-coming-soon" style="text-align: center; padding: 40px 20px; background: #FFFFFF; border-radius: 12px; border: 2.5px dashed var(--border-dashed); margin-top: 10px;">
+                <div style="font-size: 3rem; margin-bottom: 12px; animation: cute-wobble 3s ease-in-out infinite; display: inline-block;">🎵</div>
+                <h2 style="font-weight: 800; font-size: 1.15rem; color: var(--text-dark); margin-bottom: 8px;">萌趣点歌台</h2>
+                <p style="font-size: 0.8rem; color: var(--text-sub); line-height: 1.5;">想在时光小屋里放一首温馨的歌吗？<br>点歌系统正在紧张研发中，敬请期待！✨</p>
+            </div>
+        </section>
+
+        <!-- Section 3: LED Content -->
+        <section id="sec-led" class="tab-section" style="display: none;">
+            <div class="led-download-card" style="text-align: center; padding: 30px 20px; background: #FFFFFF; border-radius: 12px; border: 2.5px dashed var(--border-dashed); margin-top: 10px; display: flex; flex-direction: column; align-items: center; gap: 16px;">
+                <div style="font-size: 3rem; animation: cute-wobble 3s ease-in-out infinite; display: inline-block;">📟</div>
+                <h2 style="font-weight: 800; font-size: 1.15rem; color: var(--text-dark);">智能豆板 App</h2>
+                <p style="font-size: 0.8rem; color: var(--text-sub); line-height: 1.5; max-width: 280px; margin-bottom: 6px;">
+                    扫描下方二维码下载「智能豆板」App，随时随地开启你的智能设备之旅！
+                </p>
+                
+                <!-- QR Code wrapper with soft shadow and clean border -->
+                <div style="background: #FFFFFF; padding: 10px; border-radius: 12px; border: 2px solid var(--border-craft); box-shadow: var(--shadow-kawaii); width: 176px; height: 176px; display: flex; justify-content: center; align-items: center;">
+                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=156x156&data=https%3A%2F%2Fapp.iledshow.cn%2Fappversion%2Fdownload%3Fpackage%3Dcom.led.pixdou" alt="智能豆板下载二维码" style="width: 156px; height: 156px; display: block; border-radius: 6px;" />
+                </div>
+
+                <!-- Direct Download link button -->
+                <a href="https://app.iledshow.cn/appversion/download?package=com.led.pixdou" target="_blank" style="text-decoration: none; background: #FFE4E6; border: 2px solid #FDA4AF; color: #E11D48; padding: 8px 20px; border-radius: 14px; font-size: 0.85rem; font-weight: 800; box-shadow: var(--shadow-kawaii); transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+                    📥 直接点击下载
+                </a>
+            </div>
+        </section>
+
+        <!-- Bottom Navigation Bar -->
+        <nav class="bottom-nav">
+            <button type="button" class="nav-item active" onclick="switchTab('sec-timer', this)">
+                <span class="nav-item-icon">⏱️</span>
+                <span class="nav-item-text">计时</span>
+            </button>
+            <button type="button" class="nav-item" onclick="switchTab('sec-music', this)">
+                <span class="nav-item-icon">🎵</span>
+                <span class="nav-item-text">点歌</span>
+            </button>
+            <button type="button" class="nav-item" onclick="switchTab('sec-led', this)">
+                <span class="nav-item-icon">📟</span>
+                <span class="nav-item-text">智能豆板</span>
+            </button>
         </nav>
-
-        <!-- Dual Column Cards Grid -->
-        <main class="card-grid" id="cardsGrid">
-            <!-- Dynamic Cute Cards -->
-        </main>
     </div>
 
     <!-- Forced Announcement Modal -->
@@ -464,6 +601,47 @@
     </div>
 
     <script>
+        function switchTab(tabId, clickedBtn) {
+            // Hide all tab sections
+            document.querySelectorAll('.tab-section').forEach(sec => {
+                sec.style.display = 'none';
+            });
+            // Show target section
+            document.getElementById(tabId).style.display = 'flex';
+
+            // Update bottom nav active state
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            clickedBtn.classList.add('active');
+        }
+
+        function addSystemAlarm(endMs, cardName) {
+            const ua = navigator.userAgent.toLowerCase();
+            const isAndroid = ua.indexOf('android') > -1;
+            const isIos = /ipad|iphone|ipod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
+            if (isAndroid) {
+                if (!endMs || isNaN(endMs)) {
+                    alert('无法获取该卡片的到期时间，无法设置闹钟。');
+                    return;
+                }
+                const date = new Date(endMs);
+                const hour = date.getHours();
+                const minutes = date.getMinutes();
+                
+                // Construct Android Intent URI
+                const intentUri = `intent:#Intent;action=android.intent.action.SET_ALARM;i.android.intent.extra.alarm.HOUR=${hour};i.android.intent.extra.alarm.MINUTES=${minutes};S.android.intent.extra.alarm.MESSAGE=${encodeURIComponent(cardName + '到期提醒')};S.android.intent.extra.alarm.SKIP_UI=false;end`;
+                
+                // Trigger intent redirection
+                window.location.href = intentUri;
+            } else if (isIos) {
+                alert('🍎 苹果系统限制：iOS系统出于隐私安全保护，不支持网页端直接拉起时钟添加闹钟，请您手动在系统【时钟】应用中预设闹钟提醒哦。');
+            } else {
+                alert('提示：当前平台不支持网页端直接拉起时钟，仅支持在安卓手机端拉起系统闹钟，请您手动在系统时钟中添加提醒。');
+            }
+        }
+
         let currentFilter = 'all';
         let cachedCardsData = [];
         let cachedAnnouncements = [];
@@ -743,6 +921,9 @@
                             <div style="display: flex; align-items: center; gap: 8px;">
                                 <span class="stamp-val-text">${card.startTimeStr} → ${card.endTimeStr}</span>
                                 ${isExpiredMode ? `<span class="overdue-mini-alert">🚨 超时 ${formatTime(card.overdueSeconds)}</span>` : ''}
+                                ${card.status === 1 && card.startTimeUtc ? `
+                                    <button type="button" class="alarm-btn" onclick="addSystemAlarm(${new Date(card.startTimeUtc).getTime() + (card.targetDurationSeconds * 1000)}, '${escapeHtml(card.name)}')">⏰ 设闹钟</button>
+                                ` : ''}
                             </div>
                         </div>
 
