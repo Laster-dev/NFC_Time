@@ -619,10 +619,28 @@
             clickedBtn.classList.add('active');
         }
 
+        function parseUtcDate(utcStr) {
+            if (!utcStr) return null;
+            let d = new Date(utcStr);
+            if (!isNaN(d.getTime())) return d.getTime();
+            try {
+                let clean = utcStr.replace('T', ' ').replace('Z', ' UTC');
+                d = new Date(clean);
+                if (!isNaN(d.getTime())) return d.getTime();
+            } catch (e) {}
+            return null;
+        }
+
         function addSystemAlarm(endMs, cardName) {
             const ua = navigator.userAgent.toLowerCase();
             const isAndroid = ua.indexOf('android') > -1;
             const isIos = /ipad|iphone|ipod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+            const isWeChat = ua.indexOf('micromessenger') > -1;
+
+            if (isWeChat) {
+                alert('💬 微信限制：\n由于微信内置浏览器的安全屏蔽，直接点击网页无法唤起外部应用。请点击右上角「···」选择「在浏览器中打开」，即可正常一键添加闹钟预设哦！');
+                return;
+            }
 
             if (isAndroid) {
                 if (!endMs || isNaN(endMs)) {
@@ -633,13 +651,16 @@
                 const hour = date.getHours();
                 const minutes = date.getMinutes();
                 
-                // Construct Android Intent URI
-                const intentUri = `intent:#Intent;action=android.intent.action.SET_ALARM;i.android.intent.extra.alarm.HOUR=${hour};i.android.intent.extra.alarm.MINUTES=${minutes};S.android.intent.extra.alarm.MESSAGE=${encodeURIComponent(cardName + '到期提醒')};S.android.intent.extra.alarm.SKIP_UI=false;end`;
+                // Construct standard Android Intent URI with intent:// scheme, end marker and correct types
+                const intentUri = `intent://#Intent;action=android.intent.action.SET_ALARM;i.android.intent.extra.alarm.HOUR=${hour};i.android.intent.extra.alarm.MINUTES=${minutes};S.android.intent.extra.alarm.MESSAGE=${encodeURIComponent(cardName + '到期提醒')};B.android.intent.extra.alarm.SKIP_UI=false;end`;
                 
-                // Trigger intent redirection
-                window.location.href = intentUri;
+                try {
+                    window.location.href = intentUri;
+                } catch (e) {
+                    alert('唤起系统闹钟失败，请手动在手机中设置。');
+                }
             } else if (isIos) {
-                alert('🍎 苹果系统限制：iOS系统出于隐私安全保护，不支持网页端直接拉起时钟添加闹钟，请您手动在系统【时钟】应用中预设闹钟提醒哦。');
+                alert('🍎 苹果系统限制：\niOS 系统出于安全沙盒保护，不支持网页端直接拉起时钟添加闹钟，请您手动在系统【时钟】应用中预设闹钟提醒哦。');
             } else {
                 alert('提示：当前平台不支持网页端直接拉起时钟，仅支持在安卓手机端拉起系统闹钟，请您手动在系统时钟中添加提醒。');
             }
@@ -923,7 +944,7 @@
                             <span class="stamp-val-text">${card.startTimeStr} → ${card.endTimeStr}</span>
                             ${isExpiredMode ? `<span class="overdue-mini-alert">🚨 超时 ${formatTime(card.overdueSeconds)}</span>` : ''}
                             ${card.status === 1 && card.startTimeUtc ? `
-                                <button type="button" class="alarm-btn" onclick="addSystemAlarm(${new Date(card.startTimeUtc).getTime() + (card.targetDurationSeconds * 1000)}, '${escapeHtml(card.name)}')">⏰ 设闹钟</button>
+                                <button type="button" class="alarm-btn" onclick="addSystemAlarm(parseUtcDate('${card.startTimeUtc}') + (${card.targetDurationSeconds * 1000}), '${escapeHtml(card.name)}')">⏰ 设闹钟</button>
                             ` : ''}
                         </div>
 
