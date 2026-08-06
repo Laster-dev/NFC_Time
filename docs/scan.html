@@ -8,16 +8,17 @@
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
     <meta http-equiv="Pragma" content="no-cache" />
     <meta http-equiv="Expires" content="0" />
-    <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@700&family=M+PLUS+Rounded+1c:wght@700;800;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@700&family=ZCOOL+KuaiLe&family=M+PLUS+Rounded+1c:wght@700;800;900&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg-page: #FFFDF9;
-            --border-craft: #F4E8D6;
-            --text-dark: #4A3E3D;
-            --text-sub: #9E8E8C;
+            --bg-page: #FFF5F5;
+            --bg-container: #FFFFFF;
+            --border-cute: #FFCCD5;
+            --border-shadow: #FFE4E6;
+            --text-dark: #5C4B49;
+            --text-sub: #A89593;
             --pink-accent: #FFE4E6;
-            --pink-border: #FDA4AF;
-            --pink-text: #E11D48;
+            --pink-text: #FF5A79;
         }
 
         * {
@@ -28,28 +29,44 @@
 
         body {
             font-family: 'M PLUS Rounded 1c', 'Comfortaa', sans-serif;
-            background-color: var(--bg-page);
-            background-image: radial-gradient(#F4E8D6 1.5px, transparent 1.5px);
-            background-size: 24px 24px;
+            background: linear-gradient(135deg, #FFF5F5 0%, #FFFDF9 50%, #FFF9E6 100%);
+            background-image: radial-gradient(#FFCCD5 1.5px, transparent 1.5px);
+            background-size: 30px 30px;
             color: var(--text-dark);
             min-height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
             padding: 20px;
+            overflow-x: hidden;
+            position: relative;
         }
+
+        /* Floating decoration particles */
+        .decor {
+            position: absolute;
+            font-size: 1.5rem;
+            opacity: 0.5;
+            user-select: none;
+            pointer-events: none;
+            animation: float-slow 6s ease-in-out infinite alternate;
+        }
+        .decor-1 { top: 10%; left: 10%; animation-delay: 0s; }
+        .decor-2 { top: 75%; left: 8%; animation-delay: 1.5s; }
+        .decor-3 { top: 20%; right: 10%; animation-delay: 0.8s; }
+        .decor-4 { top: 80%; right: 12%; animation-delay: 2s; }
+        .decor-5 { top: 45%; left: 85%; animation-delay: 1.2s; }
 
         .poster-container {
             width: 100%;
-            max-width: 480px;
-            background: #FFFFFF;
-            border-radius: 32px;
-            border: 4px solid var(--border-craft);
-            box-shadow: 0 16px 40px rgba(74, 62, 61, 0.08);
-            padding: 35px 24px;
+            max-width: 440px;
+            background: var(--bg-container);
+            border-radius: 40px;
+            border: 6px solid var(--border-cute);
+            box-shadow: 0 16px 0 var(--border-shadow), 0 24px 50px rgba(255, 182, 193, 0.15);
+            padding: 38px 24px 30px 24px;
             text-align: center;
             position: relative;
-            overflow: hidden;
         }
 
         /* Top ribbon decoration */
@@ -58,57 +75,103 @@
             top: 0;
             left: 50%;
             transform: translateX(-50%);
-            background: #FFE4E6;
-            border-bottom: 3px solid #FDA4AF;
-            padding: 6px 24px;
-            border-bottom-left-radius: 16px;
-            border-bottom-right-radius: 16px;
-            font-size: 0.8rem;
-            font-weight: 800;
-            color: #E11D48;
+            background: #FF5A79;
+            border: 3px solid #FF5A79;
+            padding: 6px 28px;
+            border-bottom-left-radius: 20px;
+            border-bottom-right-radius: 20px;
+            font-family: 'ZCOOL KuaiLe', sans-serif;
+            font-size: 1rem;
+            color: #FFFFFF;
+            box-shadow: 0 4px 0 #FFCCD5;
         }
 
         .header {
             margin-top: 15px;
-            margin-bottom: 24px;
+            margin-bottom: 28px;
         }
 
         .shop-name {
-            font-size: 1.8rem;
-            font-weight: 900;
-            color: var(--text-dark);
-            margin-bottom: 4px;
+            font-family: 'ZCOOL KuaiLe', sans-serif;
+            font-size: 2.3rem;
+            color: var(--pink-text);
+            margin-bottom: 6px;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 8px;
+            gap: 10px;
+            text-shadow: 2px 2px 0px #FFE4E6;
         }
 
         .shop-slogan {
             font-size: 0.95rem;
             color: var(--text-sub);
-            font-weight: 700;
+            font-weight: 800;
             letter-spacing: 1px;
+            display: inline-block;
+            background: #FFF9E6;
+            padding: 4px 14px;
+            border-radius: 12px;
+            border: 1.5px dashed #FCD34D;
         }
 
-        /* QR Frame */
+        /* Cute Cat Ears QR Frame */
         .qr-section {
             display: inline-block;
             background: #FFFFFF;
             padding: 16px;
-            border-radius: 24px;
-            border: 3px solid var(--border-craft);
-            box-shadow: 0 8px 24px rgba(158, 142, 140, 0.12);
-            margin-bottom: 28px;
+            border-radius: 30px;
+            border: 5px solid var(--border-cute);
+            box-shadow: 0 10px 0 var(--border-shadow);
+            margin-bottom: 32px;
             position: relative;
             animation: float-bubble 4s ease-in-out infinite;
         }
 
+        /* Cat Ears */
+        .qr-section::before, .qr-section::after {
+            content: '';
+            position: absolute;
+            top: -20px;
+            width: 44px;
+            height: 44px;
+            background: var(--border-cute);
+            border-radius: 14px;
+            z-index: -1;
+        }
+        .qr-section::before {
+            left: 20px;
+            transform: rotate(-15deg);
+        }
+        .qr-section::after {
+            right: 20px;
+            transform: rotate(15deg);
+        }
+
+        /* Cat Inner Ears */
+        .qr-inner-ear-l, .qr-inner-ear-r {
+            position: absolute;
+            top: -12px;
+            width: 24px;
+            height: 24px;
+            background: #FF8E9F;
+            border-radius: 8px;
+            z-index: -1;
+        }
+        .qr-inner-ear-l {
+            left: 30px;
+            transform: rotate(-15deg);
+        }
+        .qr-inner-ear-r {
+            right: 30px;
+            transform: rotate(15deg);
+        }
+
         .qr-image {
-            width: 200px;
-            height: 200px;
+            width: 190px;
+            height: 190px;
             display: block;
-            border-radius: 12px;
+            border-radius: 16px;
         }
 
         .scan-arrow {
@@ -116,138 +179,173 @@
             bottom: -15px;
             left: 50%;
             transform: translateX(-50%);
-            background: #FEF3C7;
-            border: 2px solid #FCD34D;
-            padding: 4px 14px;
-            border-radius: 12px;
-            font-size: 0.75rem;
-            font-weight: 900;
-            color: #D97706;
+            background: #FF5A79;
+            border: 2px solid #FFFFFF;
+            padding: 5px 18px;
+            border-radius: 16px;
+            font-family: 'ZCOOL KuaiLe', sans-serif;
+            font-size: 0.9rem;
+            font-weight: bold;
+            color: #FFFFFF;
             white-space: nowrap;
+            box-shadow: 0 4px 8px rgba(255, 90, 121, 0.3);
         }
 
         /* Features List */
         .features-grid {
             display: flex;
             flex-direction: column;
-            gap: 12px;
+            gap: 14px;
             text-align: left;
-            margin-bottom: 10px;
+            margin-bottom: 12px;
         }
 
         .feature-card {
             display: flex;
             align-items: center;
-            gap: 14px;
-            background: #FDFBF7;
-            border: 2px solid var(--border-craft);
-            padding: 14px 16px;
-            border-radius: 16px;
-            transition: all 0.2s;
+            gap: 16px;
+            padding: 14px 18px;
+            border-radius: 20px;
+            transition: all 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            border-width: 2.5px;
+            border-style: solid;
         }
 
         .feature-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(158, 142, 140, 0.08);
-            border-color: #FDA4AF;
+            transform: scale(1.03) rotate(0.5deg);
+            box-shadow: 0 8px 16px rgba(158, 142, 140, 0.06);
+        }
+
+        .feature-card.f-timer {
+            background: #F0FDF4;
+            border-color: #BBF7D0;
+        }
+        .feature-card.f-music {
+            background: #EFF6FF;
+            border-color: #BFDBFE;
+        }
+        .feature-card.f-led {
+            background: #FFF1F2;
+            border-color: #FECDD3;
         }
 
         .feature-icon {
-            font-size: 2rem;
+            font-size: 2.2rem;
             display: flex;
             align-items: center;
             justify-content: center;
-            width: 44px;
-            height: 44px;
+            width: 48px;
+            height: 48px;
             background: #FFFFFF;
-            border-radius: 12px;
-            border: 2px solid var(--border-craft);
+            border-radius: 14px;
+            box-shadow: 0 4px 0 rgba(0,0,0,0.03);
+            border: 2px solid;
         }
+
+        .f-timer .feature-icon { border-color: #BBF7D0; }
+        .f-music .feature-icon { border-color: #BFDBFE; }
+        .f-led .feature-icon { border-color: #FECDD3; }
 
         .feature-info {
             flex: 1;
         }
 
         .feature-title {
-            font-size: 0.95rem;
-            font-weight: 800;
+            font-family: 'ZCOOL KuaiLe', sans-serif;
+            font-size: 1.15rem;
             color: var(--text-dark);
             margin-bottom: 2px;
         }
 
         .feature-desc {
-            font-size: 0.78rem;
+            font-size: 0.82rem;
             color: var(--text-sub);
-            line-height: 1.4;
+            line-height: 1.45;
+            font-weight: 800;
         }
 
         /* Animations */
         @keyframes float-bubble {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-8px); }
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            50% { transform: translateY(-8px) rotate(1deg); }
+        }
+
+        @keyframes float-slow {
+            0% { transform: translateY(0) rotate(0deg); }
+            100% { transform: translateY(-12px) rotate(10deg); }
         }
 
         @keyframes cute-wobble {
-            0%, 100% { transform: rotate(0deg); }
-            25% { transform: rotate(-3deg); }
-            75% { transform: rotate(3deg); }
+            0%, 100% { transform: rotate(0deg) scale(1); }
+            25% { transform: rotate(-5deg) scale(1.05); }
+            75% { transform: rotate(5deg) scale(1.05); }
         }
 
         /* Footer stamp */
         .footer-mascot {
-            font-size: 0.8rem;
+            font-family: 'ZCOOL KuaiLe', sans-serif;
+            font-size: 0.95rem;
             color: var(--text-sub);
-            margin-top: 15px;
+            margin-top: 20px;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 6px;
+            gap: 8px;
         }
     </style>
 </head>
 <body>
+    <!-- Background Floating Emojis -->
+    <div class="decor decor-1">🐱</div>
+    <div class="decor decor-2">🌸</div>
+    <div class="decor decor-3">✨</div>
+    <div class="decor decor-4">🐾</div>
+    <div class="decor decor-5">🎵</div>
+
     <div class="poster-container">
         <!-- Cute Ribbon -->
         <div class="poster-ribbon">🏡 欢迎光临时光小屋</div>
 
         <!-- Header -->
         <header class="header">
-            <h1 class="shop-name">星野手作 <span style="animation: cute-wobble 2s infinite; display: inline-block;">🐱</span></h1>
-            <p class="shop-slogan">✦ 扫码开启互动体验 ✦</p>
+            <h1 class="shop-name">星野手作 <span style="animation: cute-wobble 2.5s infinite; display: inline-block;">🐱</span></h1>
+            <p class="shop-slogan">✦ 微信扫一扫 · 开启趣味互动 ✦</p>
         </header>
 
-        <!-- QR Code -->
+        <!-- QR Code with Cat Ears -->
         <div class="qr-section">
-            <img class="qr-image" src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=https%3A%2F%2Flaster-dev.github.io%2FNFC_Time%2F" alt="星野手作扫码体验二维码">
-            <div class="scan-arrow">📱 微信扫一扫</div>
+            <div class="qr-inner-ear-l"></div>
+            <div class="qr-inner-ear-r"></div>
+            <img class="qr-image" src="https://api.qrserver.com/v1/create-qr-code/?size=190x190&data=https%3A%2F%2Flaster-dev.github.io%2FNFC_Time%2F" alt="星野手作扫码体验二维码">
+            <div class="scan-arrow">🐾 喵！扫我开启 🐾</div>
         </div>
 
         <!-- Feature Cards -->
         <div class="features-grid">
             <!-- Feature 1: Timer -->
-            <div class="feature-card">
-                <div class="feature-icon" style="background-color: #ECFDF5; border-color: #A7F3D0;">⏱️</div>
+            <div class="feature-card f-timer">
+                <div class="feature-icon">⏱️</div>
                 <div class="feature-info">
-                    <h3 class="feature-title">查看手作剩余时间</h3>
-                    <p class="feature-desc">刷卡自动上报，扫码即查进度，享受全自动计时体验。</p>
+                    <h3 class="feature-title">实时查看剩余时长</h3>
+                    <p class="feature-desc">刷卡上报后，扫码随时跟进你的手作剩余时间和超时预警。</p>
                 </div>
             </div>
 
             <!-- Feature 2: Music -->
-            <div class="feature-card">
-                <div class="feature-icon" style="background-color: #EFF6FF; border-color: #BFDBFE;">🎵</div>
+            <div class="feature-card f-music">
+                <div class="feature-icon">🎵</div>
                 <div class="feature-info">
                     <h3 class="feature-title">萌趣现场点歌</h3>
-                    <p class="feature-desc">随心为手艺创作挑选好听的背景音乐，增添温馨氛围。</p>
+                    <p class="feature-desc">想听什么歌？用手机轻轻一点，立刻为制作间换上温馨旋律。</p>
                 </div>
             </div>
 
             <!-- Feature 3: LED PixDou -->
-            <div class="feature-card">
-                <div class="feature-icon" style="background-color: #FFF1F2; border-color: #FECDD3;">📟</div>
+            <div class="feature-card f-led">
+                <div class="feature-icon">📟</div>
                 <div class="feature-info">
                     <h3 class="feature-title">智能豆板下载</h3>
-                    <p class="feature-desc">快速获取官方豆板客户端，让你的像素屏亮起手作成品。</p>
+                    <p class="feature-desc">一键扫码获取官方客户端，定制在屏幕上跳动的个性画作。</p>
                 </div>
             </div>
         </div>
@@ -255,7 +353,7 @@
         <!-- Footer Mascot Stamp -->
         <div class="footer-mascot">
             <span>🐾</span>
-            <span>星野手作，温暖每个手工时光</span>
+            <span>星野手作 · 陪伴暖心每一天</span>
             <span>🐾</span>
         </div>
     </div>
