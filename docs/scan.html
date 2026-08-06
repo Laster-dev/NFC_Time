@@ -175,6 +175,17 @@
         .qr-image {
             width: 250px;
             height: 250px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: #FFFFFF;
+            overflow: hidden;
+            border-radius: 20px;
+        }
+
+        .qr-image img {
+            width: 100%;
+            height: 100%;
             display: block;
             border-radius: 20px;
         }
@@ -346,7 +357,8 @@
         <div class="qr-section">
             <div class="qr-inner-ear-l"></div>
             <div class="qr-inner-ear-r"></div>
-            <img class="qr-image" src="https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=https%3A%2F%2Flaster-dev.github.io%2FNFC_Time%2F" alt="星野手作扫码体验二维码">
+            <!-- Container for local JS QR Code generator -->
+            <div id="qrcode" class="qr-image"></div>
             <div class="scan-arrow">🐾 喵！扫我开启 🐾</div>
         </div>
 
@@ -387,5 +399,21 @@
             <span>🐾</span>
         </div>
     </div>
+
+    <!-- Include highly stable 360-baomitu CDN for offline client-side QR generation -->
+    <script src="https://lib.baomitu.com/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Generate QR Code completely client-side to prevent network failures or blocks
+            new QRCode(document.getElementById("qrcode"), {
+                text: "https://laster-dev.github.io/NFC_Time/",
+                width: 250,
+                height: 250,
+                colorDark : "#5C4B49", // Perfectly matching text-dark color (more premium than solid black!)
+                colorLight : "#FFFFFF",
+                correctLevel : QRCode.CorrectLevel.H
+            });
+        });
+    </script>
 </body>
 </html>
