@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>星野手作 | 扫码开启萌趣时光 🐱</title>
+    <!-- Disable cache -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
+    <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@700&family=M+PLUS+Rounded+1c:wght@700;800;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-page: #FFFDF9;
+            --border-craft: #F4E8D6;
+            --text-dark: #4A3E3D;
+            --text-sub: #9E8E8C;
+            --pink-accent: #FFE4E6;
+            --pink-border: #FDA4AF;
+            --pink-text: #E11D48;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'M PLUS Rounded 1c', 'Comfortaa', sans-serif;
+            background-color: var(--bg-page);
+            background-image: radial-gradient(#F4E8D6 1.5px, transparent 1.5px);
+            background-size: 24px 24px;
+            color: var(--text-dark);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .poster-container {
+            width: 100%;
+            max-width: 480px;
+            background: #FFFFFF;
+            border-radius: 32px;
+            border: 4px solid var(--border-craft);
+            box-shadow: 0 16px 40px rgba(74, 62, 61, 0.08);
+            padding: 35px 24px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Top ribbon decoration */
+        .poster-ribbon {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #FFE4E6;
+            border-bottom: 3px solid #FDA4AF;
+            padding: 6px 24px;
+            border-bottom-left-radius: 16px;
+            border-bottom-right-radius: 16px;
+            font-size: 0.8rem;
+            font-weight: 800;
+            color: #E11D48;
+        }
+
+        .header {
+            margin-top: 15px;
+            margin-bottom: 24px;
+        }
+
+        .shop-name {
+            font-size: 1.8rem;
+            font-weight: 900;
+            color: var(--text-dark);
+            margin-bottom: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .shop-slogan {
+            font-size: 0.95rem;
+            color: var(--text-sub);
+            font-weight: 700;
+            letter-spacing: 1px;
+        }
+
+        /* QR Frame */
+        .qr-section {
+            display: inline-block;
+            background: #FFFFFF;
+            padding: 16px;
+            border-radius: 24px;
+            border: 3px solid var(--border-craft);
+            box-shadow: 0 8px 24px rgba(158, 142, 140, 0.12);
+            margin-bottom: 28px;
+            position: relative;
+            animation: float-bubble 4s ease-in-out infinite;
+        }
+
+        .qr-image {
+            width: 200px;
+            height: 200px;
+            display: block;
+            border-radius: 12px;
+        }
+
+        .scan-arrow {
+            position: absolute;
+            bottom: -15px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #FEF3C7;
+            border: 2px solid #FCD34D;
+            padding: 4px 14px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 900;
+            color: #D97706;
+            white-space: nowrap;
+        }
+
+        /* Features List */
+        .features-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            text-align: left;
+            margin-bottom: 10px;
+        }
+
+        .feature-card {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            background: #FDFBF7;
+            border: 2px solid var(--border-craft);
+            padding: 14px 16px;
+            border-radius: 16px;
+            transition: all 0.2s;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(158, 142, 140, 0.08);
+            border-color: #FDA4AF;
+        }
+
+        .feature-icon {
+            font-size: 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 44px;
+            height: 44px;
+            background: #FFFFFF;
+            border-radius: 12px;
+            border: 2px solid var(--border-craft);
+        }
+
+        .feature-info {
+            flex: 1;
+        }
+
+        .feature-title {
+            font-size: 0.95rem;
+            font-weight: 800;
+            color: var(--text-dark);
+            margin-bottom: 2px;
+        }
+
+        .feature-desc {
+            font-size: 0.78rem;
+            color: var(--text-sub);
+            line-height: 1.4;
+        }
+
+        /* Animations */
+        @keyframes float-bubble {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-8px); }
+        }
+
+        @keyframes cute-wobble {
+            0%, 100% { transform: rotate(0deg); }
+            25% { transform: rotate(-3deg); }
+            75% { transform: rotate(3deg); }
+        }
+
+        /* Footer stamp */
+        .footer-mascot {
+            font-size: 0.8rem;
+            color: var(--text-sub);
+            margin-top: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+    </style>
+</head>
+<body>
+    <div class="poster-container">
+        <!-- Cute Ribbon -->
+        <div class="poster-ribbon">🏡 欢迎光临时光小屋</div>
+
+        <!-- Header -->
+        <header class="header">
+            <h1 class="shop-name">星野手作 <span style="animation: cute-wobble 2s infinite; display: inline-block;">🐱</span></h1>
+            <p class="shop-slogan">✦ 扫码开启互动体验 ✦</p>
+        </header>
+
+        <!-- QR Code -->
+        <div class="qr-section">
+            <img class="qr-image" src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=https%3A%2F%2Flaster-dev.github.io%2FNFC_Time%2F" alt="星野手作扫码体验二维码">
+            <div class="scan-arrow">📱 微信扫一扫</div>
+        </div>
+
+        <!-- Feature Cards -->
+        <div class="features-grid">
+            <!-- Feature 1: Timer -->
+            <div class="feature-card">
+                <div class="feature-icon" style="background-color: #ECFDF5; border-color: #A7F3D0;">⏱️</div>
+                <div class="feature-info">
+                    <h3 class="feature-title">查看手作剩余时间</h3>
+                    <p class="feature-desc">刷卡自动上报，扫码即查进度，享受全自动计时体验。</p>
+                </div>
+            </div>
+
+            <!-- Feature 2: Music -->
+            <div class="feature-card">
+                <div class="feature-icon" style="background-color: #EFF6FF; border-color: #BFDBFE;">🎵</div>
+                <div class="feature-info">
+                    <h3 class="feature-title">萌趣现场点歌</h3>
+                    <p class="feature-desc">随心为手艺创作挑选好听的背景音乐，增添温馨氛围。</p>
+                </div>
+            </div>
+
+            <!-- Feature 3: LED PixDou -->
+            <div class="feature-card">
+                <div class="feature-icon" style="background-color: #FFF1F2; border-color: #FECDD3;">📟</div>
+                <div class="feature-info">
+                    <h3 class="feature-title">智能豆板下载</h3>
+                    <p class="feature-desc">快速获取官方豆板客户端，让你的像素屏亮起手作成品。</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer Mascot Stamp -->
+        <div class="footer-mascot">
+            <span>🐾</span>
+            <span>星野手作，温暖每个手工时光</span>
+            <span>🐾</span>
+        </div>
+    </div>
+</body>
+</html>
