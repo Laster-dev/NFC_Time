@@ -37,16 +37,16 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            padding: 20px;
+            padding: 40px 20px;
             overflow-x: hidden;
             position: relative;
         }
 
-        /* Floating decoration particles */
+        /* Floating decoration particles (hidden during print) */
         .decor {
             position: absolute;
-            font-size: 1.5rem;
-            opacity: 0.5;
+            font-size: 2rem;
+            opacity: 0.4;
             user-select: none;
             pointer-events: none;
             animation: float-slow 6s ease-in-out infinite alternate;
@@ -57,16 +57,21 @@
         .decor-4 { top: 80%; right: 12%; animation-delay: 2s; }
         .decor-5 { top: 45%; left: 85%; animation-delay: 1.2s; }
 
+        /* A4 Page Dimensions (ratio 1:1.414) */
         .poster-container {
-            width: 100%;
-            max-width: 440px;
+            width: 210mm;
+            height: 297mm;
             background: var(--bg-container);
             border-radius: 40px;
-            border: 6px solid var(--border-cute);
-            box-shadow: 0 16px 0 var(--border-shadow), 0 24px 50px rgba(255, 182, 193, 0.15);
-            padding: 38px 24px 30px 24px;
-            text-align: center;
+            border: 10px solid var(--border-cute);
+            box-shadow: 0 20px 40px rgba(255, 182, 193, 0.2);
+            padding: 60px 45px 50px 45px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
             position: relative;
+            overflow: hidden;
         }
 
         /* Top ribbon decoration */
@@ -77,53 +82,53 @@
             transform: translateX(-50%);
             background: #FF5A79;
             border: 3px solid #FF5A79;
-            padding: 6px 28px;
-            border-bottom-left-radius: 20px;
-            border-bottom-right-radius: 20px;
+            padding: 8px 36px;
+            border-bottom-left-radius: 24px;
+            border-bottom-right-radius: 24px;
             font-family: 'ZCOOL KuaiLe', sans-serif;
-            font-size: 1rem;
+            font-size: 1.25rem;
             color: #FFFFFF;
             box-shadow: 0 4px 0 #FFCCD5;
         }
 
         .header {
-            margin-top: 15px;
-            margin-bottom: 28px;
+            margin-top: 10px;
+            width: 100%;
+            text-align: center;
         }
 
         .shop-name {
             font-family: 'ZCOOL KuaiLe', sans-serif;
-            font-size: 2.3rem;
+            font-size: 3.2rem;
             color: var(--pink-text);
-            margin-bottom: 6px;
+            margin-bottom: 8px;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 10px;
-            text-shadow: 2px 2px 0px #FFE4E6;
+            gap: 12px;
+            text-shadow: 3px 3px 0px #FFE4E6;
         }
 
         .shop-slogan {
-            font-size: 0.95rem;
+            font-size: 1.15rem;
             color: var(--text-sub);
             font-weight: 800;
-            letter-spacing: 1px;
+            letter-spacing: 1.5px;
             display: inline-block;
             background: #FFF9E6;
-            padding: 4px 14px;
-            border-radius: 12px;
-            border: 1.5px dashed #FCD34D;
+            padding: 6px 20px;
+            border-radius: 16px;
+            border: 2px dashed #FCD34D;
         }
 
         /* Cute Cat Ears QR Frame */
         .qr-section {
             display: inline-block;
             background: #FFFFFF;
-            padding: 16px;
-            border-radius: 30px;
-            border: 5px solid var(--border-cute);
-            box-shadow: 0 10px 0 var(--border-shadow);
-            margin-bottom: 32px;
+            padding: 24px;
+            border-radius: 40px;
+            border: 6px solid var(--border-cute);
+            box-shadow: 0 12px 0 var(--border-shadow);
             position: relative;
             animation: float-bubble 4s ease-in-out infinite;
         }
@@ -132,88 +137,87 @@
         .qr-section::before, .qr-section::after {
             content: '';
             position: absolute;
-            top: -20px;
-            width: 44px;
-            height: 44px;
+            top: -24px;
+            width: 52px;
+            height: 52px;
             background: var(--border-cute);
-            border-radius: 14px;
+            border-radius: 18px;
             z-index: -1;
         }
         .qr-section::before {
-            left: 20px;
+            left: 30px;
             transform: rotate(-15deg);
         }
         .qr-section::after {
-            right: 20px;
+            right: 30px;
             transform: rotate(15deg);
         }
 
         /* Cat Inner Ears */
         .qr-inner-ear-l, .qr-inner-ear-r {
             position: absolute;
-            top: -12px;
-            width: 24px;
-            height: 24px;
+            top: -15px;
+            width: 28px;
+            height: 28px;
             background: #FF8E9F;
-            border-radius: 8px;
+            border-radius: 10px;
             z-index: -1;
         }
         .qr-inner-ear-l {
-            left: 30px;
+            left: 42px;
             transform: rotate(-15deg);
         }
         .qr-inner-ear-r {
-            right: 30px;
+            right: 42px;
             transform: rotate(15deg);
         }
 
         .qr-image {
-            width: 190px;
-            height: 190px;
+            width: 250px;
+            height: 250px;
             display: block;
-            border-radius: 16px;
+            border-radius: 20px;
         }
 
         .scan-arrow {
             position: absolute;
-            bottom: -15px;
+            bottom: -18px;
             left: 50%;
             transform: translateX(-50%);
             background: #FF5A79;
-            border: 2px solid #FFFFFF;
-            padding: 5px 18px;
-            border-radius: 16px;
+            border: 3px solid #FFFFFF;
+            padding: 6px 24px;
+            border-radius: 20px;
             font-family: 'ZCOOL KuaiLe', sans-serif;
-            font-size: 0.9rem;
+            font-size: 1.1rem;
             font-weight: bold;
             color: #FFFFFF;
             white-space: nowrap;
-            box-shadow: 0 4px 8px rgba(255, 90, 121, 0.3);
+            box-shadow: 0 6px 12px rgba(255, 90, 121, 0.3);
         }
 
         /* Features List */
         .features-grid {
             display: flex;
             flex-direction: column;
-            gap: 14px;
+            gap: 20px;
             text-align: left;
-            margin-bottom: 12px;
+            width: 100%;
         }
 
         .feature-card {
             display: flex;
             align-items: center;
-            gap: 16px;
-            padding: 14px 18px;
-            border-radius: 20px;
+            gap: 20px;
+            padding: 20px 24px;
+            border-radius: 24px;
             transition: all 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            border-width: 2.5px;
+            border-width: 3px;
             border-style: solid;
         }
 
         .feature-card:hover {
-            transform: scale(1.03) rotate(0.5deg);
-            box-shadow: 0 8px 16px rgba(158, 142, 140, 0.06);
+            transform: scale(1.02);
         }
 
         .feature-card.f-timer {
@@ -230,15 +234,14 @@
         }
 
         .feature-icon {
-            font-size: 2.2rem;
+            font-size: 2.8rem;
             display: flex;
             align-items: center;
             justify-content: center;
-            width: 48px;
-            height: 48px;
+            width: 64px;
+            height: 64px;
             background: #FFFFFF;
-            border-radius: 14px;
-            box-shadow: 0 4px 0 rgba(0,0,0,0.03);
+            border-radius: 18px;
             border: 2px solid;
         }
 
@@ -252,22 +255,34 @@
 
         .feature-title {
             font-family: 'ZCOOL KuaiLe', sans-serif;
-            font-size: 1.15rem;
+            font-size: 1.4rem;
             color: var(--text-dark);
-            margin-bottom: 2px;
+            margin-bottom: 4px;
         }
 
         .feature-desc {
-            font-size: 0.82rem;
+            font-size: 0.95rem;
             color: var(--text-sub);
-            line-height: 1.45;
+            line-height: 1.5;
             font-weight: 800;
+        }
+
+        /* Footer stamp */
+        .footer-mascot {
+            font-family: 'ZCOOL KuaiLe', sans-serif;
+            font-size: 1.25rem;
+            color: var(--text-sub);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            width: 100%;
         }
 
         /* Animations */
         @keyframes float-bubble {
             0%, 100% { transform: translateY(0) rotate(0deg); }
-            50% { transform: translateY(-8px) rotate(1deg); }
+            50% { transform: translateY(-6px) rotate(0.5deg); }
         }
 
         @keyframes float-slow {
@@ -281,16 +296,31 @@
             75% { transform: rotate(5deg) scale(1.05); }
         }
 
-        /* Footer stamp */
-        .footer-mascot {
-            font-family: 'ZCOOL KuaiLe', sans-serif;
-            font-size: 0.95rem;
-            color: var(--text-sub);
-            margin-top: 20px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
+        /* CSS Print Styles for A4 Poster */
+        @media print {
+            @page {
+                size: A4 portrait;
+                margin: 0;
+            }
+            body {
+                background: #FFFFFF;
+                padding: 0;
+                margin: 0;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+            .decor {
+                display: none;
+            }
+            .poster-container {
+                width: 210mm;
+                height: 297mm;
+                border-radius: 0;
+                border: 12px solid var(--border-cute);
+                box-shadow: none;
+                padding: 60px 45px 50px 45px;
+                page-break-inside: avoid;
+            }
         }
     </style>
 </head>
@@ -316,7 +346,7 @@
         <div class="qr-section">
             <div class="qr-inner-ear-l"></div>
             <div class="qr-inner-ear-r"></div>
-            <img class="qr-image" src="https://api.qrserver.com/v1/create-qr-code/?size=190x190&data=https%3A%2F%2Flaster-dev.github.io%2FNFC_Time%2F" alt="星野手作扫码体验二维码">
+            <img class="qr-image" src="https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=https%3A%2F%2Flaster-dev.github.io%2FNFC_Time%2F" alt="星野手作扫码体验二维码">
             <div class="scan-arrow">🐾 喵！扫我开启 🐾</div>
         </div>
 
@@ -326,7 +356,7 @@
             <div class="feature-card f-timer">
                 <div class="feature-icon">⏱️</div>
                 <div class="feature-info">
-                    <h3 class="feature-title">实时查看剩余时长</h3>
+                    <h3 class="feature-title">实时查看剩余时间</h3>
                     <p class="feature-desc">刷卡上报后，扫码随时跟进你的手作剩余时间和超时预警。</p>
                 </div>
             </div>
