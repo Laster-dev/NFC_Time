@@ -915,16 +915,13 @@
                             </div>
                         </div>
 
-                        <!-- Row 2: UID on Left, Timestamps + Overdue Mini Alert on Right -->
-                        <div class="card-row-2">
-                            <span class="card-uid-sub">UID: ${escapeHtml(card.cardId)}</span>
-                            <div style="display: flex; align-items: center; gap: 8px;">
-                                <span class="stamp-val-text">${card.startTimeStr} → ${card.endTimeStr}</span>
-                                ${isExpiredMode ? `<span class="overdue-mini-alert">🚨 超时 ${formatTime(card.overdueSeconds)}</span>` : ''}
-                                ${card.status === 1 && card.startTimeUtc ? `
-                                    <button type="button" class="alarm-btn" onclick="addSystemAlarm(${new Date(card.startTimeUtc).getTime() + (card.targetDurationSeconds * 1000)}, '${escapeHtml(card.name)}')">⏰ 设闹钟</button>
-                                ` : ''}
-                            </div>
+                        <!-- Row 2: Timestamps, Overdue Mini Alert & Alarm Button -->
+                        <div class="card-row-2" style="justify-content: flex-start; gap: 8px;">
+                            <span class="stamp-val-text">${card.startTimeStr} → ${card.endTimeStr}</span>
+                            ${isExpiredMode ? `<span class="overdue-mini-alert">🚨 超时 ${formatTime(card.overdueSeconds)}</span>` : ''}
+                            ${card.status === 1 && card.startTimeUtc ? `
+                                <button type="button" class="alarm-btn" onclick="addSystemAlarm(${new Date(card.startTimeUtc).getTime() + (card.targetDurationSeconds * 1000)}, '${escapeHtml(card.name)}')">⏰ 设闹钟</button>
+                            ` : ''}
                         </div>
 
                         <!-- Progress Bar at bottom -->
