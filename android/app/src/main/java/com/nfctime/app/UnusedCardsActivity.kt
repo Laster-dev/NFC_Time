@@ -139,7 +139,7 @@ class UnusedCardsActivity : AppCompatActivity() {
 
             fun bind(card: CardInfo, onEditClick: ((CardInfo) -> Unit)?) {
                 tvName.text = card.name
-                tvUid.text = "UID: ${card.cardId}"
+                tvUid.text = if (card.remark.isNotEmpty()) "UID: ${card.cardId} | 📝 ${card.remark}" else "UID: ${card.cardId}"
                 tvAvatarChar.text = if (card.name.isNotEmpty()) card.name.take(1) else "卡"
                 tvBadge.text = "未使用"
                 tvBadge.setTextColor(0xFF7F91A4.toInt())

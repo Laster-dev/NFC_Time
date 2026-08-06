@@ -95,7 +95,7 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="16dp"
+        android:layout_marginBottom="12dp"
         android:orientation="horizontal">
 
         <EditText
@@ -116,6 +116,42 @@
             android:layout_height="48dp"
             android:layout_marginStart="8dp"
             android:text="重命名"
+            android:textSize="15sp"
+            android:textStyle="bold" />
+    </LinearLayout>
+
+    <!-- Remark Input Field -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="备注 (仅手机端可见)"
+        android:textColor="@color/tg_text_secondary"
+        android:textSize="13sp" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="16dp"
+        android:orientation="horizontal">
+
+        <EditText
+            android:id="@+id/etCardRemark"
+            android:layout_width="0dp"
+            android:layout_height="48dp"
+            android:layout_weight="1"
+            android:background="@color/tg_background"
+            android:hint="输入备注内容"
+            android:paddingHorizontal="14dp"
+            android:textColor="@color/tg_text_primary"
+            android:textColorHint="@color/tg_text_secondary"
+            android:textSize="15sp" />
+
+        <Button
+            android:id="@+id/btnSaveRemark"
+            android:layout_width="wrap_content"
+            android:layout_height="48dp"
+            android:layout_marginStart="8dp"
+            android:text="保存"
             android:textSize="15sp"
             android:textStyle="bold" />
     </LinearLayout>
@@ -143,7 +179,8 @@
         <NumberPicker
             android:id="@+id/npHours"
             android:layout_width="wrap_content"
-            android:layout_height="140dp" />
+            android:layout_height="140dp"
+            android:theme="@style/NumberPickerTheme" />
 
         <TextView
             android:layout_width="wrap_content"
@@ -157,7 +194,8 @@
         <NumberPicker
             android:id="@+id/npMinutes"
             android:layout_width="wrap_content"
-            android:layout_height="140dp" />
+            android:layout_height="140dp"
+            android:theme="@style/NumberPickerTheme" />
 
         <TextView
             android:layout_width="wrap_content"

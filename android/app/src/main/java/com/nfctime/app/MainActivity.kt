@@ -214,7 +214,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun openCardDialogByState(card: CardInfo) {
-        if (card.status == 1 || card.status == 3 || card.isOverdue) {
+        if (card.status == 1 || card.status == 2 || card.status == 3 || card.isOverdue) {
             showActiveRunningCardDialog(card)
         } else {
             showCardControlDialog(card)
@@ -297,6 +297,7 @@ class MainActivity : AppCompatActivity() {
         val tvTitle = view.findViewById<TextView>(R.id.tvActiveTitle)
         val tvStatusBadge = view.findViewById<TextView>(R.id.tvActiveStatusBadge)
         val tvUid = view.findViewById<TextView>(R.id.tvActiveUid)
+        val tvActiveRemark = view.findViewById<TextView>(R.id.tvActiveRemark)
         val tvRemaining = view.findViewById<TextView>(R.id.tvActiveRemainingBig)
         val tvOverdueAlert = view.findViewById<TextView>(R.id.tvActiveOverdueAlert)
         val tvStartTime = view.findViewById<TextView>(R.id.tvActiveStartTime)
@@ -310,6 +311,15 @@ class MainActivity : AppCompatActivity() {
 
         tvTitle.text = card.name
         tvUid.text = "UID: ${card.cardId}"
+
+        if (card.remark.isNotEmpty()) {
+            tvActiveRemark.text = "📝 备注: ${card.remark}"
+            tvActiveRemark.visibility = View.VISIBLE
+        } else {
+            tvActiveRemark.visibility = View.GONE
+        }
+
+        btnPause.text = if (card.status == 2) "继续" else "暂停"
 
         val sdf = getIsoFormat()
         val startMs = try { sdf.parse(card.startTimeUtc ?: "")?.time } catch (e: Exception) { null }
@@ -439,10 +449,12 @@ class MainActivity : AppCompatActivity() {
 
         val tvUid = view.findViewById<TextView>(R.id.dialogCardUid)
         val etName = view.findViewById<EditText>(R.id.etCardName)
+        val etRemark = view.findViewById<EditText>(R.id.etCardRemark)
         val llTimelineDetails = view.findViewById<LinearLayout>(R.id.llTimelineDetails)
         val npHours = view.findViewById<NumberPicker>(R.id.npHours)
         val npMinutes = view.findViewById<NumberPicker>(R.id.npMinutes)
         val btnRename = view.findViewById<Button>(R.id.btnRename)
+        val btnSaveRemark = view.findViewById<Button>(R.id.btnSaveRemark)
         val btnStart = view.findViewById<Button>(R.id.btnStart)
         val btnPause = view.findViewById<Button>(R.id.btnPause)
         val btnStop = view.findViewById<Button>(R.id.btnStop)
@@ -450,6 +462,7 @@ class MainActivity : AppCompatActivity() {
 
         tvUid.text = "UID: ${card.cardId}"
         etName.setText(card.name)
+        etRemark.setText(card.remark)
 
         llTimelineDetails.visibility = View.GONE
         btnPause.visibility = View.GONE
@@ -475,6 +488,13 @@ class MainActivity : AppCompatActivity() {
                 Toast.makeText(this@MainActivity, "卡片名称已更新: $newName", Toast.LENGTH_SHORT).show()
                 triggerLocalRefresh()
             }
+        }
+
+        btnSaveRemark.setOnClickListener {
+            val newRemark = etRemark.text.toString().trim()
+            apiClient.updateCardRemarkImmediate(card.cardId, newRemark)
+            Toast.makeText(this@MainActivity, "备注已保存", Toast.LENGTH_SHORT).show()
+            triggerLocalRefresh()
         }
 
         btnStart.setOnClickListener {
@@ -553,7 +573,7 @@ class MainActivity : AppCompatActivity() {
 
             fun bind(card: CardInfo, onManageClick: ((CardInfo) -> Unit)?) {
                 tvName.text = card.name
-                tvUid.text = "UID: ${card.cardId}"
+                tvUid.text = if (card.remark.isNotEmpty()) "UID: ${card.cardId} | 📝 ${card.remark}" else "UID: ${card.cardId}"
                 tvAvatarChar.text = if (card.name.isNotEmpty()) card.name.take(1) else "卡"
 
                 if (card.isOverdue || card.status == 3) {

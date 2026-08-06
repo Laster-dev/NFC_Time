@@ -42,10 +42,22 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="2dp"
-        android:layout_marginBottom="16dp"
+        android:layout_marginBottom="2dp"
         android:text="UID: 04:A2:3B"
         android:textColor="@color/tg_text_secondary"
         android:textSize="13sp" />
+
+    <TextView
+        android:id="@+id/tvActiveRemark"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="2dp"
+        android:layout_marginBottom="16dp"
+        android:text="📝 备注: 无"
+        android:textColor="@color/tg_blue"
+        android:textSize="14sp"
+        android:textStyle="bold"
+        android:visibility="gone" />
 
     <!-- Big Digital Clock & Overdue Display -->
     <LinearLayout

@@ -44,4 +44,10 @@
         <item name="backgroundTint">#2B394A</item>
         <item name="android:textColor">@color/tg_blue</item>
     </style>
+
+    <style name="NumberPickerTheme">
+        <item name="android:textColorPrimary">#FFFFFF</item>
+        <item name="android:textColorSecondary">#B0C4DE</item>
+        <item name="android:textColorSecondaryNoDisable">#B0C4DE</item>
+    </style>
 </resources>

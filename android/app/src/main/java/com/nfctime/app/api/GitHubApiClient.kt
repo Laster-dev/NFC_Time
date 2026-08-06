@@ -26,7 +26,8 @@ data class CardInfo(
     var savedRemainingSeconds: Int = 0,
     var remainingSeconds: Double = 0.0,
     var overdueSeconds: Double = 0.0,
-    var isOverdue: Boolean = false
+    var isOverdue: Boolean = false,
+    var remark: String = ""
 )
 
 data class Announcement(
@@ -282,6 +283,14 @@ class GitHubApiClient(
         val list = getCachedCards()
         val card = list.find { it.cardId.equals(cardId, ignoreCase = true) } ?: return null
         card.name = newName
+        syncAllToRemoteAsync(list, getCachedAnnouncements())
+        return card
+    }
+
+    fun updateCardRemarkImmediate(cardId: String, remark: String): CardInfo? {
+        val list = getCachedCards()
+        val card = list.find { it.cardId.equals(cardId, ignoreCase = true) } ?: return null
+        card.remark = remark
         syncAllToRemoteAsync(list, getCachedAnnouncements())
         return card
     }
