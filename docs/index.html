@@ -511,6 +511,369 @@
         .alarm-btn:active {
             transform: scale(0.95);
         }
+
+        /* Music Form Styles */
+        .music-card {
+            background: #FFFFFF;
+            border-radius: 12px;
+            border: 2px solid var(--border-craft);
+            box-shadow: var(--shadow-kawaii);
+            padding: 16px 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 11px;
+        }
+
+        .music-head {
+            text-align: center;
+            border-bottom: 1.5px dashed var(--border-dashed);
+            padding-bottom: 8px;
+        }
+
+        .music-head-title {
+            font-size: 1.12rem;
+            font-weight: 900;
+            color: var(--text-dark);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        .music-head-subtitle {
+            font-size: 0.75rem;
+            color: var(--text-sub);
+            margin-top: 2px;
+            font-weight: 700;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .form-label {
+            font-size: 0.78rem;
+            font-weight: 800;
+            color: var(--text-dark);
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .form-label-req {
+            color: #E11D48;
+            font-size: 0.72rem;
+        }
+
+        .form-input, .form-textarea {
+            width: 100%;
+            background: #FDFBF7;
+            border: 1.5px solid var(--border-craft);
+            border-radius: 8px;
+            padding: 8px 10px;
+            font-size: 0.82rem;
+            font-family: inherit;
+            color: var(--text-dark);
+            box-sizing: border-box;
+            transition: all 0.2s;
+        }
+
+        .form-input:focus, .form-textarea:focus {
+            outline: none;
+            border-color: #FDA4AF;
+            background: #FFFFFF;
+            box-shadow: 0 0 0 3px rgba(253, 164, 175, 0.2);
+        }
+
+        .quick-tags-wrap {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            margin-top: 2px;
+        }
+
+        .quick-tag-pill {
+            background: #FEF3C7;
+            border: 1px solid #FCD34D;
+            color: #D97706;
+            padding: 3px 8px;
+            border-radius: 6px;
+            font-size: 0.7rem;
+            font-weight: 800;
+            cursor: pointer;
+            transition: all 0.2s;
+            user-select: none;
+        }
+
+        .quick-tag-pill:hover {
+            background: #FDE68A;
+            transform: scale(1.04);
+        }
+
+        .music-submit-btn {
+            background: linear-gradient(135deg, #FF6B8B, #FF8E9F);
+            border: none;
+            color: #FFFFFF;
+            font-size: 0.92rem;
+            font-weight: 900;
+            padding: 12px;
+            border-radius: 10px;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(255, 107, 139, 0.25);
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            margin-top: 4px;
+            font-family: inherit;
+        }
+
+        .music-submit-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(255, 107, 139, 0.35);
+        }
+
+        .music-submit-btn:active:not(:disabled) {
+            transform: translateY(1px);
+        }
+
+        .music-submit-btn:disabled {
+            background: #D1D5DB;
+            box-shadow: none;
+            cursor: not-allowed;
+            color: #9CA3AF;
+        }
+
+        .music-tip-box {
+            background: #F0FDF4;
+            border: 1px dashed #86EFAC;
+            border-radius: 8px;
+            padding: 8px 10px;
+            font-size: 0.72rem;
+            color: #15803D;
+            line-height: 1.4;
+            display: flex;
+            align-items: flex-start;
+            gap: 6px;
+        }
+
+        .music-feedback-toast {
+            display: none;
+            background: #FFF1F2;
+            border: 1.5px solid #FDA4AF;
+            border-radius: 8px;
+            padding: 10px 12px;
+            color: #BE123C;
+            font-size: 0.8rem;
+            font-weight: 800;
+            text-align: center;
+            animation: fadeIn 0.3s ease;
+        }
+
+        /* NetEase Search & Playlist Styles */
+        .music-search-bar-wrap {
+            display: flex;
+            gap: 6px;
+            margin-top: 4px;
+        }
+
+        .music-search-input {
+            flex: 1;
+            background: #FDFBF7;
+            border: 1.5px solid var(--border-craft);
+            border-radius: 8px;
+            padding: 8px 10px;
+            font-size: 0.8rem;
+            font-family: inherit;
+            color: var(--text-dark);
+            outline: none;
+            box-sizing: border-box;
+            transition: all 0.2s;
+        }
+
+        .music-search-input:focus {
+            border-color: #FDA4AF;
+            background: #FFFFFF;
+            box-shadow: 0 0 0 3px rgba(253, 164, 175, 0.2);
+        }
+
+        .music-search-btn {
+            background: #FFE4E6;
+            border: 1.5px solid #FDA4AF;
+            color: #E11D48;
+            border-radius: 8px;
+            padding: 0 12px;
+            font-size: 0.78rem;
+            font-weight: 800;
+            cursor: pointer;
+            transition: all 0.2s;
+            white-space: nowrap;
+            font-family: inherit;
+        }
+
+        .music-search-btn:hover {
+            background: #FECDD3;
+            transform: scale(1.03);
+        }
+
+        .music-playlist-pills {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            margin-top: 4px;
+        }
+
+        .playlist-pill {
+            background: #EFF6FF;
+            border: 1px solid #BFDBFE;
+            color: #2563EB;
+            padding: 3px 8px;
+            border-radius: 6px;
+            font-size: 0.68rem;
+            font-weight: 800;
+            cursor: pointer;
+            transition: all 0.2s;
+            user-select: none;
+        }
+
+        .playlist-pill:hover, .playlist-pill.active {
+            background: #DBEAFE;
+            border-color: #93C5FD;
+            transform: scale(1.04);
+        }
+
+        .music-list-wrap {
+            max-height: 220px;
+            overflow-y: auto;
+            border: 1.5px solid var(--border-craft);
+            border-radius: 10px;
+            background: #FFFDF9;
+            padding: 5px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            margin-top: 4px;
+        }
+
+        .music-list-wrap::-webkit-scrollbar {
+            width: 4px;
+        }
+        .music-list-wrap::-webkit-scrollbar-thumb {
+            background: #FDA4AF;
+            border-radius: 4px;
+        }
+
+        .music-item-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            padding: 6px 8px;
+            background: #FFFFFF;
+            border-radius: 8px;
+            border: 1px solid rgba(0,0,0,0.04);
+            transition: all 0.2s;
+        }
+
+        .music-item-row:hover {
+            background: #FFF5F5;
+            border-color: #FECDD3;
+        }
+
+        .music-item-left {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            overflow: hidden;
+            flex: 1;
+        }
+
+        .music-item-pic {
+            width: 34px;
+            height: 34px;
+            border-radius: 6px;
+            object-fit: cover;
+            background: #FFE4E6;
+            flex-shrink: 0;
+        }
+
+        .music-item-meta {
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            gap: 1px;
+        }
+
+        .music-item-name {
+            font-size: 0.78rem;
+            font-weight: 800;
+            color: var(--text-dark);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .music-item-artist {
+            font-size: 0.68rem;
+            color: var(--text-sub);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .music-pick-btn {
+            background: #FFF1F2;
+            border: 1px solid #FDA4AF;
+            color: #E11D48;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 0.68rem;
+            font-weight: 800;
+            cursor: pointer;
+            flex-shrink: 0;
+            transition: all 0.2s;
+        }
+
+        .music-pick-btn:hover {
+            background: #FF6B8B;
+            color: #FFFFFF;
+            border-color: #FF6B8B;
+            transform: scale(1.05);
+        }
+
+        .selected-song-banner {
+            background: #FFF1F2;
+            border: 1.5px solid #FDA4AF;
+            border-radius: 8px;
+            padding: 8px 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+        }
+
+        .selected-song-info {
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .selected-song-title {
+            font-size: 0.82rem;
+            font-weight: 900;
+            color: #BE123C;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .selected-song-artist {
+            font-size: 0.7rem;
+            color: #E11D48;
+        }
     </style>
 </head>
 <body>
@@ -549,10 +912,89 @@
 
         <!-- Section 2: Song Content -->
         <section id="sec-music" class="tab-section" style="display: none;">
-            <div class="music-coming-soon" style="text-align: center; padding: 40px 20px; background: #FFFFFF; border-radius: 12px; border: 2.5px dashed var(--border-dashed); margin-top: 10px;">
-                <div style="font-size: 3rem; margin-bottom: 12px; animation: cute-wobble 3s ease-in-out infinite; display: inline-block;">🎵</div>
-                <h2 style="font-weight: 800; font-size: 1.15rem; color: var(--text-dark); margin-bottom: 8px;">萌趣点歌台</h2>
-                <p style="font-size: 0.8rem; color: var(--text-sub); line-height: 1.5;">想在时光小屋里放一首温馨的歌吗？<br>点歌系统正在紧张研发中，敬请期待！✨</p>
+            <div class="music-card">
+                <div class="music-head">
+                    <div class="music-head-title">
+                        <span>🎵</span>
+                        <span>星野萌趣点歌台</span>
+                        <span>🐱</span>
+                    </div>
+                    <p class="music-head-subtitle">连接网易云曲库 · 选一首心仪的旋律陪伴手作时光</p>
+                </div>
+
+                <div id="musicToast" class="music-feedback-toast"></div>
+
+                <!-- NetEase Search / Playlist Input -->
+                <div class="form-group">
+                    <label class="form-label" for="musicSearchInput">
+                        <span>🔍 网易云曲库搜索 / 歌单导入</span>
+                    </label>
+                    <div class="music-search-bar-wrap">
+                        <input type="text" id="musicSearchInput" class="music-search-input" placeholder="输入歌名/歌手，或粘贴网易云歌单链接/ID" onkeydown="if(event.key==='Enter') searchNetEaseMusic()" />
+                        <button type="button" class="music-search-btn" onclick="searchNetEaseMusic()">🔍 搜索/导入</button>
+                    </div>
+                </div>
+
+                <!-- Preset Playlists -->
+                <div class="form-group">
+                    <label class="form-label">✨ 精选网易云歌单推荐：</label>
+                    <div class="music-playlist-pills">
+                        <span class="playlist-pill active" id="pill-3778678" onclick="loadNetEasePlaylist('3778678', this)">🔥 热歌榜</span>
+                        <span class="playlist-pill" id="pill-2829883282" onclick="loadNetEasePlaylist('2829883282', this)">☕ 治愈手作慢调</span>
+                        <span class="playlist-pill" id="pill-505964270" onclick="loadNetEasePlaylist('505964270', this)">🌻 宫崎骏原声</span>
+                        <span class="playlist-pill" id="pill-3779629" onclick="loadNetEasePlaylist('3779629', this)">🌸 经典暖心榜</span>
+                    </div>
+                </div>
+
+                <!-- Song Selection List -->
+                <div class="form-group">
+                    <label class="form-label" id="musicListLabel">📜 网易云推荐曲目 (点击即可一键点歌)：</label>
+                    <div class="music-list-wrap" id="musicSearchResultArea">
+                        <div style="text-align: center; padding: 20px; color: var(--text-sub); font-size: 0.78rem;">
+                            <span>⏳ 正在加载网易云热歌榜...</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Selected Song Indicator -->
+                <div id="selectedSongBox" style="display: none;">
+                    <div class="selected-song-banner">
+                        <div class="selected-song-info">
+                            <div class="selected-song-title" id="dispSelectedSong">🎵 已选歌曲：--</div>
+                            <div class="selected-song-artist" id="dispSelectedArtist">🎤 歌手：--</div>
+                        </div>
+                        <span style="font-size: 0.72rem; color: #E11D48; font-weight: 800;">✓ 已就绪</span>
+                    </div>
+                </div>
+
+                <!-- Hidden inputs holding selected song -->
+                <input type="hidden" id="musicSongName" />
+                <input type="hidden" id="musicArtist" />
+
+                <!-- Table / Card UID Input -->
+                <div class="form-group" id="formGroupTable">
+                    <label class="form-label" for="musicTable">🏷️ 您的桌号 / 手作卡片 (选填)</label>
+                    <input type="text" id="musicTable" class="form-input" placeholder="例如：3号桌 / 04号手作卡" maxlength="30" />
+                </div>
+
+                <!-- Message / Wishes -->
+                <div class="form-group">
+                    <label class="form-label" for="musicMessage">💌 送歌留言 / 祝福 (选填)</label>
+                    <textarea id="musicMessage" class="form-textarea" rows="2" placeholder="写一句温暖的寄语吧，例如：祝在店里做手工的朋友们都有好心情！" maxlength="120"></textarea>
+                </div>
+
+                <!-- Submit Button -->
+                <button type="button" id="btnSubmitSong" class="music-submit-btn" onclick="submitSongRequest()">
+                    <span>✨</span>
+                    <span id="btnSubmitSongText">投递点歌心愿</span>
+                    <span>💌</span>
+                </button>
+
+                <!-- Tip Box -->
+                <div class="music-tip-box">
+                    <span>💡</span>
+                    <span>店主收到即时通知后，会优先为您安排在店内音响播放哦！</span>
+                </div>
             </div>
         </section>
 
@@ -980,6 +1422,256 @@
                 return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[m];
             });
         }
+
+        // NetEase Music Integration
+        let currentLoadedSongs = [];
+
+        async function loadNetEasePlaylist(playlistId, pillElement) {
+            const listArea = document.getElementById('musicSearchResultArea');
+            const label = document.getElementById('musicListLabel');
+            
+            // Update active pill styling
+            document.querySelectorAll('.playlist-pill').forEach(p => p.classList.remove('active'));
+            if (pillElement) pillElement.classList.add('active');
+
+            if (listArea) {
+                listArea.innerHTML = `<div style="text-align: center; padding: 24px; color: var(--text-sub); font-size: 0.78rem;"><span>⏳ 正在加载歌单歌曲...</span></div>`;
+            }
+            if (label) label.textContent = '📜 网易云歌单曲目：';
+
+            try {
+                const res = await fetch(`https://api.injahow.cn/meting/?type=playlist&id=${playlistId}`);
+                if (!res.ok) throw new Error('Network error');
+                const songs = await res.json();
+                
+                if (Array.isArray(songs) && songs.length > 0) {
+                    currentLoadedSongs = songs;
+                    renderNetEaseSongs(songs);
+                } else {
+                    listArea.innerHTML = `<div style="text-align: center; padding: 20px; color: var(--text-sub); font-size: 0.78rem;">⚠️ 未找到该歌单的歌曲，请检查歌单ID是否公开~</div>`;
+                }
+            } catch (err) {
+                console.error('loadNetEasePlaylist failed:', err);
+                listArea.innerHTML = `<div style="text-align: center; padding: 20px; color: #BE123C; font-size: 0.78rem;">❌ 歌单加载失败，请检查网络或直接输入歌名点歌~</div>`;
+            }
+        }
+
+        async function searchNetEaseMusic() {
+            const input = document.getElementById('musicSearchInput');
+            const listArea = document.getElementById('musicSearchResultArea');
+            const label = document.getElementById('musicListLabel');
+            const val = (input.value || '').trim();
+
+            if (!val) {
+                showMusicToast('⚠️ 请输入歌曲名称、歌手或网易云歌单链接~', '#BE123C', '#FFF1F2', '#FDA4AF');
+                input.focus();
+                return;
+            }
+
+            // Check if user entered a playlist link or ID
+            const playlistMatch = val.match(/playlist(?:\?id=|\/)(\d+)/i) || (val.match(/^\d{4,12}$/) ? [null, val] : null);
+            if (playlistMatch && playlistMatch[1]) {
+                const pId = playlistMatch[1];
+                loadNetEasePlaylist(pId, null);
+                return;
+            }
+
+            // Search by keyword
+            listArea.innerHTML = `<div style="text-align: center; padding: 24px; color: var(--text-sub); font-size: 0.78rem;"><span>🔍 正在搜索网易云音乐曲库...</span></div>`;
+            if (label) label.textContent = `🔍 搜索 “${val}” 的结果：`;
+
+            try {
+                const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(`https://music.163.com/api/search/suggest/web?s=${encodeURIComponent(val)}`)}`;
+                const res = await fetch(proxyUrl);
+                const data = await res.json();
+
+                if (data && data.result && Array.isArray(data.result.songs) && data.result.songs.length > 0) {
+                    const mappedSongs = data.result.songs.map(s => ({
+                        name: s.name,
+                        artist: (s.artists || []).map(a => a.name).join('/'),
+                        pic: (s.artists && s.artists[0] && s.artists[0].picUrl) || ''
+                    }));
+                    currentLoadedSongs = mappedSongs;
+                    renderNetEaseSongs(mappedSongs);
+                } else {
+                    // Fallback to manual selection prompt
+                    listArea.innerHTML = `
+                        <div style="text-align: center; padding: 18px; color: var(--text-sub); font-size: 0.78rem;">
+                            <p style="margin-bottom: 8px;">未找到完全匹配的结果，您可以直接点歌：</p>
+                            <button type="button" class="music-pick-btn" style="padding: 6px 14px; font-size: 0.75rem;" onclick="selectSong('${escapeHtml(val)}', '未指定', '')">👉 点歌《${escapeHtml(val)}》</button>
+                        </div>
+                    `;
+                }
+            } catch (err) {
+                console.error('searchNetEaseMusic failed:', err);
+                listArea.innerHTML = `
+                    <div style="text-align: center; padding: 18px; color: var(--text-sub); font-size: 0.78rem;">
+                        <p style="margin-bottom: 8px;">搜索服务暂忙，您可以直接点这首歌：</p>
+                        <button type="button" class="music-pick-btn" style="padding: 6px 14px; font-size: 0.75rem;" onclick="selectSong('${escapeHtml(val)}', '未指定', '')">👉 点歌《${escapeHtml(val)}》</button>
+                    </div>
+                `;
+            }
+        }
+
+        function renderNetEaseSongs(songs) {
+            const listArea = document.getElementById('musicSearchResultArea');
+            if (!listArea) return;
+
+            if (!songs || songs.length === 0) {
+                listArea.innerHTML = `<div style="text-align: center; padding: 20px; color: var(--text-sub); font-size: 0.78rem;">暂无歌曲数据</div>`;
+                return;
+            }
+
+            listArea.innerHTML = songs.map((s, idx) => {
+                const songNameEsc = escapeHtml(s.name);
+                const artistEsc = escapeHtml(s.artist || '未知歌手');
+                const picUrl = s.pic || '';
+
+                return `
+                    <div class="music-item-row">
+                        <div class="music-item-left">
+                            ${picUrl ? `<img src="${picUrl}" class="music-item-pic" alt="cover" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'34\\' height=\\'34\\' viewBox=\\'0 0 34 34\\'><rect fill=\\'%23FFE4E6\\' width=\\'34\\' height=\\'34\\'/><text fill=\\'%23E11D48\\' font-size=\\'16\\' x=\\'50%\\' y=\\'50%\\' dominant-baseline=\\'central\\' text-anchor=\\'middle\\'>🎵</text></svg>'">` : `<div class="music-item-pic" style="display:flex;align-items:center;justify-content:center;font-size:16px;">🎵</div>`}
+                            <div class="music-item-meta">
+                                <span class="music-item-name" title="${songNameEsc}">${songNameEsc}</span>
+                                <span class="music-item-artist" title="${artistEsc}">${artistEsc}</span>
+                            </div>
+                        </div>
+                        <button type="button" class="music-pick-btn" onclick="selectSong('${songNameEsc}', '${artistEsc}', '${picUrl}')">点这首 🐾</button>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function selectSong(name, artist, pic) {
+            const songNameInput = document.getElementById('musicSongName');
+            const artistInput = document.getElementById('musicArtist');
+            const selectedBox = document.getElementById('selectedSongBox');
+            const dispName = document.getElementById('dispSelectedSong');
+            const dispArtist = document.getElementById('dispSelectedArtist');
+            const tableInput = document.getElementById('musicTable');
+
+            if (songNameInput) songNameInput.value = name;
+            if (artistInput) artistInput.value = artist;
+
+            if (dispName) dispName.textContent = `🎵 已选歌曲：${name}`;
+            if (dispArtist) dispArtist.textContent = `🎤 歌手：${artist || '未指定'}`;
+            if (selectedBox) selectedBox.style.display = 'block';
+
+            showMusicToast(`✨ 已选择《${name}》，填写桌号后即可投递~`, '#15803D', '#F0FDF4', '#86EFAC');
+
+            // Scroll down smoothly to table input
+            if (tableInput) {
+                tableInput.focus();
+                tableInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        }
+
+        async function submitSongRequest() {
+            const songName = (document.getElementById('musicSongName')?.value || '').trim();
+            const artist = (document.getElementById('musicArtist')?.value || '').trim();
+            const table = (document.getElementById('musicTable')?.value || '').trim();
+            const message = (document.getElementById('musicMessage')?.value || '').trim();
+            const submitBtn = document.getElementById('btnSubmitSong');
+            const submitBtnText = document.getElementById('btnSubmitSongText');
+
+            if (!songName) {
+                showMusicToast('⚠️ 请先在上方列表中点击「点这首」选择一首歌曲哦~', '#BE123C', '#FFF1F2', '#FDA4AF');
+                const searchInput = document.getElementById('musicSearchInput');
+                if (searchInput) {
+                    searchInput.focus();
+                    searchInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+                return;
+            }
+
+            // Cooldown check (prevent spamming: 20 seconds cooldown)
+            const lastSent = localStorage.getItem('ntfy_last_song_sent');
+            const now = Date.now();
+            if (lastSent && (now - parseInt(lastSent)) < 20000) {
+                const waitSec = Math.ceil((20000 - (now - parseInt(lastSent))) / 1000);
+                showMusicToast(`⏳ 点歌太快啦，请等待 ${waitSec} 秒后再投递下一首哦~`, '#D97706', '#FEF3C7', '#FCD34D');
+                return;
+            }
+
+            submitBtn.disabled = true;
+            submitBtnText.textContent = '正在投递心愿...';
+
+            const topic = 'XingYeShouZuo';
+            const nowTimeStr = new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
+            const payloadLines = [
+                `🎵【星野手作 · 现场点歌通知】`,
+                ``,
+                `📌 歌曲名称：${songName}`,
+                `🎤 歌手/版本：${artist || '未指定'}`,
+                `🏷️ 来源桌号：${table || '店内顾客'}`,
+                `💌 点歌留言：${message || '无'}`,
+                `🌐 来源：网易云曲库`,
+                `⏰ 点歌时间：${nowTimeStr}`
+            ];
+            const payload = payloadLines.join('\n');
+
+            try {
+                const response = await fetch(`https://ntfy.sh/${topic}`, {
+                    method: 'POST',
+                    body: payload,
+                    headers: {
+                        'Title': `🎵 点歌通知: ${songName}`,
+                        'Priority': 'high',
+                        'Tags': 'musical_note,sparkles',
+                        'Markdown': 'no'
+                    }
+                });
+
+                if (response.ok) {
+                    localStorage.setItem('ntfy_last_song_sent', Date.now().toString());
+                    showMusicToast(`🎉 点歌心愿已投递成功！店主正在为您准备《${songName}》~ 🐱`, '#15803D', '#F0FDF4', '#86EFAC');
+                    
+                    // Reset selected song
+                    document.getElementById('musicSongName').value = '';
+                    document.getElementById('musicArtist').value = '';
+                    document.getElementById('musicTable').value = '';
+                    document.getElementById('musicMessage').value = '';
+                    const selectedBox = document.getElementById('selectedSongBox');
+                    if (selectedBox) selectedBox.style.display = 'none';
+
+                    // Start 20s cooldown countdown
+                    let countdown = 20;
+                    const timer = setInterval(() => {
+                        countdown--;
+                        if (countdown > 0) {
+                            submitBtnText.textContent = `心愿冷却中 (${countdown}s)`;
+                        } else {
+                            clearInterval(timer);
+                            submitBtn.disabled = false;
+                            submitBtnText.textContent = '投递点歌心愿';
+                        }
+                    }, 1000);
+                } else {
+                    throw new Error(`Status: ${response.status}`);
+                }
+            } catch (err) {
+                console.error('ntfy push failed:', err);
+                submitBtn.disabled = false;
+                submitBtnText.textContent = '投递点歌心愿';
+                showMusicToast('❌ 投递失败，请检查网络连接后重试~', '#BE123C', '#FFF1F2', '#FDA4AF');
+            }
+        }
+
+        function showMusicToast(text, color, bg, border) {
+            const toast = document.getElementById('musicToast');
+            if (!toast) return;
+            toast.style.display = 'block';
+            toast.style.color = color;
+            toast.style.background = bg;
+            toast.style.borderColor = border;
+            toast.textContent = text;
+        }
+
+        // Auto load initial popular playlist when DOM is ready
+        document.addEventListener('DOMContentLoaded', () => {
+            loadNetEasePlaylist('3778678', document.getElementById('pill-3778678'));
+        });
     </script>
 </body>
 </html>
