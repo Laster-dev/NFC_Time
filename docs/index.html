@@ -1410,13 +1410,46 @@
         // NetEase Music Integration
         let currentLoadedSongs = [];
 
+        const METING_MIRRORS = [
+            (type, id) => `https://met.api.xiaoguan.fit/api?server=netease&type=${type}&id=${id}`,
+            (type, id) => `https://api.injahow.cn/meting/?type=${type}&id=${id}`,
+            (type, id) => `https://api.i-meto.com/meting/api?server=netease&type=${type}&id=${id}`
+        ];
+
+        async function fetchNetEaseMeting(type, id) {
+            for (const buildUrl of METING_MIRRORS) {
+                try {
+                    const url = buildUrl(type, id);
+                    const res = await fetch(url);
+                    if (!res.ok) continue;
+                    const data = await res.json();
+                    if (Array.isArray(data) && data.length > 0) {
+                        return data.map(item => {
+                            const songId = item.id || (item.url && item.url.match(/id=(\d+)/)?.[1]) || (type === 'song' ? id : '');
+                            return {
+                                id: songId,
+                                name: item.name || item.title || '',
+                                artist: item.artist || item.author || '未知歌手',
+                                pic: item.pic || item.picUrl || ''
+                            };
+                        });
+                    }
+                } catch (e) {
+                    console.warn(`[Meting] mirror failed for ${type} ${id}:`, e);
+                }
+            }
+            return null;
+        }
+
         async function loadNetEasePlaylist(playlistId, pillElement) {
+            currentPlaylistId = playlistId;
+            if (pillElement) {
+                document.querySelectorAll('.music-pill').forEach(p => p.classList.remove('active'));
+                pillElement.classList.add('active');
+            }
+
             const listArea = document.getElementById('musicSearchResultArea');
             const label = document.getElementById('musicListLabel');
-            
-            // Update active pill styling
-            document.querySelectorAll('.playlist-pill').forEach(p => p.classList.remove('active'));
-            if (pillElement) pillElement.classList.add('active');
 
             if (listArea) {
                 listArea.innerHTML = `<div style="text-align: center; padding: 24px; color: var(--text-sub); font-size: 0.78rem;"><span>⏳ 正在加载歌单歌曲...</span></div>`;
@@ -1424,24 +1457,12 @@
             if (label) label.textContent = '📜 网易云歌单曲目：';
 
             try {
-                const res = await fetch(`https://api.injahow.cn/meting/?type=playlist&id=${playlistId}`);
-                if (!res.ok) throw new Error('Network error');
-                const rawSongs = await res.json();
-                
-                if (Array.isArray(rawSongs) && rawSongs.length > 0) {
-                    const songs = rawSongs.map(s => {
-                        const id = s.id || (s.url && s.url.match(/id=(\d+)/)?.[1]) || '';
-                        return {
-                            id: id,
-                            name: s.name,
-                            artist: s.artist,
-                            pic: s.pic || ''
-                        };
-                    });
+                const songs = await fetchNetEaseMeting('playlist', playlistId);
+                if (songs && songs.length > 0) {
                     currentLoadedSongs = songs;
                     renderNetEaseSongs(songs);
                 } else {
-                    listArea.innerHTML = `<div style="text-align: center; padding: 20px; color: var(--text-sub); font-size: 0.78rem;">⚠️ 未找到该歌单的歌曲，请检查歌单ID是否公开~</div>`;
+                    listArea.innerHTML = `<div style="text-align: center; padding: 20px; color: var(--text-sub); font-size: 0.78rem;">⚠️ 歌单接口暂忙，您可以直接在上方输入歌名点歌~</div>`;
                 }
             } catch (err) {
                 console.error('loadNetEasePlaylist failed:', err);
@@ -1469,25 +1490,29 @@
                 if (label) label.textContent = `🎵 解析到的网易云单曲：`;
 
                 try {
-                    const res = await fetch(`https://api.injahow.cn/meting/?type=song&id=${sId}`);
-                    const songs = await res.json();
-                    if (Array.isArray(songs) && songs.length > 0) {
-                        const s = songs[0];
-                        const songObj = {
-                            id: s.id || (s.url && s.url.match(/id=(\d+)/)?.[1]) || sId,
-                            name: s.name,
-                            artist: s.artist,
-                            pic: s.pic || ''
-                        };
+                    const songs = await fetchNetEaseMeting('song', sId);
+                    if (songs && songs.length > 0) {
+                        const songObj = songs[0];
                         currentLoadedSongs = [songObj];
                         renderNetEaseSongs([songObj]);
-                        // Auto-select and send this single song
                         selectSong(songObj.id, songObj.name, songObj.artist, songObj.pic);
                         return;
                     }
                 } catch (e) {
                     console.error('Fetch song failed:', e);
                 }
+
+                // Resilient fallback: Even if mirror APIs fail, directly use the extracted ID!
+                const fallbackObj = {
+                    id: sId,
+                    name: `网易云单曲 (ID:${sId})`,
+                    artist: '网易云音乐',
+                    pic: ''
+                };
+                currentLoadedSongs = [fallbackObj];
+                renderNetEaseSongs([fallbackObj]);
+                selectSong(sId, fallbackObj.name, fallbackObj.artist, '');
+                return;
             }
 
             // 2. Check if user entered a playlist link or ID
