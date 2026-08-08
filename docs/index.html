@@ -970,6 +970,7 @@
                 </div>
 
                 <!-- Hidden inputs holding selected song -->
+                <input type="hidden" id="musicSongId" />
                 <input type="hidden" id="musicSongName" />
                 <input type="hidden" id="musicArtist" />
 
@@ -1425,9 +1426,18 @@
             try {
                 const res = await fetch(`https://api.injahow.cn/meting/?type=playlist&id=${playlistId}`);
                 if (!res.ok) throw new Error('Network error');
-                const songs = await res.json();
+                const rawSongs = await res.json();
                 
-                if (Array.isArray(songs) && songs.length > 0) {
+                if (Array.isArray(rawSongs) && rawSongs.length > 0) {
+                    const songs = rawSongs.map(s => {
+                        const id = s.id || (s.url && s.url.match(/id=(\d+)/)?.[1]) || '';
+                        return {
+                            id: id,
+                            name: s.name,
+                            artist: s.artist,
+                            pic: s.pic || ''
+                        };
+                    });
                     currentLoadedSongs = songs;
                     renderNetEaseSongs(songs);
                 } else {
@@ -1462,11 +1472,17 @@
                     const res = await fetch(`https://api.injahow.cn/meting/?type=song&id=${sId}`);
                     const songs = await res.json();
                     if (Array.isArray(songs) && songs.length > 0) {
-                        currentLoadedSongs = songs;
-                        renderNetEaseSongs(songs);
-                        // Auto-select this single song directly
                         const s = songs[0];
-                        selectSong(s.name, s.artist, s.pic || '');
+                        const songObj = {
+                            id: s.id || (s.url && s.url.match(/id=(\d+)/)?.[1]) || sId,
+                            name: s.name,
+                            artist: s.artist,
+                            pic: s.pic || ''
+                        };
+                        currentLoadedSongs = [songObj];
+                        renderNetEaseSongs([songObj]);
+                        // Auto-select and send this single song
+                        selectSong(songObj.id, songObj.name, songObj.artist, songObj.pic);
                         return;
                     }
                 } catch (e) {
@@ -1504,6 +1520,7 @@
 
                 if (data && data.result && Array.isArray(data.result.songs) && data.result.songs.length > 0) {
                     const mappedSongs = data.result.songs.map(s => ({
+                        id: s.id || '',
                         name: s.name,
                         artist: (s.artists || []).map(a => a.name).join('/'),
                         pic: (s.artists && s.artists[0] && s.artists[0].picUrl) || ''
@@ -1514,8 +1531,8 @@
                     // Fallback to manual selection prompt
                     listArea.innerHTML = `
                         <div style="text-align: center; padding: 18px; color: var(--text-sub); font-size: 0.78rem;">
-                            <p style="margin-bottom: 8px;">未找到完全匹配的结果，您可以直接点歌：</p>
-                            <button type="button" class="music-pick-btn" style="padding: 6px 14px; font-size: 0.75rem;" onclick="selectSong('${escapeHtml(val)}', '未指定', '')">👉 点歌《${escapeHtml(val)}》</button>
+                            <p style="margin-bottom: 8px;">未在曲库找到完全匹配的结果，您可以直接点歌：</p>
+                            <button type="button" class="music-pick-btn" style="padding: 6px 14px; font-size: 0.75rem;" onclick="selectSong('', '${escapeHtml(val)}', '未指定', '')">👉 点歌《${escapeHtml(val)}》</button>
                         </div>
                     `;
                 }
@@ -1524,7 +1541,7 @@
                 listArea.innerHTML = `
                     <div style="text-align: center; padding: 18px; color: var(--text-sub); font-size: 0.78rem;">
                         <p style="margin-bottom: 8px;">搜索服务暂忙，您可以直接点这首歌：</p>
-                        <button type="button" class="music-pick-btn" style="padding: 6px 14px; font-size: 0.75rem;" onclick="selectSong('${escapeHtml(val)}', '未指定', '')">👉 点歌《${escapeHtml(val)}》</button>
+                        <button type="button" class="music-pick-btn" style="padding: 6px 14px; font-size: 0.75rem;" onclick="selectSong('', '${escapeHtml(val)}', '未指定', '')">👉 点歌《${escapeHtml(val)}》</button>
                     </div>
                 `;
             }
@@ -1540,6 +1557,7 @@
             }
 
             listArea.innerHTML = songs.map((s, idx) => {
+                const songId = s.id || '';
                 const songNameEsc = escapeHtml(s.name);
                 const artistEsc = escapeHtml(s.artist || '未知歌手');
                 const picUrl = s.pic || '';
@@ -1550,26 +1568,28 @@
                             ${picUrl ? `<img src="${picUrl}" class="music-item-pic" alt="cover" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'34\\' height=\\'34\\' viewBox=\\'0 0 34 34\\'><rect fill=\\'%23FFE4E6\\' width=\\'34\\' height=\\'34\\'/><text fill=\\'%23E11D48\\' font-size=\\'16\\' x=\\'50%\\' y=\\'50%\\' dominant-baseline=\\'central\\' text-anchor=\\'middle\\'>🎵</text></svg>'">` : `<div class="music-item-pic" style="display:flex;align-items:center;justify-content:center;font-size:16px;">🎵</div>`}
                             <div class="music-item-meta">
                                 <span class="music-item-name" title="${songNameEsc}">${songNameEsc}</span>
-                                <span class="music-item-artist" title="${artistEsc}">${artistEsc}</span>
+                                <span class="music-item-artist" title="${artistEsc}">${artistEsc}${songId ? ` · ID:${songId}` : ''}</span>
                             </div>
                         </div>
-                        <button type="button" class="music-pick-btn" onclick="selectSong('${songNameEsc}', '${artistEsc}', '${picUrl}')">点这首 🐾</button>
+                        <button type="button" class="music-pick-btn" onclick="selectSong('${songId}', '${songNameEsc}', '${artistEsc}', '${picUrl}')">点这首 🐾</button>
                     </div>
                 `;
             }).join('');
         }
 
-        function selectSong(name, artist, pic) {
+        function selectSong(id, name, artist, pic) {
+            const songIdInput = document.getElementById('musicSongId');
             const songNameInput = document.getElementById('musicSongName');
             const artistInput = document.getElementById('musicArtist');
             const selectedBox = document.getElementById('selectedSongBox');
             const dispName = document.getElementById('dispSelectedSong');
             const dispArtist = document.getElementById('dispSelectedArtist');
 
+            if (songIdInput) songIdInput.value = id || '';
             if (songNameInput) songNameInput.value = name;
             if (artistInput) artistInput.value = artist;
 
-            if (dispName) dispName.textContent = `🎵 已选：${name}`;
+            if (dispName) dispName.textContent = `🎵 已选：${name}${id ? ` (ID: ${id})` : ''}`;
             if (dispArtist) dispArtist.textContent = `🎤 歌手：${artist || '未指定'}`;
             if (selectedBox) selectedBox.style.display = 'block';
 
@@ -1578,12 +1598,13 @@
         }
 
         async function submitSongRequest() {
+            const songId = (document.getElementById('musicSongId')?.value || '').trim();
             const songName = (document.getElementById('musicSongName')?.value || '').trim();
             const artist = (document.getElementById('musicArtist')?.value || '').trim();
             const submitBtn = document.getElementById('btnSubmitSong');
             const submitBtnText = document.getElementById('btnSubmitSongText');
 
-            if (!songName) {
+            if (!songId && !songName) {
                 showMusicToast('⚠️ 请先在上方列表中点击「点这首」选择一首歌曲哦~', '#BE123C', '#FFF1F2', '#FDA4AF');
                 const searchInput = document.getElementById('musicSearchInput');
                 if (searchInput) {
@@ -1608,7 +1629,8 @@
             const topic = 'XingYeShouZuo';
             const nowTimeStr = new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 
-            const payloadMessage = `📌 歌曲名称：${songName}\n🎤 歌手/版本：${artist || '未指定'}\n🌐 来源：网易云曲库\n⏰ 点歌时间：${nowTimeStr}`;
+            // The core payload message transmits the pure Song ID (fallback to name if no ID)
+            const messageBody = songId ? `${songId}` : `${songName}`;
 
             try {
                 const response = await fetch('https://ntfy.sh', {
@@ -1618,16 +1640,17 @@
                     },
                     body: JSON.stringify({
                         topic: topic,
-                        title: `🎵 点歌: ${songName}`,
-                        message: payloadMessage,
+                        title: `🎵 点歌: ${songName}${songId ? ` (${songId})` : ''}`,
+                        message: messageBody,
                         tags: ['musical_note', 'sparkles'],
-                        priority: 4
+                        priority: 4,
+                        click: songId ? `https://music.163.com/song?id=${songId}` : undefined
                     })
                 });
 
                 if (response.ok) {
                     localStorage.setItem('ntfy_last_song_sent', Date.now().toString());
-                    showMusicToast(`🎉 点歌成功！已加入播放队列，当前歌曲播放完毕后将为您播放《${songName}》~ 🐱`, '#15803D', '#F0FDF4', '#86EFAC');
+                    showMusicToast(`🎉 点歌成功！已传输歌曲ID [${songId || songName}]，当前歌曲播放完毕后将为您播放《${songName}》~ 🐱`, '#15803D', '#F0FDF4', '#86EFAC');
                     
                     // Start 20s cooldown countdown
                     let countdown = 20;
