@@ -1411,18 +1411,53 @@
         let currentLoadedSongs = [];
 
         const METING_MIRRORS = [
+            // 1. 高速主力 Meting 镜像源 (Xiaoguan)
             (type, id) => `https://met.api.xiaoguan.fit/api?server=netease&type=${type}&id=${id}`,
+            // 2. 稳定公用 Meting 镜像源 (Liiiu)
+            (type, id) => `https://met.liiiu.cn/meting/api?server=netease&type=${type}&id=${id}`,
+            // 3. 备用 Meting 镜像源 (243542)
+            (type, id) => `https://meting-api.243542.xyz/api?server=netease&type=${type}&id=${id}`,
+            // 4. 老牌 Meting 节点 (Injahow)
             (type, id) => `https://api.injahow.cn/meting/?type=${type}&id=${id}`,
-            (type, id) => `https://api.i-meto.com/meting/api?server=netease&type=${type}&id=${id}`
+            // 5. 老牌 Meting 节点备用路由 (Injahow Server Mode)
+            (type, id) => `https://api.injahow.cn/meting/?server=netease&type=${type}&id=${id}`,
+            // 6. 官方衍生公用节点 (I-Meto)
+            (type, id) => `https://api.i-meto.com/meting/api?server=netease&type=${type}&id=${id}`,
+            // 7. 社区 Meting 节点 (XF1433)
+            (type, id) => `https://music.xf1433.com/api/?server=netease&type=${type}&id=${id}`,
+            // 8. 网易云直通代理 1 (AllOrigins Raw)
+            (type, id) => `https://api.allorigins.win/raw?url=${encodeURIComponent(type === 'playlist' ? `https://music.163.com/api/v1/playlist/detail?id=${id}` : `https://music.163.com/api/song/detail/?id=${id}&ids=[${id}]`)}`,
+            // 9. 网易云直通代理 2 (CodeTabs Proxy)
+            (type, id) => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(type === 'playlist' ? `https://music.163.com/api/v1/playlist/detail?id=${id}` : `https://music.163.com/api/song/detail/?id=${id}&ids=[${id}]`)}`,
+            // 10. 网易云直通代理 3 (AllOrigins Get JSON)
+            (type, id) => `https://api.allorigins.win/get?url=${encodeURIComponent(type === 'playlist' ? `https://music.163.com/api/v1/playlist/detail?id=${id}` : `https://music.163.com/api/song/detail/?id=${id}&ids=[${id}]`)}`,
+            // 11. PearkTrue 开放接口 (单曲)
+            (type, id) => type === 'song' ? `https://api.pearktrue.cn/api/music/netease/?id=${id}` : null,
+            // 12. VVHan 开放接口 (单曲)
+            (type, id) => type === 'song' ? `https://api.vvhan.com/api/wy/detail?id=${id}` : null
         ];
 
         async function fetchNetEaseMeting(type, id) {
             for (const buildUrl of METING_MIRRORS) {
                 try {
                     const url = buildUrl(type, id);
-                    const res = await fetch(url);
+                    if (!url) continue;
+
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), 4000); // 4秒超时自动切下一个
+
+                    const res = await fetch(url, { signal: controller.signal });
+                    clearTimeout(timeoutId);
                     if (!res.ok) continue;
-                    const data = await res.json();
+
+                    let data = await res.json();
+
+                    // 处理 AllOrigins Get 嵌套包裹结构
+                    if (data && data.contents && typeof data.contents === 'string') {
+                        try { data = JSON.parse(data.contents); } catch { continue; }
+                    }
+
+                    // 1. 标准 Meting 数组格式
                     if (Array.isArray(data) && data.length > 0) {
                         return data.map(item => {
                             const songId = item.id || (item.url && item.url.match(/id=(\d+)/)?.[1]) || (type === 'song' ? id : '');
@@ -1434,8 +1469,42 @@
                             };
                         });
                     }
+
+                    // 2. 网易云官方单曲对象格式 { songs: [...] }
+                    if (data && Array.isArray(data.songs) && data.songs.length > 0) {
+                        return data.songs.map(s => ({
+                            id: s.id,
+                            name: s.name,
+                            artist: (s.artists || s.ar || []).map(a => a.name).join('/'),
+                            pic: (s.album && s.album.picUrl) || (s.al && s.al.picUrl) || ''
+                        }));
+                    }
+
+                    // 3. 网易云官方歌单对象格式 { playlist: { tracks: [...] } }
+                    if (data && data.playlist && Array.isArray(data.playlist.tracks) && data.playlist.tracks.length > 0) {
+                        return data.playlist.tracks.map(s => ({
+                            id: s.id,
+                            name: s.name,
+                            artist: (s.artists || s.ar || []).map(a => a.name).join('/'),
+                            pic: (s.album && s.album.picUrl) || (s.al && s.al.picUrl) || ''
+                        }));
+                    }
+
+                    // 4. 第三方单曲数据对象 (VVHan / PearkTrue)
+                    if (data && data.data && typeof data.data === 'object') {
+                        const d = data.data;
+                        if (d.name || d.title || d.song) {
+                            return [{
+                                id: id,
+                                name: d.name || d.title || d.song || '',
+                                artist: d.author || d.singer || d.artist || '未知歌手',
+                                pic: d.pic || d.cover || d.img || ''
+                            }];
+                        }
+                    }
                 } catch (e) {
-                    console.warn(`[Meting] mirror failed for ${type} ${id}:`, e);
+                    // 当前镜像超时或异常，自动切入下一个候选节点
+                    console.warn(`[Meting Mirror] Failover to next mirror for ${type} ${id}`);
                 }
             }
             return null;
