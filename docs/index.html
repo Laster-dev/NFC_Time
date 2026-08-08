@@ -1412,25 +1412,25 @@
 
         const METING_MIRRORS = [
             // 1. 高速主力 Meting 镜像源 (Xiaoguan)
-            (type, id) => `https://met.api.xiaoguan.fit/api?server=netease&type=${type}&id=${id}`,
+            (type, id) => `https://met.api.xiaoguan.fit/api?server=netease&type=${type}&id=${encodeURIComponent(id)}`,
             // 2. 稳定公用 Meting 镜像源 (Liiiu)
-            (type, id) => `https://met.liiiu.cn/meting/api?server=netease&type=${type}&id=${id}`,
+            (type, id) => `https://met.liiiu.cn/meting/api?server=netease&type=${type}&id=${encodeURIComponent(id)}`,
             // 3. 备用 Meting 镜像源 (243542)
-            (type, id) => `https://meting-api.243542.xyz/api?server=netease&type=${type}&id=${id}`,
+            (type, id) => `https://meting-api.243542.xyz/api?server=netease&type=${type}&id=${encodeURIComponent(id)}`,
             // 4. 老牌 Meting 节点 (Injahow)
-            (type, id) => `https://api.injahow.cn/meting/?type=${type}&id=${id}`,
+            (type, id) => `https://api.injahow.cn/meting/?type=${type}&id=${encodeURIComponent(id)}`,
             // 5. 老牌 Meting 节点备用路由 (Injahow Server Mode)
-            (type, id) => `https://api.injahow.cn/meting/?server=netease&type=${type}&id=${id}`,
+            (type, id) => `https://api.injahow.cn/meting/?server=netease&type=${type}&id=${encodeURIComponent(id)}`,
             // 6. 官方衍生公用节点 (I-Meto)
-            (type, id) => `https://api.i-meto.com/meting/api?server=netease&type=${type}&id=${id}`,
+            (type, id) => `https://api.i-meto.com/meting/api?server=netease&type=${type}&id=${encodeURIComponent(id)}`,
             // 7. 社区 Meting 节点 (XF1433)
-            (type, id) => `https://music.xf1433.com/api/?server=netease&type=${type}&id=${id}`,
+            (type, id) => `https://music.xf1433.com/api/?server=netease&type=${type}&id=${encodeURIComponent(id)}`,
             // 8. 网易云直通代理 1 (AllOrigins Raw)
-            (type, id) => `https://api.allorigins.win/raw?url=${encodeURIComponent(type === 'playlist' ? `https://music.163.com/api/v1/playlist/detail?id=${id}` : `https://music.163.com/api/song/detail/?id=${id}&ids=[${id}]`)}`,
+            (type, id) => `https://api.allorigins.win/raw?url=${encodeURIComponent(type === 'playlist' ? `https://music.163.com/api/v1/playlist/detail?id=${id}` : (type === 'search' ? `https://music.163.com/api/search/get/web?s=${encodeURIComponent(id)}&type=1&offset=0&total=true&limit=20` : `https://music.163.com/api/song/detail/?id=${id}&ids=[${id}]`))}`,
             // 9. 网易云直通代理 2 (CodeTabs Proxy)
-            (type, id) => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(type === 'playlist' ? `https://music.163.com/api/v1/playlist/detail?id=${id}` : `https://music.163.com/api/song/detail/?id=${id}&ids=[${id}]`)}`,
+            (type, id) => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(type === 'playlist' ? `https://music.163.com/api/v1/playlist/detail?id=${id}` : (type === 'search' ? `https://music.163.com/api/search/get/web?s=${encodeURIComponent(id)}&type=1&offset=0&total=true&limit=20` : `https://music.163.com/api/song/detail/?id=${id}&ids=[${id}]`))}`,
             // 10. 网易云直通代理 3 (AllOrigins Get JSON)
-            (type, id) => `https://api.allorigins.win/get?url=${encodeURIComponent(type === 'playlist' ? `https://music.163.com/api/v1/playlist/detail?id=${id}` : `https://music.163.com/api/song/detail/?id=${id}&ids=[${id}]`)}`,
+            (type, id) => `https://api.allorigins.win/get?url=${encodeURIComponent(type === 'playlist' ? `https://music.163.com/api/v1/playlist/detail?id=${id}` : (type === 'search' ? `https://music.163.com/api/search/get/web?s=${encodeURIComponent(id)}&type=1&offset=0&total=true&limit=20` : `https://music.163.com/api/song/detail/?id=${id}&ids=[${id}]`))}`,
             // 11. PearkTrue 开放接口 (单曲)
             (type, id) => type === 'song' ? `https://api.pearktrue.cn/api/music/netease/?id=${id}` : null,
             // 12. VVHan 开放接口 (单曲)
@@ -1480,7 +1480,17 @@
                         }));
                     }
 
-                    // 3. 网易云官方歌单对象格式 { playlist: { tracks: [...] } }
+                    // 3. 网易云官方搜索对象格式 { result: { songs: [...] } }
+                    if (data && data.result && Array.isArray(data.result.songs) && data.result.songs.length > 0) {
+                        return data.result.songs.map(s => ({
+                            id: s.id,
+                            name: s.name,
+                            artist: (s.artists || s.ar || []).map(a => a.name).join('/'),
+                            pic: (s.album && s.album.picUrl) || (s.al && s.al.picUrl) || (s.artists && s.artists[0] && s.artists[0].picUrl) || ''
+                        }));
+                    }
+
+                    // 4. 网易云官方歌单对象格式 { playlist: { tracks: [...] } }
                     if (data && data.playlist && Array.isArray(data.playlist.tracks) && data.playlist.tracks.length > 0) {
                         return data.playlist.tracks.map(s => ({
                             id: s.id,
@@ -1490,7 +1500,7 @@
                         }));
                     }
 
-                    // 4. 第三方单曲数据对象 (VVHan / PearkTrue)
+                    // 5. 第三方单曲数据对象 (VVHan / PearkTrue)
                     if (data && data.data && typeof data.data === 'object') {
                         const d = data.data;
                         if (d.name || d.title || d.song) {
@@ -1601,24 +1611,15 @@
                 val = val.replace(/\(来自@网易云音乐\)/g, '').replace(/https?:\/\/\S+/g, '').trim() || val;
             }
 
-            // 4. Search by keyword
+            // 4. Search by keyword using the multi-mirror pool!
             listArea.innerHTML = `<div style="text-align: center; padding: 24px; color: var(--text-sub); font-size: 0.78rem;"><span>🔍 正在搜索网易云音乐曲库...</span></div>`;
             if (label) label.textContent = `🔍 搜索 “${val}” 的结果：`;
 
             try {
-                const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(`https://music.163.com/api/search/suggest/web?s=${encodeURIComponent(val)}`)}`;
-                const res = await fetch(proxyUrl);
-                const data = await res.json();
-
-                if (data && data.result && Array.isArray(data.result.songs) && data.result.songs.length > 0) {
-                    const mappedSongs = data.result.songs.map(s => ({
-                        id: s.id || '',
-                        name: s.name,
-                        artist: (s.artists || []).map(a => a.name).join('/'),
-                        pic: (s.artists && s.artists[0] && s.artists[0].picUrl) || ''
-                    }));
-                    currentLoadedSongs = mappedSongs;
-                    renderNetEaseSongs(mappedSongs);
+                const songs = await fetchNetEaseMeting('search', val);
+                if (songs && songs.length > 0) {
+                    currentLoadedSongs = songs;
+                    renderNetEaseSongs(songs);
                 } else {
                     // Fallback to manual selection prompt
                     listArea.innerHTML = `
