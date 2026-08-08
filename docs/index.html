@@ -956,14 +956,16 @@
                     </div>
                 </div>
 
-                <!-- Selected Song Indicator -->
+                <!-- Selected Song Indicator & Quick Submit -->
                 <div id="selectedSongBox" style="display: none;">
                     <div class="selected-song-banner">
                         <div class="selected-song-info">
                             <div class="selected-song-title" id="dispSelectedSong">🎵 已选歌曲：--</div>
                             <div class="selected-song-artist" id="dispSelectedArtist">🎤 歌手：--</div>
                         </div>
-                        <span style="font-size: 0.72rem; color: #E11D48; font-weight: 800;">✓ 已就绪</span>
+                        <button type="button" id="btnSubmitSong" class="music-submit-btn" style="margin-top: 0; padding: 6px 14px; font-size: 0.8rem;" onclick="submitSongRequest()">
+                            <span id="btnSubmitSongText">立即点歌 🐾</span>
+                        </button>
                     </div>
                 </div>
 
@@ -971,29 +973,10 @@
                 <input type="hidden" id="musicSongName" />
                 <input type="hidden" id="musicArtist" />
 
-                <!-- Table / Card UID Input -->
-                <div class="form-group" id="formGroupTable">
-                    <label class="form-label" for="musicTable">🏷️ 您的桌号 / 手作卡片 (选填)</label>
-                    <input type="text" id="musicTable" class="form-input" placeholder="例如：3号桌 / 04号手作卡" maxlength="30" />
-                </div>
-
-                <!-- Message / Wishes -->
-                <div class="form-group">
-                    <label class="form-label" for="musicMessage">💌 送歌留言 / 祝福 (选填)</label>
-                    <textarea id="musicMessage" class="form-textarea" rows="2" placeholder="写一句温暖的寄语吧，例如：祝在店里做手工的朋友们都有好心情！" maxlength="120"></textarea>
-                </div>
-
-                <!-- Submit Button -->
-                <button type="button" id="btnSubmitSong" class="music-submit-btn" onclick="submitSongRequest()">
-                    <span>✨</span>
-                    <span id="btnSubmitSongText">投递点歌心愿</span>
-                    <span>💌</span>
-                </button>
-
                 <!-- Tip Box -->
                 <div class="music-tip-box">
                     <span>💡</span>
-                    <span>店主收到即时通知后，会优先为您安排在店内音响播放哦！</span>
+                    <span>点歌须知：新点的歌曲会自动加入播放队列，当前歌曲播放完毕后将依次为您播放~</span>
                 </div>
             </div>
         </section>
@@ -1582,29 +1565,21 @@
             const selectedBox = document.getElementById('selectedSongBox');
             const dispName = document.getElementById('dispSelectedSong');
             const dispArtist = document.getElementById('dispSelectedArtist');
-            const tableInput = document.getElementById('musicTable');
 
             if (songNameInput) songNameInput.value = name;
             if (artistInput) artistInput.value = artist;
 
-            if (dispName) dispName.textContent = `🎵 已选歌曲：${name}`;
+            if (dispName) dispName.textContent = `🎵 已选：${name}`;
             if (dispArtist) dispArtist.textContent = `🎤 歌手：${artist || '未指定'}`;
             if (selectedBox) selectedBox.style.display = 'block';
 
-            showMusicToast(`✨ 已选择《${name}》，填写桌号后即可投递~`, '#15803D', '#F0FDF4', '#86EFAC');
-
-            // Scroll down smoothly to table input
-            if (tableInput) {
-                tableInput.focus();
-                tableInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            }
+            // Directly submit the song request with 1-click
+            submitSongRequest();
         }
 
         async function submitSongRequest() {
             const songName = (document.getElementById('musicSongName')?.value || '').trim();
             const artist = (document.getElementById('musicArtist')?.value || '').trim();
-            const table = (document.getElementById('musicTable')?.value || '').trim();
-            const message = (document.getElementById('musicMessage')?.value || '').trim();
             const submitBtn = document.getElementById('btnSubmitSong');
             const submitBtnText = document.getElementById('btnSubmitSongText');
 
@@ -1623,23 +1598,21 @@
             const now = Date.now();
             if (lastSent && (now - parseInt(lastSent)) < 20000) {
                 const waitSec = Math.ceil((20000 - (now - parseInt(lastSent))) / 1000);
-                showMusicToast(`⏳ 点歌太快啦，请等待 ${waitSec} 秒后再投递下一首哦~`, '#D97706', '#FEF3C7', '#FCD34D');
+                showMusicToast(`⏳ 点歌太快啦，请等待 ${waitSec} 秒后再点下一首哦~`, '#D97706', '#FEF3C7', '#FCD34D');
                 return;
             }
 
-            submitBtn.disabled = true;
-            submitBtnText.textContent = '正在投递心愿...';
+            if (submitBtn) submitBtn.disabled = true;
+            if (submitBtnText) submitBtnText.textContent = '正在点歌...';
 
             const topic = 'XingYeShouZuo';
             const nowTimeStr = new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 
             const payloadLines = [
-                `🎵【星野手作 · 现场点歌通知】`,
+                `🎵【星野手作 · 现场点歌】`,
                 ``,
                 `📌 歌曲名称：${songName}`,
                 `🎤 歌手/版本：${artist || '未指定'}`,
-                `🏷️ 来源桌号：${table || '店内顾客'}`,
-                `💌 点歌留言：${message || '无'}`,
                 `🌐 来源：网易云曲库`,
                 `⏰ 点歌时间：${nowTimeStr}`
             ];
@@ -1650,7 +1623,7 @@
                     method: 'POST',
                     body: payload,
                     headers: {
-                        'Title': `🎵 点歌通知: ${songName}`,
+                        'Title': `🎵 点歌: ${songName}`,
                         'Priority': 'high',
                         'Tags': 'musical_note,sparkles',
                         'Markdown': 'no'
@@ -1659,26 +1632,18 @@
 
                 if (response.ok) {
                     localStorage.setItem('ntfy_last_song_sent', Date.now().toString());
-                    showMusicToast(`🎉 点歌心愿已投递成功！店主正在为您准备《${songName}》~ 🐱`, '#15803D', '#F0FDF4', '#86EFAC');
+                    showMusicToast(`🎉 点歌成功！已加入播放队列，当前歌曲播放完毕后将为您播放《${songName}》~ 🐱`, '#15803D', '#F0FDF4', '#86EFAC');
                     
-                    // Reset selected song
-                    document.getElementById('musicSongName').value = '';
-                    document.getElementById('musicArtist').value = '';
-                    document.getElementById('musicTable').value = '';
-                    document.getElementById('musicMessage').value = '';
-                    const selectedBox = document.getElementById('selectedSongBox');
-                    if (selectedBox) selectedBox.style.display = 'none';
-
                     // Start 20s cooldown countdown
                     let countdown = 20;
                     const timer = setInterval(() => {
                         countdown--;
                         if (countdown > 0) {
-                            submitBtnText.textContent = `心愿冷却中 (${countdown}s)`;
+                            if (submitBtnText) submitBtnText.textContent = `冷却中 (${countdown}s)`;
                         } else {
                             clearInterval(timer);
-                            submitBtn.disabled = false;
-                            submitBtnText.textContent = '投递点歌心愿';
+                            if (submitBtn) submitBtn.disabled = false;
+                            if (submitBtnText) submitBtnText.textContent = '再次点歌 🐾';
                         }
                     }, 1000);
                 } else {
@@ -1686,9 +1651,9 @@
                 }
             } catch (err) {
                 console.error('ntfy push failed:', err);
-                submitBtn.disabled = false;
-                submitBtnText.textContent = '投递点歌心愿';
-                showMusicToast('❌ 投递失败，请检查网络连接后重试~', '#BE123C', '#FFF1F2', '#FDA4AF');
+                if (submitBtn) submitBtn.disabled = false;
+                if (submitBtnText) submitBtnText.textContent = '立即点歌 🐾';
+                showMusicToast('❌ 点歌失败，请检查网络连接后重试~', '#BE123C', '#FFF1F2', '#FDA4AF');
             }
         }
 
