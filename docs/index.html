@@ -1460,23 +1460,57 @@
             const input = document.getElementById('musicSearchInput');
             const listArea = document.getElementById('musicSearchResultArea');
             const label = document.getElementById('musicListLabel');
-            const val = (input.value || '').trim();
+            let val = (input.value || '').trim();
 
             if (!val) {
-                showMusicToast('⚠️ 请输入歌曲名称、歌手或网易云歌单链接~', '#BE123C', '#FFF1F2', '#FDA4AF');
+                showMusicToast('⚠️ 请输入歌曲名称、歌手或粘贴网易云分享链接~', '#BE123C', '#FFF1F2', '#FDA4AF');
                 input.focus();
                 return;
             }
 
-            // Check if user entered a playlist link or ID
-            const playlistMatch = val.match(/playlist(?:\?id=|\/)(\d+)/i) || (val.match(/^\d{4,12}$/) ? [null, val] : null);
+            // 1. Check if user pasted a NetEase Single Song share link or ID (e.g., id=1873049720 or /song?id=1873049720 or /song/1873049720)
+            const songIdMatch = val.match(/(?:song\?id=|\/song\/)(\d+)/i);
+            if (songIdMatch && songIdMatch[1]) {
+                const sId = songIdMatch[1];
+                listArea.innerHTML = `<div style="text-align: center; padding: 24px; color: var(--text-sub); font-size: 0.78rem;"><span>🎵 正在解析网易云单曲分享...</span></div>`;
+                if (label) label.textContent = `🎵 解析到的网易云单曲：`;
+
+                try {
+                    const res = await fetch(`https://api.injahow.cn/meting/?type=song&id=${sId}`);
+                    const songs = await res.json();
+                    if (Array.isArray(songs) && songs.length > 0) {
+                        currentLoadedSongs = songs;
+                        renderNetEaseSongs(songs);
+                        // Auto-select this single song directly
+                        const s = songs[0];
+                        selectSong(s.name, s.artist, s.pic || '');
+                        return;
+                    }
+                } catch (e) {
+                    console.error('Fetch song failed:', e);
+                }
+            }
+
+            // 2. Check if user entered a playlist link or ID
+            const playlistMatch = val.match(/(?:playlist(?:\?id=|\/)|\/playlist\/)(\d+)/i) || (val.match(/^\d{4,12}$/) ? [null, val] : null);
             if (playlistMatch && playlistMatch[1]) {
                 const pId = playlistMatch[1];
                 loadNetEasePlaylist(pId, null);
                 return;
             }
 
-            // Search by keyword
+            // 3. Check if text contains App Share format like "分享回春丹的单曲《初恋》"
+            const shareTextMatch = val.match(/分享(.*?)(?:的单曲|的歌曲)《(.*?)》/);
+            if (shareTextMatch) {
+                const parsedArtist = shareTextMatch[1].trim();
+                const parsedSong = shareTextMatch[2].trim();
+                val = `${parsedSong} ${parsedArtist}`;
+            } else {
+                // Strip common noise like "(来自@网易云音乐)" and urls
+                val = val.replace(/\(来自@网易云音乐\)/g, '').replace(/https?:\/\/\S+/g, '').trim() || val;
+            }
+
+            // 4. Search by keyword
             listArea.innerHTML = `<div style="text-align: center; padding: 24px; color: var(--text-sub); font-size: 0.78rem;"><span>🔍 正在搜索网易云音乐曲库...</span></div>`;
             if (label) label.textContent = `🔍 搜索 “${val}” 的结果：`;
 
