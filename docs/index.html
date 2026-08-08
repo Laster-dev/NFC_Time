@@ -1564,14 +1564,13 @@
                         const songObj = songs[0];
                         currentLoadedSongs = [songObj];
                         renderNetEaseSongs([songObj]);
-                        selectSong(songObj.id, songObj.name, songObj.artist, songObj.pic);
                         return;
                     }
                 } catch (e) {
                     console.error('Fetch song failed:', e);
                 }
 
-                // Resilient fallback: Even if mirror APIs fail, directly use the extracted ID!
+                // Resilient fallback: Even if mirror APIs fail, directly show the extracted ID in list!
                 const fallbackObj = {
                     id: sId,
                     name: `网易云单曲 (ID:${sId})`,
@@ -1580,7 +1579,6 @@
                 };
                 currentLoadedSongs = [fallbackObj];
                 renderNetEaseSongs([fallbackObj]);
-                selectSong(sId, fallbackObj.name, fallbackObj.artist, '');
                 return;
             }
 
