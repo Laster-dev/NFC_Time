@@ -1710,8 +1710,8 @@
             // Cooldown check (prevent spamming: 20 seconds cooldown)
             const lastSent = localStorage.getItem('ntfy_last_song_sent');
             const now = Date.now();
-            if (lastSent && (now - parseInt(lastSent)) < 20000) {
-                const waitSec = Math.ceil((20000 - (now - parseInt(lastSent))) / 1000);
+            if (lastSent && (now - parseInt(lastSent)) < 2000) {
+                const waitSec = Math.ceil((2000 - (now - parseInt(lastSent))) / 1000);
                 showMusicToast(`⏳ 点歌太快啦，请等待 ${waitSec} 秒后再点下一首哦~`, '#D97706', '#FEF3C7', '#FCD34D');
                 return;
             }
