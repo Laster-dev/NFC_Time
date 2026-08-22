@@ -109,10 +109,34 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private var isInitialSyncing = true
+    private var hasPerformedInitialSync = false
+    private var initialSyncDialog: AlertDialog? = null
+
+    private fun showInitialSyncDialog() {
+        if (initialSyncDialog?.isShowing == true) return
+        val view = LayoutInflater.from(this).inflate(R.layout.dialog_initial_syncing, null)
+        initialSyncDialog = AlertDialog.Builder(this)
+            .setView(view)
+            .setCancelable(false)
+            .create()
+        initialSyncDialog?.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+        initialSyncDialog?.show()
+    }
+
+    private fun dismissInitialSyncDialog() {
+        try {
+            initialSyncDialog?.dismiss()
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+        initialSyncDialog = null
+    }
+
     override fun onResume() {
         super.onResume()
         enableForegroundDispatchSafely()
-        startPolling()
+        startPollingOrInitialSync()
     }
 
     private fun enableForegroundDispatchSafely() {
@@ -153,7 +177,33 @@ class MainActivity : AppCompatActivity() {
         stopPolling()
     }
 
-    private fun startPolling() {
+    private fun startPollingOrInitialSync() {
+        syncJob?.cancel()
+        tickJob?.cancel()
+
+        if (!hasPerformedInitialSync) {
+            isInitialSyncing = true
+            showInitialSyncDialog()
+
+            lifecycleScope.launch {
+                try {
+                    refreshCards(forceFetch = true)
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                } finally {
+                    hasPerformedInitialSync = true
+                    isInitialSyncing = false
+                    dismissInitialSyncDialog()
+                    Toast.makeText(this@MainActivity, "✅ 强制同步云端数据完成", Toast.LENGTH_SHORT).show()
+                    startRegularPolling()
+                }
+            }
+        } else {
+            startRegularPolling()
+        }
+    }
+
+    private fun startRegularPolling() {
         syncJob?.cancel()
         tickJob?.cancel()
 
@@ -202,6 +252,10 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun processNfcTag(tag: Tag) {
+        if (isInitialSyncing) {
+            Toast.makeText(this, "⏳ 正在强制同步云端最新数据，请稍等...", Toast.LENGTH_SHORT).show()
+            return
+        }
         val uidBytes = tag.id
         val cardId = uidBytes.joinToString(":") { String.format("%02X", it) }
         tvNfcStatus.text = "✨ 贴卡成功! UID: $cardId"
