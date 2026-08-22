@@ -28,7 +28,7 @@ data class CardInfo(
     var overdueSeconds: Double = 0.0,
     var isOverdue: Boolean = false,
     var remark: String = "",
-    var updatedAtMs: Long = System.currentTimeMillis()
+    var updatedAtMs: Long = 0L
 )
 
 data class Announcement(
@@ -37,7 +37,7 @@ data class Announcement(
     var content: String = "",
     var isForce: Boolean = false,
     var publishTimeUtc: String = "",
-    var updatedAtMs: Long = System.currentTimeMillis()
+    var updatedAtMs: Long = 0L
 )
 
 class GitHubApiClient(
@@ -118,12 +118,30 @@ class GitHubApiClient(
         prefs.edit().putStringSet("deleted_anno_ids", set).apply()
     }
 
+    private fun getLocallyModifiedCardIds(): HashSet<String> {
+        val set = prefs.getStringSet("dirty_card_ids", emptySet()) ?: emptySet()
+        return HashSet(set)
+    }
+
+    private fun markCardLocallyModified(cardId: String) {
+        val set = getLocallyModifiedCardIds()
+        set.add(cardId.lowercase())
+        prefs.edit().putStringSet("dirty_card_ids", set).apply()
+    }
+
+    private fun clearLocallyModifiedCardIds(cardIds: List<String>) {
+        val set = getLocallyModifiedCardIds()
+        cardIds.forEach { set.remove(it.lowercase()) }
+        prefs.edit().putStringSet("dirty_card_ids", set).apply()
+    }
+
     /**
      * Smart card merge algorithm:
-     * Combines local cards and remote cards item-by-item.
-     * Prevents stale local data from overwriting newly added/updated remote cards from other devices.
+     * Combines local cards and remote cards item-by-item using explicit dirty tracking.
+     * Overwrites remote cards ONLY if the local card was explicitly modified on THIS device and has a newer timestamp.
      */
     private fun mergeCards(localList: List<CardInfo>, remoteList: List<CardInfo>): MutableList<CardInfo> {
+        val dirtySet = getLocallyModifiedCardIds()
         val map = LinkedHashMap<String, CardInfo>()
 
         for (remote in remoteList) {
@@ -134,10 +152,12 @@ class GitHubApiClient(
         for (local in localList) {
             val key = local.cardId.lowercase()
             val remote = map[key]
+
             if (remote == null) {
                 map[key] = local
             } else {
-                if (local.updatedAtMs > remote.updatedAtMs) {
+                val isDirty = dirtySet.contains(key)
+                if (isDirty && local.updatedAtMs >= remote.updatedAtMs) {
                     map[key] = local
                 } else {
                     map[key] = remote
@@ -167,7 +187,7 @@ class GitHubApiClient(
             if (remote == null) {
                 map[local.id] = local
             } else {
-                if (local.updatedAtMs > remote.updatedAtMs) {
+                if (local.updatedAtMs >= remote.updatedAtMs) {
                     map[local.id] = local
                 } else {
                     map[local.id] = remote
@@ -271,7 +291,11 @@ class GitHubApiClient(
                     .addHeader("Authorization", "Bearer $token")
                     .build()
 
-                client.newCall(req).execute().close()
+                client.newCall(req).execute().use { resp ->
+                    if (resp.isSuccessful) {
+                        clearLocallyModifiedCardIds(finalCards.map { it.cardId })
+                    }
+                }
             } catch (e: Exception) {
                 e.printStackTrace()
             }
@@ -318,6 +342,7 @@ class GitHubApiClient(
         } else {
             card.updatedAtMs = nowMs
         }
+        markCardLocallyModified(cardId)
         syncAllToRemoteAsync(list, getCachedAnnouncements())
         return card
     }
@@ -328,6 +353,7 @@ class GitHubApiClient(
         card.targetDurationSeconds += addSeconds
         card.savedRemainingSeconds += addSeconds
         card.updatedAtMs = System.currentTimeMillis()
+        markCardLocallyModified(cardId)
         syncAllToRemoteAsync(list, getCachedAnnouncements())
         return card
     }
@@ -375,6 +401,7 @@ class GitHubApiClient(
             }
         }
         card.updatedAtMs = nowMs
+        markCardLocallyModified(cardId)
 
         syncAllToRemoteAsync(list, getCachedAnnouncements())
         return card
@@ -385,6 +412,7 @@ class GitHubApiClient(
         val card = list.find { it.cardId.equals(cardId, ignoreCase = true) } ?: return null
         card.name = newName
         card.updatedAtMs = System.currentTimeMillis()
+        markCardLocallyModified(cardId)
         syncAllToRemoteAsync(list, getCachedAnnouncements())
         return card
     }
@@ -394,6 +422,7 @@ class GitHubApiClient(
         val card = list.find { it.cardId.equals(cardId, ignoreCase = true) } ?: return null
         card.remark = remark
         card.updatedAtMs = System.currentTimeMillis()
+        markCardLocallyModified(cardId)
         syncAllToRemoteAsync(list, getCachedAnnouncements())
         return card
     }
@@ -405,6 +434,7 @@ class GitHubApiClient(
         card.startTimeUtc = null
         card.savedRemainingSeconds = card.targetDurationSeconds
         card.updatedAtMs = System.currentTimeMillis()
+        markCardLocallyModified(cardId)
         syncAllToRemoteAsync(list, getCachedAnnouncements())
         return true
     }
