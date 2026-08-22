@@ -27,7 +27,8 @@ data class CardInfo(
     var remainingSeconds: Double = 0.0,
     var overdueSeconds: Double = 0.0,
     var isOverdue: Boolean = false,
-    var remark: String = ""
+    var remark: String = "",
+    var updatedAtMs: Long = System.currentTimeMillis()
 )
 
 data class Announcement(
@@ -35,7 +36,8 @@ data class Announcement(
     var title: String = "",
     var content: String = "",
     var isForce: Boolean = false,
-    var publishTimeUtc: String = ""
+    var publishTimeUtc: String = "",
+    var updatedAtMs: Long = System.currentTimeMillis()
 )
 
 class GitHubApiClient(
@@ -105,8 +107,79 @@ class GitHubApiClient(
         }
     }
 
-    private suspend fun fetchRemoteCards(): MutableList<CardInfo>? = withContext(Dispatchers.IO) {
-        if (gistId.isEmpty()) return@withContext null
+    private fun getDeletedAnnoIds(): HashSet<String> {
+        val set = prefs.getStringSet("deleted_anno_ids", emptySet()) ?: emptySet()
+        return HashSet(set)
+    }
+
+    private fun markAnnouncementDeleted(id: String) {
+        val set = getDeletedAnnoIds()
+        set.add(id)
+        prefs.edit().putStringSet("deleted_anno_ids", set).apply()
+    }
+
+    /**
+     * Smart card merge algorithm:
+     * Combines local cards and remote cards item-by-item.
+     * Prevents stale local data from overwriting newly added/updated remote cards from other devices.
+     */
+    private fun mergeCards(localList: List<CardInfo>, remoteList: List<CardInfo>): MutableList<CardInfo> {
+        val map = LinkedHashMap<String, CardInfo>()
+
+        for (remote in remoteList) {
+            val key = remote.cardId.lowercase()
+            map[key] = remote
+        }
+
+        for (local in localList) {
+            val key = local.cardId.lowercase()
+            val remote = map[key]
+            if (remote == null) {
+                map[key] = local
+            } else {
+                if (local.updatedAtMs > remote.updatedAtMs) {
+                    map[key] = local
+                } else {
+                    map[key] = remote
+                }
+            }
+        }
+
+        return map.values.toMutableList()
+    }
+
+    /**
+     * Smart announcement merge algorithm:
+     * Merges announcement lists by ID while checking deleted ID blacklist.
+     */
+    private fun mergeAnnouncements(localList: List<Announcement>, remoteList: List<Announcement>): MutableList<Announcement> {
+        val deletedIds = getDeletedAnnoIds()
+        val map = LinkedHashMap<String, Announcement>()
+
+        for (remote in remoteList) {
+            if (deletedIds.contains(remote.id)) continue
+            map[remote.id] = remote
+        }
+
+        for (local in localList) {
+            if (deletedIds.contains(local.id)) continue
+            val remote = map[local.id]
+            if (remote == null) {
+                map[local.id] = local
+            } else {
+                if (local.updatedAtMs > remote.updatedAtMs) {
+                    map[local.id] = local
+                } else {
+                    map[local.id] = remote
+                }
+            }
+        }
+
+        return map.values.toMutableList()
+    }
+
+    private fun fetchRemoteCardsAndAnnosDirect(): Pair<List<CardInfo>?, List<Announcement>?> {
+        if (gistId.isEmpty()) return Pair(null, null)
         try {
             val reqBuilder = Request.Builder()
                 .url("https://api.github.com/gists/$gistId")
@@ -118,10 +191,11 @@ class GitHubApiClient(
 
             client.newCall(reqBuilder.build()).execute().use { resp ->
                 if (resp.isSuccessful) {
-                    val body = resp.body?.string() ?: return@use
-                    val jsonObj = gson.fromJson(body, JsonObject::class.java) ?: return@use
+                    val body = resp.body?.string() ?: return Pair(null, null)
+                    val jsonObj = gson.fromJson(body, JsonObject::class.java) ?: return Pair(null, null)
                     val files = jsonObj.getAsJsonObject("files")
                     if (files != null) {
+                        var remoteCards: List<CardInfo>? = null
                         val fileObj = files.getAsJsonObject("cards_data.json")
                             ?: files.getAsJsonObject("gistfile1.txt")
                             ?: if (files.keySet().isNotEmpty()) files.getAsJsonObject(files.keySet().first()) else null
@@ -130,38 +204,60 @@ class GitHubApiClient(
                             val content = fileObj.get("content").asString
                             val list = gson.fromJson(content, Array<CardInfo>::class.java)
                             if (list != null) {
-                                saveCachedCards(list.toList())
+                                remoteCards = list.toList()
                             }
                         }
 
+                        var remoteAnnos: List<Announcement>? = null
                         val annoFileObj = files.getAsJsonObject("announcements.json")
                         if (annoFileObj != null && annoFileObj.has("content")) {
                             val annoContent = annoFileObj.get("content").asString
                             val annoList = gson.fromJson(annoContent, Array<Announcement>::class.java)
                             if (annoList != null) {
-                                saveCachedAnnouncements(annoList.toList())
+                                remoteAnnos = annoList.toList()
                             }
                         }
 
-                        return@withContext getCachedCards()
+                        return Pair(remoteCards, remoteAnnos)
                     }
                 }
             }
         } catch (e: Exception) {
             e.printStackTrace()
         }
+        return Pair(null, null)
+    }
+
+    private suspend fun fetchRemoteCards(): MutableList<CardInfo>? = withContext(Dispatchers.IO) {
+        val (remoteCards, remoteAnnos) = fetchRemoteCardsAndAnnosDirect()
+        if (remoteCards != null || remoteAnnos != null) {
+            val mergedCards = if (remoteCards != null) mergeCards(getCachedCards(), remoteCards) else getCachedCards()
+            val mergedAnnos = if (remoteAnnos != null) mergeAnnouncements(getCachedAnnouncements(), remoteAnnos) else getCachedAnnouncements()
+
+            saveCachedCards(mergedCards)
+            saveCachedAnnouncements(mergedAnnos)
+            return@withContext mergedCards
+        }
         return@withContext null
     }
 
-    private fun syncAllToRemoteAsync(cards: List<CardInfo>, announcements: List<Announcement>) {
-        saveCachedCards(cards)
-        saveCachedAnnouncements(announcements)
+    private fun syncAllToRemoteAsync(localCards: List<CardInfo>, localAnnos: List<Announcement>) {
+        saveCachedCards(localCards)
+        saveCachedAnnouncements(localAnnos)
         if (gistId.isEmpty() || token.isEmpty()) return
 
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                val cardsJsonStr = gson.toJson(cards)
-                val annosJsonStr = gson.toJson(announcements)
+                // Fetch remote first to prevent overwriting updates made on other devices
+                val (remoteCards, remoteAnnos) = fetchRemoteCardsAndAnnosDirect()
+                val finalCards = if (remoteCards != null) mergeCards(localCards, remoteCards) else localCards
+                val finalAnnos = if (remoteAnnos != null) mergeAnnouncements(localAnnos, remoteAnnos) else localAnnos
+
+                saveCachedCards(finalCards)
+                saveCachedAnnouncements(finalAnnos)
+
+                val cardsJsonStr = gson.toJson(finalCards)
+                val annosJsonStr = gson.toJson(finalAnnos)
 
                 val filesObj = JsonObject().apply {
                     add("cards_data.json", JsonObject().apply { addProperty("content", cardsJsonStr) })
@@ -215,9 +311,12 @@ class GitHubApiClient(
     fun swipeCardImmediate(cardId: String): CardInfo {
         val list = getCachedCards()
         var card = list.find { it.cardId.equals(cardId, ignoreCase = true) }
+        val nowMs = System.currentTimeMillis()
         if (card == null) {
-            card = CardInfo(cardId = cardId, name = "卡片_$cardId", status = 0)
+            card = CardInfo(cardId = cardId, name = "卡片_$cardId", status = 0, updatedAtMs = nowMs)
             list.add(card)
+        } else {
+            card.updatedAtMs = nowMs
         }
         syncAllToRemoteAsync(list, getCachedAnnouncements())
         return card
@@ -228,6 +327,7 @@ class GitHubApiClient(
         val card = list.find { it.cardId.equals(cardId, ignoreCase = true) } ?: return null
         card.targetDurationSeconds += addSeconds
         card.savedRemainingSeconds += addSeconds
+        card.updatedAtMs = System.currentTimeMillis()
         syncAllToRemoteAsync(list, getCachedAnnouncements())
         return card
     }
@@ -236,6 +336,7 @@ class GitHubApiClient(
         val list = getCachedCards()
         val card = list.find { it.cardId.equals(cardId, ignoreCase = true) } ?: return null
         val nowIso = getIsoFormat().format(Date())
+        val nowMs = System.currentTimeMillis()
 
         when (action.lowercase()) {
             "start" -> {
@@ -250,11 +351,10 @@ class GitHubApiClient(
             }
             "pause" -> {
                 if (card.status == 1) {
-                    val now = System.currentTimeMillis()
                     val startMs = if (!card.startTimeUtc.isNull_Empty()) {
-                        try { getIsoFormat().parse(card.startTimeUtc!!)?.time ?: now } catch (e: Exception) { now }
-                    } else now
-                    val elapsedSec = (now - startMs) / 1000.0
+                        try { getIsoFormat().parse(card.startTimeUtc!!)?.time ?: nowMs } catch (e: Exception) { nowMs }
+                    } else nowMs
+                    val elapsedSec = (nowMs - startMs) / 1000.0
                     val rem = Math.max(0.0, card.savedRemainingSeconds - elapsedSec)
 
                     card.savedRemainingSeconds = rem.toInt()
@@ -274,6 +374,7 @@ class GitHubApiClient(
                 card.startTimeUtc = null
             }
         }
+        card.updatedAtMs = nowMs
 
         syncAllToRemoteAsync(list, getCachedAnnouncements())
         return card
@@ -283,6 +384,7 @@ class GitHubApiClient(
         val list = getCachedCards()
         val card = list.find { it.cardId.equals(cardId, ignoreCase = true) } ?: return null
         card.name = newName
+        card.updatedAtMs = System.currentTimeMillis()
         syncAllToRemoteAsync(list, getCachedAnnouncements())
         return card
     }
@@ -291,6 +393,7 @@ class GitHubApiClient(
         val list = getCachedCards()
         val card = list.find { it.cardId.equals(cardId, ignoreCase = true) } ?: return null
         card.remark = remark
+        card.updatedAtMs = System.currentTimeMillis()
         syncAllToRemoteAsync(list, getCachedAnnouncements())
         return card
     }
@@ -301,6 +404,7 @@ class GitHubApiClient(
         card.status = 0
         card.startTimeUtc = null
         card.savedRemainingSeconds = card.targetDurationSeconds
+        card.updatedAtMs = System.currentTimeMillis()
         syncAllToRemoteAsync(list, getCachedAnnouncements())
         return true
     }
@@ -308,6 +412,7 @@ class GitHubApiClient(
     fun addOrUpdateAnnouncement(anno: Announcement) {
         val annos = getCachedAnnouncements()
         val index = annos.indexOfFirst { it.id == anno.id }
+        anno.updatedAtMs = System.currentTimeMillis()
         if (anno.publishTimeUtc.isEmpty()) {
             anno.publishTimeUtc = getIsoFormat().format(Date())
         }
@@ -320,6 +425,7 @@ class GitHubApiClient(
     }
 
     fun deleteAnnouncement(id: String) {
+        markAnnouncementDeleted(id)
         val annos = getCachedAnnouncements()
         annos.removeAll { it.id == id }
         syncAllToRemoteAsync(getCachedCards(), annos)
