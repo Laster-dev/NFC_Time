@@ -6,6 +6,8 @@ import com.google.gson.JsonObject
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
@@ -53,6 +55,7 @@ class GitHubApiClient(
 
     private val gson = Gson()
     private val jsonType = "application/json; charset=utf-8".toMediaType()
+    private val syncMutex = Mutex()
 
     private fun getIsoFormat(): SimpleDateFormat {
         return SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US).apply {
@@ -138,7 +141,7 @@ class GitHubApiClient(
     /**
      * Smart card merge algorithm:
      * Combines local cards and remote cards item-by-item using explicit dirty tracking.
-     * Overwrites remote cards ONLY if the local card was explicitly modified on THIS device and has a newer timestamp.
+     * Prevents data loss across multiple devices and protects against device clock skew.
      */
     private fun mergeCards(localList: List<CardInfo>, remoteList: List<CardInfo>): MutableList<CardInfo> {
         val dirtySet = getLocallyModifiedCardIds()
@@ -157,9 +160,11 @@ class GitHubApiClient(
                 map[key] = local
             } else {
                 val isDirty = dirtySet.contains(key)
-                if (isDirty && local.updatedAtMs >= remote.updatedAtMs) {
+                if (isDirty) {
+                    // Local card was explicitly modified on THIS device -> Prioritize local intent
                     map[key] = local
                 } else {
+                    // Local card was NOT touched on THIS device -> Keep remote update from other devices
                     map[key] = remote
                 }
             }
@@ -267,37 +272,41 @@ class GitHubApiClient(
         if (gistId.isEmpty() || token.isEmpty()) return
 
         CoroutineScope(Dispatchers.IO).launch {
-            try {
-                // Fetch remote first to prevent overwriting updates made on other devices
-                val (remoteCards, remoteAnnos) = fetchRemoteCardsAndAnnosDirect()
-                val finalCards = if (remoteCards != null) mergeCards(localCards, remoteCards) else localCards
-                val finalAnnos = if (remoteAnnos != null) mergeAnnouncements(localAnnos, remoteAnnos) else localAnnos
+            syncMutex.withLock {
+                try {
+                    val currentLocalCards = getCachedCards()
+                    val currentLocalAnnos = getCachedAnnouncements()
 
-                saveCachedCards(finalCards)
-                saveCachedAnnouncements(finalAnnos)
+                    val (remoteCards, remoteAnnos) = fetchRemoteCardsAndAnnosDirect()
+                    val finalCards = if (remoteCards != null) mergeCards(currentLocalCards, remoteCards) else currentLocalCards
+                    val finalAnnos = if (remoteAnnos != null) mergeAnnouncements(currentLocalAnnos, remoteAnnos) else currentLocalAnnos
 
-                val cardsJsonStr = gson.toJson(finalCards)
-                val annosJsonStr = gson.toJson(finalAnnos)
+                    saveCachedCards(finalCards)
+                    saveCachedAnnouncements(finalAnnos)
 
-                val filesObj = JsonObject().apply {
-                    add("cards_data.json", JsonObject().apply { addProperty("content", cardsJsonStr) })
-                    add("announcements.json", JsonObject().apply { addProperty("content", annosJsonStr) })
-                }
-                val rootObj = JsonObject().apply { add("files", filesObj) }
+                    val cardsJsonStr = gson.toJson(finalCards)
+                    val annosJsonStr = gson.toJson(finalAnnos)
 
-                val req = Request.Builder()
-                    .url("https://api.github.com/gists/$gistId")
-                    .patch(rootObj.toString().toRequestBody(jsonType))
-                    .addHeader("Authorization", "Bearer $token")
-                    .build()
-
-                client.newCall(req).execute().use { resp ->
-                    if (resp.isSuccessful) {
-                        clearLocallyModifiedCardIds(finalCards.map { it.cardId })
+                    val filesObj = JsonObject().apply {
+                        add("cards_data.json", JsonObject().apply { addProperty("content", cardsJsonStr) })
+                        add("announcements.json", JsonObject().apply { addProperty("content", annosJsonStr) })
                     }
+                    val rootObj = JsonObject().apply { add("files", filesObj) }
+
+                    val req = Request.Builder()
+                        .url("https://api.github.com/gists/$gistId")
+                        .patch(rootObj.toString().toRequestBody(jsonType))
+                        .addHeader("Authorization", "Bearer $token")
+                        .build()
+
+                    client.newCall(req).execute().use { resp ->
+                        if (resp.isSuccessful) {
+                            clearLocallyModifiedCardIds(finalCards.map { it.cardId })
+                        }
+                    }
+                } catch (e: Exception) {
+                    e.printStackTrace()
                 }
-            } catch (e: Exception) {
-                e.printStackTrace()
             }
         }
     }
