@@ -298,6 +298,8 @@ class MainActivity : AppCompatActivity() {
         val tvStatusBadge = view.findViewById<TextView>(R.id.tvActiveStatusBadge)
         val tvUid = view.findViewById<TextView>(R.id.tvActiveUid)
         val tvActiveRemark = view.findViewById<TextView>(R.id.tvActiveRemark)
+        val btnActiveQuickUnpaid = view.findViewById<Button>(R.id.btnActiveQuickUnpaid)
+        val btnActiveQuickClear = view.findViewById<Button>(R.id.btnActiveQuickClear)
         val tvRemaining = view.findViewById<TextView>(R.id.tvActiveRemainingBig)
         val tvOverdueAlert = view.findViewById<TextView>(R.id.tvActiveOverdueAlert)
         val tvStartTime = view.findViewById<TextView>(R.id.tvActiveStartTime)
@@ -314,9 +316,22 @@ class MainActivity : AppCompatActivity() {
 
         if (card.remark.isNotEmpty()) {
             tvActiveRemark.text = "📝 备注: ${card.remark}"
-            tvActiveRemark.visibility = View.VISIBLE
         } else {
-            tvActiveRemark.visibility = View.GONE
+            tvActiveRemark.text = "📝 备注: 无"
+        }
+
+        btnActiveQuickUnpaid.setOnClickListener {
+            apiClient.updateCardRemarkImmediate(card.cardId, "未付款")
+            Toast.makeText(this, "已快速标记为 [未付款]", Toast.LENGTH_SHORT).show()
+            dialog.dismiss()
+            triggerLocalRefresh()
+        }
+
+        btnActiveQuickClear.setOnClickListener {
+            apiClient.updateCardRemarkImmediate(card.cardId, "")
+            Toast.makeText(this, "备注已清空", Toast.LENGTH_SHORT).show()
+            dialog.dismiss()
+            triggerLocalRefresh()
         }
 
         btnPause.text = if (card.status == 2) "继续" else "暂停"
@@ -455,6 +470,8 @@ class MainActivity : AppCompatActivity() {
         val npMinutes = view.findViewById<NumberPicker>(R.id.npMinutes)
         val btnRename = view.findViewById<Button>(R.id.btnRename)
         val btnSaveRemark = view.findViewById<Button>(R.id.btnSaveRemark)
+        val btnQuickUnpaid = view.findViewById<Button>(R.id.btnQuickUnpaid)
+        val btnQuickClearRemark = view.findViewById<Button>(R.id.btnQuickClearRemark)
         val btnStart = view.findViewById<Button>(R.id.btnStart)
         val btnPause = view.findViewById<Button>(R.id.btnPause)
         val btnStop = view.findViewById<Button>(R.id.btnStop)
@@ -494,6 +511,20 @@ class MainActivity : AppCompatActivity() {
             val newRemark = etRemark.text.toString().trim()
             apiClient.updateCardRemarkImmediate(card.cardId, newRemark)
             Toast.makeText(this@MainActivity, "备注已保存", Toast.LENGTH_SHORT).show()
+            triggerLocalRefresh()
+        }
+
+        btnQuickUnpaid.setOnClickListener {
+            etRemark.setText("未付款")
+            apiClient.updateCardRemarkImmediate(card.cardId, "未付款")
+            Toast.makeText(this@MainActivity, "已标记为 [未付款]", Toast.LENGTH_SHORT).show()
+            triggerLocalRefresh()
+        }
+
+        btnQuickClearRemark.setOnClickListener {
+            etRemark.setText("")
+            apiClient.updateCardRemarkImmediate(card.cardId, "")
+            Toast.makeText(this@MainActivity, "备注已清空", Toast.LENGTH_SHORT).show()
             triggerLocalRefresh()
         }
 
@@ -570,11 +601,27 @@ class MainActivity : AppCompatActivity() {
             private val tvBadge: TextView = itemView.findViewById(R.id.tvStatusBadge)
             private val tvTime: TextView = itemView.findViewById(R.id.tvTimeDisplay)
             private val tvAvatarChar: TextView = itemView.findViewById(R.id.tvAvatarChar)
+            private val tvRemarkBadge: TextView = itemView.findViewById(R.id.tvRemarkBadge)
 
             fun bind(card: CardInfo, onManageClick: ((CardInfo) -> Unit)?) {
                 tvName.text = card.name
-                tvUid.text = if (card.remark.isNotEmpty()) "UID: ${card.cardId} | 📝 ${card.remark}" else "UID: ${card.cardId}"
                 tvAvatarChar.text = if (card.name.isNotEmpty()) card.name.take(1) else "卡"
+                tvUid.text = "UID: ${card.cardId}"
+
+                if (card.remark.isNotEmpty()) {
+                    tvRemarkBadge.visibility = View.VISIBLE
+                    if (card.remark.contains("未付款")) {
+                        tvRemarkBadge.text = "⚠️ 未付款"
+                        tvRemarkBadge.setBackgroundColor(0xFFFFE4E6.toInt())
+                        tvRemarkBadge.setTextColor(0xFFE11D48.toInt())
+                    } else {
+                        tvRemarkBadge.text = "📝 ${card.remark}"
+                        tvRemarkBadge.setBackgroundColor(0xFFF1F5F9.toInt())
+                        tvRemarkBadge.setTextColor(0xFF475569.toInt())
+                    }
+                } else {
+                    tvRemarkBadge.visibility = View.GONE
+                }
 
                 if (card.isOverdue || card.status == 3) {
                     tvBadge.text = "⚠️ 已超时"

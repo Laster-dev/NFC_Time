@@ -136,11 +136,28 @@ class UnusedCardsActivity : AppCompatActivity() {
             private val tvBadge: TextView = itemView.findViewById(R.id.tvStatusBadge)
             private val tvTime: TextView = itemView.findViewById(R.id.tvTimeDisplay)
             private val tvAvatarChar: TextView = itemView.findViewById(R.id.tvAvatarChar)
+            private val tvRemarkBadge: TextView = itemView.findViewById(R.id.tvRemarkBadge)
 
             fun bind(card: CardInfo, onEditClick: ((CardInfo) -> Unit)?) {
                 tvName.text = card.name
-                tvUid.text = if (card.remark.isNotEmpty()) "UID: ${card.cardId} | 📝 ${card.remark}" else "UID: ${card.cardId}"
                 tvAvatarChar.text = if (card.name.isNotEmpty()) card.name.take(1) else "卡"
+                tvUid.text = "UID: ${card.cardId}"
+
+                if (card.remark.isNotEmpty()) {
+                    tvRemarkBadge.visibility = View.VISIBLE
+                    if (card.remark.contains("未付款")) {
+                        tvRemarkBadge.text = "⚠️ 未付款"
+                        tvRemarkBadge.setBackgroundColor(0xFFFFE4E6.toInt())
+                        tvRemarkBadge.setTextColor(0xFFE11D48.toInt())
+                    } else {
+                        tvRemarkBadge.text = "📝 ${card.remark}"
+                        tvRemarkBadge.setBackgroundColor(0xFFF1F5F9.toInt())
+                        tvRemarkBadge.setTextColor(0xFF475569.toInt())
+                    }
+                } else {
+                    tvRemarkBadge.visibility = View.GONE
+                }
+
                 tvBadge.text = "未使用"
                 tvBadge.setTextColor(0xFF7F91A4.toInt())
 

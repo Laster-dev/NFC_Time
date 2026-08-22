@@ -1352,13 +1352,24 @@
                     pct = Math.max(0, Math.min(100, (remainingSec / targetSec) * 100));
                 }
 
+                let remarkTagHtml = '';
+                if (card.remark && card.remark.trim()) {
+                    const rem = card.remark.trim();
+                    if (rem.includes('未付款')) {
+                        remarkTagHtml = `<span class="cute-tag" style="background: #FFE4E6; color: #E11D48; border: 1px solid #FDA4AF; font-weight: bold;">⚠️ 未付款</span>`;
+                    } else {
+                        remarkTagHtml = `<span class="cute-tag" style="background: #F1F5F9; color: #475569;">📝 ${escapeHtml(rem)}</span>`;
+                    }
+                }
+
                 return `
                     <div class="cute-card ${isExpiredMode ? 'card-overdue-mode' : ''}">
                         <!-- Row 1: Title + Tag on Left, Timer on Right -->
                         <div class="card-row-1">
-                            <div style="display: flex; align-items: center; gap: 8px;">
+                            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
                                 <span class="card-name-title" title="${escapeHtml(card.name)}">${escapeHtml(card.name)}</span>
                                 <span class="cute-tag ${tagClass}">${statusText}</span>
+                                ${remarkTagHtml}
                             </div>
                             <div class="clock-val-cute ${timeColorClass}">
                                 ${isExpiredMode ? '0秒' : formatTime(remainingSec)}
