@@ -1,18 +1,14 @@
 let currentFilter = 'all';
 let allCardsData = [];
 
-const DEFAULT_REMOTE_API = "http://43.140.218.3:5000";
+// 默认直接走远程服务器 API
+const REMOTE_API_SERVER = "http://43.140.218.3:5000";
 
-function getApiBaseUrl() {
-    const saved = localStorage.getItem('nfc_server_api_url');
-    if (saved) return saved.replace(/\/+$/, '');
-    
-    // 如果直接从服务端部署的 Web 端口访问，使用相对路径
+function getApiUrl() {
     if (window.location.port === '5000') {
-        return '';
+        return `/api/cards?t=${Date.now()}`;
     }
-    // 如果在 GitHub Pages、客户端文件或外部域名下打开，默认连接云端服务器
-    return DEFAULT_REMOTE_API;
+    return `${REMOTE_API_SERVER}/api/cards?t=${Date.now()}`;
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -44,37 +40,16 @@ function updateLiveClock() {
     if (el) el.textContent = str;
 }
 
-function updateServerStatusBadge(online, host) {
-    const btn = document.getElementById('btnServerStatus');
-    const txt = document.getElementById('serverStatusText');
-    if (!btn || !txt) return;
-
-    if (online) {
-        btn.className = 'server-status-btn status-online';
-        txt.textContent = `🟢 ${host}`;
-    } else {
-        btn.className = 'server-status-btn status-offline';
-        txt.textContent = `🔴 离线 (点击切换)`;
-    }
-}
-
 async function fetchCards() {
-    const baseUrl = getApiBaseUrl();
-    const host = baseUrl ? baseUrl.replace(/^https?:\/\//, '') : '本地服务';
-    const url = `${baseUrl}/api/cards?t=${Date.now()}`;
-
+    const url = getApiUrl();
     try {
         const res = await fetch(url, { mode: 'cors' });
-        if (!res.ok) {
-            updateServerStatusBadge(false, host);
-            return;
-        }
+        if (!res.ok) return;
         const cards = await res.json();
         allCardsData = cards || [];
-        updateServerStatusBadge(true, host);
         renderCards(allCardsData);
     } catch (err) {
-        updateServerStatusBadge(false, host);
+        console.warn("Polling cards update:", err);
     }
 }
 
@@ -93,8 +68,8 @@ function formatDuration(totalSeconds) {
 
 function formatPresetPlan(plan) {
     switch (plan?.toLowerCase()) {
-        case '1h': return '1小时 (¥12.9)';
-        case '3h': return '3小时 (¥29.9)';
+        case '1h': return '1小时套餐 (¥12.9)';
+        case '3h': return '3小时套餐 (¥29.9)';
         default: return '无预设 (按时结算)';
     }
 }
@@ -265,29 +240,4 @@ function escapeHtml(str) {
     return str.replace(/[&<>"']/g, function(m) {
         return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[m];
     });
-}
-
-// Modal controls
-function openServerModal() {
-    document.getElementById('modalApiInput').value = getApiBaseUrl() || DEFAULT_REMOTE_API;
-    document.getElementById('serverModal').style.display = 'flex';
-}
-
-function closeServerModal() {
-    document.getElementById('serverModal').style.display = 'none';
-}
-
-function setModalUrl(url) {
-    document.getElementById('modalApiInput').value = url;
-}
-
-function saveServerModal() {
-    const val = document.getElementById('modalApiInput').value.trim();
-    if (val) {
-        localStorage.setItem('nfc_server_api_url', val);
-    } else {
-        localStorage.removeItem('nfc_server_api_url');
-    }
-    closeServerModal();
-    fetchCards();
 }
