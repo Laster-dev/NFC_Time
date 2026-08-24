@@ -136,11 +136,94 @@
             android:visibility="gone" />
     </LinearLayout>
 
+    <!-- Price Calculation Box (Live estimated price & best scheme) -->
+    <LinearLayout
+        android:id="@+id/llPriceCardArea"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="12dp"
+        android:background="#242F3D"
+        android:orientation="vertical"
+        android:padding="12dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="💰 实时预估价格 (最划算):"
+                android:textColor="#FCD34D"
+                android:textSize="14sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/tvEstimatedPriceBig"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="¥ 12.9"
+                android:textColor="#FCD34D"
+                android:textSize="20sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/tvBestPlanName"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:text="💡 推荐方案: 单人1小时套餐"
+            android:textColor="@color/tg_text_primary"
+            android:textSize="13sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/tvPriceBreakdown"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:text="明细: 基础¥12.9"
+            android:textColor="@color/tg_text_secondary"
+            android:textSize="12sp" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/tvDoubleModeBadge"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="👥 当前: 单人计费"
+                android:textColor="@color/tg_blue"
+                android:textSize="12sp" />
+
+            <Button
+                android:id="@+id/btnToggleDoubleMode"
+                style="@style/Widget.Material3.Button.TonalButton"
+                android:layout_width="wrap_content"
+                android:layout_height="32dp"
+                android:text="切换为双人计费"
+                android:textSize="11sp"
+                android:insetTop="0dp"
+                android:insetBottom="0dp"
+                android:paddingHorizontal="8dp"
+                android:paddingVertical="0dp" />
+        </LinearLayout>
+    </LinearLayout>
+
     <!-- Timeline Details Container -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="12dp"
         android:background="@color/tg_background"
         android:orientation="vertical"
         android:padding="12dp">
@@ -169,8 +252,9 @@
                 android:textStyle="bold" />
         </LinearLayout>
 
-        <!-- Line 2: Estimated End Time -->
+        <!-- Line 2: Estimated End Time (Countdown only) -->
         <LinearLayout
+            android:id="@+id/llActiveEndTimeRow"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
@@ -196,6 +280,7 @@
 
         <!-- Line 3: Target/Set Duration -->
         <LinearLayout
+            android:id="@+id/llActiveTargetDurationRow"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
@@ -220,34 +305,40 @@
         </LinearLayout>
     </LinearLayout>
 
-    <!-- Quick Add Time Buttons Section -->
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
-        android:layout_marginBottom="8dp"
-        android:text="⚡ 快捷加时"
-        android:textColor="@color/tg_text_secondary"
-        android:textSize="13sp" />
-
+    <!-- Countdown Quick Add Time Buttons Section (Countdown only) -->
     <LinearLayout
+        android:id="@+id/llCountdownAddSection"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal">
+        android:orientation="vertical">
 
-        <Button
-            android:id="@+id/btnAdd10Min"
-            android:layout_width="0dp"
-            android:layout_height="48dp"
-            android:layout_weight="1"
-            android:backgroundTint="#2B394A"
-            android:textColor="@color/tg_blue"
-            android:text="+10分钟"
-            android:textSize="14sp"
-            android:textStyle="bold"
-            android:insetTop="0dp"
-            android:insetBottom="0dp"
-            android:padding="0dp" />
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:layout_marginBottom="8dp"
+            android:text="⚡ 快捷加时"
+            android:textColor="@color/tg_text_secondary"
+            android:textSize="13sp" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <Button
+                android:id="@+id/btnAdd10Min"
+                android:layout_width="0dp"
+                android:layout_height="48dp"
+                android:layout_weight="1"
+                android:backgroundTint="#2B394A"
+                android:textColor="@color/tg_blue"
+                android:text="+10分钟"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:insetTop="0dp"
+                android:insetBottom="0dp"
+                android:padding="0dp" />
 
         <Button
             android:id="@+id/btnAdd30Min"
@@ -320,6 +411,7 @@
             android:textStyle="bold"
             android:insetTop="0dp"
             android:insetBottom="0dp" />
+    </LinearLayout>
     </LinearLayout>
 
     <!-- Main Control Action Buttons -->

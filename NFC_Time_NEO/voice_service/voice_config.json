@@ -1,0 +1,10 @@
+{
+  "server_api_url": "http://43.140.218.3:5000/api/cards",
+  "poll_interval_seconds": 10,
+  "pause_system_music": true,
+  "enable_voice_alert": true,
+  "expired_template": "{卡片列表}即将超时，请留意时间",
+  "selected_voice_name": "zh-CN-XiaoxiaoNeural",
+  "speech_rate": "-20%",
+  "volume_boost": 2.5
+}

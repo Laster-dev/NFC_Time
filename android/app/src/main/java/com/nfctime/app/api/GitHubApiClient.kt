@@ -24,11 +24,17 @@ data class CardInfo(
     var name: String = "",
     var targetDurationSeconds: Int = 0,
     var status: Int = 0, // 0: Unused/Stopped, 1: Running, 2: Paused, 3: Expired
+    var timerMode: Int = 0, // 0: 倒计时 (Countdown), 1: 正计时 (Countup 先玩后付)
+    var isDouble: Boolean = false, // 是否双人模式
     var startTimeUtc: String? = null,
-    var savedRemainingSeconds: Int = 0,
+    var savedRemainingSeconds: Int = 0, // 倒计时为剩余秒数，正计时已暂停累积秒数
     var remainingSeconds: Double = 0.0,
+    var elapsedSeconds: Double = 0.0,
     var overdueSeconds: Double = 0.0,
     var isOverdue: Boolean = false,
+    var estimatedPrice: Double = 0.0,
+    var pricePlanName: String = "",
+    var priceDetails: String = "",
     var remark: String = "",
     var updatedAtMs: Long = 0L
 )
@@ -318,23 +324,53 @@ class GitHubApiClient(
         val sdf = getIsoFormat()
 
         list.forEach { card ->
-            var remaining = card.savedRemainingSeconds.toDouble()
-            if (card.status == 1 && !card.startTimeUtc.isNull_Empty()) {
-                try {
-                    val startMs = sdf.parse(card.startTimeUtc!!)?.time ?: now
-                    val elapsedSec = (now - startMs) / 1000.0
-                    remaining = card.savedRemainingSeconds - elapsedSec
-                    if (remaining <= 0) {
-                        card.status = 3 // Expired
+            if (card.timerMode == 1) {
+                // 正计时模式 (先玩后付)
+                var elapsed = card.savedRemainingSeconds.toDouble()
+                var startDate: Date? = null
+                if (card.status == 1 && !card.startTimeUtc.isNull_Empty()) {
+                    try {
+                        val parsed = sdf.parse(card.startTimeUtc!!)
+                        startDate = parsed
+                        val startMs = parsed?.time ?: now
+                        val currentSegment = Math.max(0.0, (now - startMs) / 1000.0)
+                        elapsed = card.savedRemainingSeconds.toDouble() + currentSegment
+                    } catch (e: Exception) {
+                        e.printStackTrace()
                     }
-                } catch (e: Exception) {
-                    e.printStackTrace()
+                } else if (!card.startTimeUtc.isNull_Empty()) {
+                    try { startDate = sdf.parse(card.startTimeUtc!!) } catch (e: Exception) {}
                 }
-            }
 
-            card.isOverdue = remaining < 0 && (card.status == 1 || card.status == 3)
-            card.remainingSeconds = remaining
-            card.overdueSeconds = if (card.isOverdue) Math.abs(remaining) else 0.0
+                card.elapsedSeconds = elapsed
+                card.remainingSeconds = elapsed
+                card.isOverdue = false
+                card.overdueSeconds = 0.0
+
+                val pricing = PriceCalculator.calculateBestPrice(elapsed, startDate, card.isDouble)
+                card.estimatedPrice = pricing.price
+                card.pricePlanName = pricing.planName
+                card.priceDetails = pricing.details
+            } else {
+                // 倒计时模式
+                var remaining = card.savedRemainingSeconds.toDouble()
+                if (card.status == 1 && !card.startTimeUtc.isNull_Empty()) {
+                    try {
+                        val startMs = sdf.parse(card.startTimeUtc!!)?.time ?: now
+                        val elapsedSec = (now - startMs) / 1000.0
+                        remaining = card.savedRemainingSeconds - elapsedSec
+                        if (remaining <= 0) {
+                            card.status = 3 // Expired
+                        }
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                    }
+                }
+
+                card.isOverdue = remaining < 0 && (card.status == 1 || card.status == 3)
+                card.remainingSeconds = remaining
+                card.overdueSeconds = if (card.isOverdue) Math.abs(remaining) else 0.0
+            }
         }
         return@withContext list
     }
@@ -367,7 +403,13 @@ class GitHubApiClient(
         return card
     }
 
-    fun setTimerImmediate(cardId: String, durationSec: Int, action: String): CardInfo? {
+    fun setTimerImmediate(
+        cardId: String,
+        durationSec: Int,
+        action: String,
+        timerMode: Int = 0,
+        isDouble: Boolean = false
+    ): CardInfo? {
         val list = getCachedCards()
         val card = list.find { it.cardId.equals(cardId, ignoreCase = true) } ?: return null
         val nowIso = getIsoFormat().format(Date())
@@ -375,13 +417,24 @@ class GitHubApiClient(
 
         when (action.lowercase()) {
             "start" -> {
-                if (durationSec > 0) {
-                    card.targetDurationSeconds = durationSec
-                    card.savedRemainingSeconds = durationSec
-                }
-                if (card.savedRemainingSeconds > 0) {
+                card.timerMode = timerMode
+                card.isDouble = isDouble
+                if (timerMode == 1) {
+                    // 正计时
+                    card.targetDurationSeconds = 0
+                    card.savedRemainingSeconds = 0
                     card.startTimeUtc = nowIso
                     card.status = 1 // Running
+                } else {
+                    // 倒计时
+                    if (durationSec > 0) {
+                        card.targetDurationSeconds = durationSec
+                        card.savedRemainingSeconds = durationSec
+                    }
+                    if (card.savedRemainingSeconds > 0) {
+                        card.startTimeUtc = nowIso
+                        card.status = 1 // Running
+                    }
                 }
             }
             "pause" -> {
@@ -389,24 +442,35 @@ class GitHubApiClient(
                     val startMs = if (!card.startTimeUtc.isNull_Empty()) {
                         try { getIsoFormat().parse(card.startTimeUtc!!)?.time ?: nowMs } catch (e: Exception) { nowMs }
                     } else nowMs
-                    val elapsedSec = (nowMs - startMs) / 1000.0
-                    val rem = Math.max(0.0, card.savedRemainingSeconds - elapsedSec)
 
-                    card.savedRemainingSeconds = rem.toInt()
+                    if (card.timerMode == 1) {
+                        val currentSegment = Math.max(0.0, (nowMs - startMs) / 1000.0)
+                        card.savedRemainingSeconds += currentSegment.toInt()
+                    } else {
+                        val elapsedSec = (nowMs - startMs) / 1000.0
+                        val rem = Math.max(0.0, card.savedRemainingSeconds - elapsedSec)
+                        card.savedRemainingSeconds = rem.toInt()
+                    }
                     card.status = 2 // Paused
                     card.startTimeUtc = null
                 }
             }
             "resume" -> {
-                if (card.status == 2 && card.savedRemainingSeconds > 0) {
-                    card.startTimeUtc = nowIso
-                    card.status = 1
+                if (card.status == 2) {
+                    if (card.timerMode == 1 || card.savedRemainingSeconds > 0) {
+                        card.startTimeUtc = nowIso
+                        card.status = 1
+                    }
                 }
             }
             "stop" -> {
                 card.status = 0 // Stopped
-                card.savedRemainingSeconds = card.targetDurationSeconds
                 card.startTimeUtc = null
+                if (card.timerMode == 1) {
+                    card.savedRemainingSeconds = 0
+                } else {
+                    card.savedRemainingSeconds = card.targetDurationSeconds
+                }
             }
         }
         card.updatedAtMs = nowMs

@@ -1,10 +1,16 @@
 let currentFilter = 'all';
 let nfcNDEFReader = null;
 let activeNfcCardId = null;
+let voiceEnabled = false;
+const alertedCardIds = new Set();
+
+const POLL_INTERVAL_MS = 10000; // 每10秒拉取一次
 
 document.addEventListener('DOMContentLoaded', () => {
     fetchCards();
-    setInterval(fetchCards, 1000); // 1-second auto refresh
+    setInterval(fetchCards, POLL_INTERVAL_MS); // 10秒定时拉取
+
+    initVoiceAlerts();
 
     // Filter handlers
     document.querySelectorAll('.btn-filter').forEach(btn => {
@@ -27,6 +33,68 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('btnToggleWebNfc').addEventListener('click', toggleWebNfc);
     }
 });
+
+function initVoiceAlerts() {
+    const btnEnable = document.getElementById('btnEnableVoice');
+    const btnTest = document.getElementById('btnTestVoice');
+    const statusText = document.getElementById('speechStatusText');
+
+    if (btnEnable) {
+        btnEnable.addEventListener('click', () => {
+            voiceEnabled = !voiceEnabled;
+            if (voiceEnabled) {
+                btnEnable.textContent = '✅ 语音提醒已激活';
+                btnEnable.classList.add('active');
+                statusText.textContent = '🟢 语音提醒已激活！每10秒自动拉取，计时到期将语音提醒："{卡片名称}号卡片即将超时"';
+                speakText('语音提醒已激活');
+            } else {
+                btnEnable.textContent = '🔊 激活语音提醒';
+                btnEnable.classList.remove('active');
+                statusText.textContent = '未启用（提示：点击右侧按钮激活语音播报）';
+            }
+        });
+    }
+
+    if (btnTest) {
+        btnTest.addEventListener('click', () => {
+            speakText('1号卡片即将超时');
+        });
+    }
+}
+
+function speakText(text) {
+    if (!('speechSynthesis' in window)) {
+        alert('当前浏览器不支持语音合成 (Web Speech API)');
+        return;
+    }
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = 'zh-CN';
+    utterance.rate = 1.0;
+    utterance.pitch = 1.0;
+    utterance.volume = 1.0;
+    window.speechSynthesis.speak(utterance);
+}
+
+function checkAndTriggerVoiceAlerts(cards) {
+    cards.forEach(card => {
+        // 倒计时结束条件: isOverdue=true 或 (运行中且剩余时间<=0) 或 status=3(Expired)
+        const isTimeUp = card.isOverdue || (card.status === 1 && card.remainingSeconds <= 0) || card.status === 3;
+
+        if (isTimeUp) {
+            if (!alertedCardIds.has(card.cardId)) {
+                alertedCardIds.add(card.cardId);
+                const cardDisplayName = card.name || card.cardId;
+                if (voiceEnabled) {
+                    speakText(`${cardDisplayName}号卡片即将超时`);
+                }
+            }
+        } else {
+            // 重置后解除已提醒状态
+            alertedCardIds.delete(card.cardId);
+        }
+    });
+}
 
 async function toggleWebNfc() {
     const btn = document.getElementById('btnToggleWebNfc');
@@ -93,6 +161,7 @@ async function fetchCards() {
         const res = await fetch('/api/cards');
         if (!res.ok) return;
         const cards = await res.json();
+        checkAndTriggerVoiceAlerts(cards);
         renderDashboard(cards);
     } catch (err) {
         console.error('Failed to fetch cards:', err);

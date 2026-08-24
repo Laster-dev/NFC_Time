@@ -108,6 +108,20 @@
                     android:textStyle="bold" />
             </LinearLayout>
 
+            <!-- Price & Plan Summary row (Visible for Count-up or active cards) -->
+            <TextView
+                android:id="@+id/tvCardPriceEstimate"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:text="💰 预估: ¥12.9 (单人1小时套餐)"
+                android:textColor="#FCD34D"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                android:visibility="gone" />
+
         </LinearLayout>
 
     </LinearLayout>

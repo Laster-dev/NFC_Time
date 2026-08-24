@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>卡片倒计时语音提醒监控网页</title>
+    <style>
+        :root {
+            --bg-dark: #0f172a;
+            --bg-card: #1e293b;
+            --primary: #9333ea;
+            --primary-hover: #a855f7;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --color-running: #10b981;
+            --color-expired: #ef4444;
+            --color-paused: #f59e0b;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            padding: 24px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #334155;
+            margin-bottom: 24px;
+        }
+
+        .title-box {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .title-box h1 {
+            font-size: 1.6rem;
+            background: linear-gradient(135deg, #c084fc, #60a5fa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .control-panel {
+            background: var(--bg-card);
+            border: 1px solid #3b82f6;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 20px rgba(59, 130, 246, 0.15);
+        }
+
+        .status-info h3 {
+            font-size: 1.1rem;
+            color: #93c5fd;
+            margin-bottom: 6px;
+        }
+
+        .status-info p {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 12px;
+        }
+
+        button {
+            padding: 10px 20px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-voice {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-voice:hover {
+            background: var(--primary-hover);
+        }
+
+        .btn-voice.active {
+            background: var(--color-running);
+        }
+
+        .btn-secondary {
+            background: #334155;
+            color: var(--text-main);
+            border: 1px solid #475569;
+        }
+
+        .btn-secondary:hover {
+            background: #475569;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+        }
+
+        .card {
+            background: var(--bg-card);
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid #334155;
+            position: relative;
+            transition: transform 0.2s;
+        }
+
+        .card.running { border-color: var(--color-running); }
+        .card.expired { border-color: var(--color-expired); animation: shake 0.5s infinite alternate; }
+
+        @keyframes shake {
+            0% { box-shadow: 0 0 10px rgba(239, 68, 68, 0.3); }
+            100% { box-shadow: 0 0 20px rgba(239, 68, 68, 0.7); }
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .card-name {
+            font-size: 1.2rem;
+            font-weight: 700;
+        }
+
+        .badge {
+            font-size: 0.8rem;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-weight: 600;
+        }
+
+        .badge-running { background: rgba(16, 185, 129, 0.2); color: var(--color-running); }
+        .badge-expired { background: rgba(239, 68, 68, 0.25); color: #f87171; }
+        .badge-paused { background: rgba(245, 158, 11, 0.2); color: var(--color-paused); }
+        .badge-stopped { background: rgba(100, 116, 139, 0.2); color: var(--text-muted); }
+
+        .timer-display {
+            font-size: 2.2rem;
+            font-family: monospace;
+            font-weight: 700;
+            text-align: center;
+            margin: 14px 0;
+        }
+
+        .text-running { color: var(--color-running); }
+        .text-expired { color: var(--color-expired); }
+
+        .empty-msg {
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: 40px;
+            color: var(--text-muted);
+            background: var(--bg-card);
+            border-radius: 12px;
+        }
+
+        .countdown-indicator {
+            font-size: 0.85rem;
+            color: #60a5fa;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <div class="title-box">
+                <span style="font-size: 2rem;">⏱️</span>
+                <h1>卡片倒计时语音提醒监控</h1>
+            </div>
+            <div class="countdown-indicator">
+                🔄 自动轮询: 每 10 秒刷新一次 (<span id="nextPollSec">10</span>s)
+            </div>
+        </header>
+
+        <div class="control-panel">
+            <div class="status-info">
+                <h3>📢 语音提醒控制台</h3>
+                <p id="voiceStatusText">提示：现代浏览器要求用户点击互动后激活语音播报功能。</p>
+            </div>
+            <div class="btn-group">
+                <button id="btnToggleVoice" class="btn-voice">🔊 点击激活语音提醒</button>
+                <button id="btnTestVoice" class="btn-secondary">🗣️ 测试语音播报</button>
+            </div>
+        </div>
+
+        <main>
+            <div class="grid" id="cardsContainer">
+                <div class="empty-msg">正在加载卡片数据中...</div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        const API_URL = '/api/cards';
+        const POLL_INTERVAL = 10; // 10秒拉取一次
+        let voiceEnabled = false;
+        const alertedCards = new Set();
+        let secondsToNextPoll = POLL_INTERVAL;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            // 启动首次拉取
+            fetchCards();
+
+            // 每 10 秒拉取一次 API
+            setInterval(fetchCards, POLL_INTERVAL * 1000);
+
+            // UI 倒计时指示器 (每秒递减)
+            setInterval(() => {
+                secondsToNextPoll--;
+                if (secondsToNextPoll <= 0) secondsToNextPoll = POLL_INTERVAL;
+                document.getElementById('nextPollSec').textContent = secondsToNextPoll;
+            }, 1000);
+
+            // 绑定语音控制按钮
+            document.getElementById('btnToggleVoice').addEventListener('click', toggleVoiceAlert);
+            document.getElementById('btnTestVoice').addEventListener('click', () => {
+                speakText('测试卡片号卡片即将超时');
+            });
+        });
+
+        async function fetchCards() {
+            secondsToNextPoll = POLL_INTERVAL;
+            try {
+                const response = await fetch(API_URL);
+                if (!response.ok) throw new Error('网络响应异常');
+                const cards = await response.json();
+                processCardData(cards);
+            } catch (err) {
+                console.warn('API 拉取失败或在本地模拟环境:', err.message);
+                // 如果 API 不可用，使用模拟数据展示效果
+                if (!window.hasRenderedMock) {
+                    renderMockData();
+                }
+            }
+        }
+
+        function processCardData(cards) {
+            renderCards(cards);
+            checkVoiceAlerts(cards);
+        }
+
+        function checkVoiceAlerts(cards) {
+            cards.forEach(card => {
+                const cardName = card.name || card.cardId;
+                // 判断条件：是否超时 (remainingSeconds <= 0 或 status === Expired 或 isOverdue === true)
+                const isTimeUp = card.isOverdue || (card.status === 1 && card.remainingSeconds <= 0) || card.status === 3;
+
+                if (isTimeUp) {
+                    if (!alertedCards.has(card.cardId)) {
+                        alertedCards.add(card.cardId);
+                        if (voiceEnabled) {
+                            speakText(`${cardName}号卡片即将超时`);
+                        }
+                    }
+                } else {
+                    // 卡片复位或重新倒计时时移除已提醒标志
+                    alertedCards.delete(card.cardId);
+                }
+            });
+        }
+
+        function speakText(text) {
+            if (!('speechSynthesis' in window)) {
+                alert('您的浏览器不支持 Web Speech API 语音合成');
+                return;
+            }
+            window.speechSynthesis.cancel(); // 取消上一条未播完的
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'zh-CN';
+            utterance.rate = 1.0;  // 语速 1.0
+            utterance.pitch = 1.0; // 音调 1.0
+            utterance.volume = 1.0;// 音量 1.0
+            window.speechSynthesis.speak(utterance);
+        }
+
+        function toggleVoiceAlert() {
+            const btn = document.getElementById('btnToggleVoice');
+            const status = document.getElementById('voiceStatusText');
+
+            voiceEnabled = !voiceEnabled;
+            if (voiceEnabled) {
+                btn.textContent = '✅ 语音提醒已开启';
+                btn.classList.add('active');
+                status.textContent = '🟢 语音播报服务已运行，当倒计时到期时，会自动播报：“{卡片名称}号卡片即将超时”';
+                speakText('语音提醒已开启');
+            } else {
+                btn.textContent = '🔊 点击激活语音提醒';
+                btn.classList.remove('active');
+                status.textContent = '未启用（提示：点击右侧按钮激活语音播报）';
+            }
+        }
+
+        function renderCards(cards) {
+            const container = document.getElementById('cardsContainer');
+            if (!cards || cards.length === 0) {
+                container.innerHTML = `<div class="empty-msg">目前没有发现卡片数据</div>`;
+                return;
+            }
+
+            container.innerHTML = cards.map(card => {
+                const cardName = card.name || card.cardId;
+                const isOverdue = card.isOverdue || card.remainingSeconds <= 0;
+                let statusClass = 'stopped';
+                let badgeText = '未开始';
+                let badgeClass = 'badge-stopped';
+
+                if (isOverdue || card.status === 3) {
+                    statusClass = 'expired';
+                    badgeText = '🚨 已经超时';
+                    badgeClass = 'badge-expired';
+                } else if (card.status === 1) {
+                    statusClass = 'running';
+                    badgeText = '运行中';
+                    badgeClass = 'badge-running';
+                } else if (card.status === 2) {
+                    badgeText = '已暂停';
+                    badgeClass = 'badge-paused';
+                }
+
+                return `
+                    <div class="card ${statusClass}">
+                        <div class="card-header">
+                            <span class="card-name">${escapeHtml(cardName)}号卡片</span>
+                            <span class="badge ${badgeClass}">${badgeText}</span>
+                        </div>
+                        <div class="timer-display ${isOverdue ? 'text-expired' : (card.status === 1 ? 'text-running' : '')}">
+                            ${formatTime(card.remainingSeconds || 0)}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function formatTime(totalSec) {
+            const abs = Math.abs(Math.floor(totalSec));
+            const m = Math.floor(abs / 60).toString().padStart(2, '0');
+            const s = (abs % 60).toString().padStart(2, '0');
+            return `${totalSec < 0 ? '-' : ''}${m}:${s}`;
+        }
+
+        function escapeHtml(str) {
+            return String(str).replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[m]));
+        }
+
+        // 本地测试模拟数据
+        function renderMockData() {
+            window.hasRenderedMock = true;
+            const mockCards = [
+                { cardId: 'A01', name: '1', remainingSeconds: 25, status: 1, isOverdue: false },
+                { cardId: 'A02', name: '2', remainingSeconds: 0, status: 3, isOverdue: true },
+                { cardId: 'A03', name: '3', remainingSeconds: 120, status: 1, isOverdue: false }
+            ];
+            processCardData(mockCards);
+        }
+    </script>
+</body>
+</html>

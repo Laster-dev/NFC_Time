@@ -4,6 +4,13 @@ server/obj/
 android/app/build/
 android/.gradle/
 android/local.properties
+NFC_Time_NEO/server/bin/
+NFC_Time_NEO/server/obj/
+NFC_Time_NEO/server/publish_aot/
+NFC_Time_NEO/server/publish_crossplatform/
+NFC_Time_NEO/android/app/build/
+NFC_Time_NEO/android/.gradle/
+NFC_Time_NEO/android/local.properties
 .idea/
 .vs/
 *.user

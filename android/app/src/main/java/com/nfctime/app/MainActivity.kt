@@ -21,10 +21,13 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
+import android.widget.CheckBox
 import android.widget.EditText
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.NumberPicker
+import android.widget.RadioButton
+import android.widget.RadioGroup
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
@@ -34,6 +37,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.nfctime.app.api.CardInfo
 import com.nfctime.app.api.GitHubApiClient
+import com.nfctime.app.api.PriceCalculator
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
@@ -345,7 +349,6 @@ class MainActivity : AppCompatActivity() {
             .setView(view)
             .create()
 
-        // Set transparent window background for custom rounded background corner rendering
         dialog.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
 
         val tvTitle = view.findViewById<TextView>(R.id.tvActiveTitle)
@@ -354,11 +357,25 @@ class MainActivity : AppCompatActivity() {
         val tvActiveRemark = view.findViewById<TextView>(R.id.tvActiveRemark)
         val btnActiveQuickUnpaid = view.findViewById<Button>(R.id.btnActiveQuickUnpaid)
         val btnActiveQuickClear = view.findViewById<Button>(R.id.btnActiveQuickClear)
+        val tvActiveTimeLabel = view.findViewById<TextView>(R.id.tvActiveTimeLabel)
         val tvRemaining = view.findViewById<TextView>(R.id.tvActiveRemainingBig)
         val tvOverdueAlert = view.findViewById<TextView>(R.id.tvActiveOverdueAlert)
+
+        // Price Section
+        val tvEstimatedPriceBig = view.findViewById<TextView>(R.id.tvEstimatedPriceBig)
+        val tvBestPlanName = view.findViewById<TextView>(R.id.tvBestPlanName)
+        val tvPriceBreakdown = view.findViewById<TextView>(R.id.tvPriceBreakdown)
+        val tvDoubleModeBadge = view.findViewById<TextView>(R.id.tvDoubleModeBadge)
+        val btnToggleDoubleMode = view.findViewById<Button>(R.id.btnToggleDoubleMode)
+
+        // Timeline Details
         val tvStartTime = view.findViewById<TextView>(R.id.tvActiveStartTime)
         val tvEndTime = view.findViewById<TextView>(R.id.tvActiveEndTime)
         val tvTargetDuration = view.findViewById<TextView>(R.id.tvActiveTargetDuration)
+        val llActiveEndTimeRow = view.findViewById<LinearLayout>(R.id.llActiveEndTimeRow)
+        val llActiveTargetDurationRow = view.findViewById<LinearLayout>(R.id.llActiveTargetDurationRow)
+        val llCountdownAddSection = view.findViewById<LinearLayout>(R.id.llCountdownAddSection)
+
         val btnAdd10 = view.findViewById<Button>(R.id.btnAdd10Min)
         val btnAdd30 = view.findViewById<Button>(R.id.btnAdd30Min)
         val btnAdd1H = view.findViewById<Button>(R.id.btnAdd1Hour)
@@ -392,52 +409,134 @@ class MainActivity : AppCompatActivity() {
 
         val sdf = getIsoFormat()
         val startMs = try { sdf.parse(card.startTimeUtc ?: "")?.time } catch (e: Exception) { null }
+        val startDate = try { sdf.parse(card.startTimeUtc ?: "") } catch (e: Exception) { null }
+
         if (startMs != null) {
             val clockSdf = SimpleDateFormat("HH:mm:ss", Locale.getDefault())
             tvStartTime.text = clockSdf.format(Date(startMs))
-            val endMs = startMs + (card.targetDurationSeconds * 1000L)
-            tvEndTime.text = clockSdf.format(Date(endMs))
+            if (card.timerMode == 0 && card.targetDurationSeconds > 0) {
+                val endMs = startMs + (card.targetDurationSeconds * 1000L)
+                tvEndTime.text = clockSdf.format(Date(endMs))
+            } else {
+                tvEndTime.text = "--:--:--"
+            }
         } else {
             tvStartTime.text = "--:--:--"
             tvEndTime.text = "--:--:--"
         }
         tvTargetDuration.text = formatTime(card.targetDurationSeconds.toDouble())
 
+        if (card.timerMode == 1) {
+            // 正计时模式
+            tvActiveTimeLabel.text = "⏱️ 已玩时长 (正计时)"
+            llActiveEndTimeRow.visibility = View.GONE
+            llActiveTargetDurationRow.visibility = View.GONE
+            llCountdownAddSection.visibility = View.GONE
+            btnStop.text = "💰 结算并停止"
+        } else {
+            // 倒计时模式
+            tvActiveTimeLabel.text = "⏳ 剩余时间 (倒计时)"
+            llActiveEndTimeRow.visibility = View.VISIBLE
+            llActiveTargetDurationRow.visibility = View.VISIBLE
+            llCountdownAddSection.visibility = View.VISIBLE
+            btnStop.text = "停止计时"
+        }
+
+        fun updateDoubleModeUi() {
+            tvDoubleModeBadge.text = if (card.isDouble) "👥 当前: 双人计费" else "👤 当前: 单人计费"
+            btnToggleDoubleMode.text = if (card.isDouble) "切为单人计费" else "切为双人计费"
+        }
+        updateDoubleModeUi()
+
+        btnToggleDoubleMode.setOnClickListener {
+            card.isDouble = !card.isDouble
+            updateDoubleModeUi()
+            val pricing = PriceCalculator.calculateBestPrice(
+                if (card.timerMode == 1) card.elapsedSeconds else card.targetDurationSeconds.toDouble(),
+                startDate,
+                card.isDouble
+            )
+            card.estimatedPrice = pricing.price
+            card.pricePlanName = pricing.planName
+            card.priceDetails = pricing.details
+            tvEstimatedPriceBig.text = "¥ ${String.format(Locale.US, "%.1f", pricing.price)}"
+            tvBestPlanName.text = "💡 推荐方案: ${pricing.planName}"
+            tvPriceBreakdown.text = pricing.details
+        }
+
         var dialogTickJob: Job? = null
         dialogTickJob = lifecycleScope.launch {
             while (isActive) {
                 val now = System.currentTimeMillis()
-                var remaining = card.savedRemainingSeconds.toDouble()
-                var isOverdue = false
-                var overdueSeconds = 0.0
+                if (card.timerMode == 1) {
+                    // 正计时
+                    var elapsed = card.savedRemainingSeconds.toDouble()
+                    if (startMs != null && card.status == 1) {
+                        val currentSegment = Math.max(0.0, (now - startMs) / 1000.0)
+                        elapsed = card.savedRemainingSeconds.toDouble() + currentSegment
+                    }
+                    card.elapsedSeconds = elapsed
 
-                if (startMs != null && (card.status == 1 || card.status == 3)) {
-                    val elapsedSec = (now - startMs) / 1000.0
-                    remaining = card.savedRemainingSeconds - elapsedSec
-                }
+                    tvStatusBadge.text = if (card.status == 2) "🍵 已暂停" else "⏱️ 正计时中"
+                    tvStatusBadge.setTextColor(if (card.status == 2) 0xFFE58032.toInt() else 0xFF0284C7.toInt())
 
-                if (remaining < 0) {
-                    isOverdue = true
-                    overdueSeconds = Math.abs(remaining)
-                }
-
-                if (isOverdue) {
-                    tvStatusBadge.text = "⚠️ 已超时"
-                    tvStatusBadge.setTextColor(0xFFFF5252.toInt())
-
-                    tvRemaining.text = "已超时"
-                    tvRemaining.setTextColor(0xFFFF5252.toInt())
-
-                    tvOverdueAlert.visibility = View.VISIBLE
-                    tvOverdueAlert.text = "🚨 已超时: ${formatTime(overdueSeconds)}"
-                } else {
-                    tvStatusBadge.text = if (card.status == 2) "已暂停" else "进行中"
-                    tvStatusBadge.setTextColor(if (card.status == 2) 0xFFE58032.toInt() else 0xFF45B880.toInt())
-
-                    tvRemaining.text = formatTime(remaining)
-                    tvRemaining.setTextColor(if (card.status == 2) 0xFFE58032.toInt() else 0xFF45B880.toInt())
-
+                    tvRemaining.text = formatTime(elapsed)
+                    tvRemaining.setTextColor(if (card.status == 2) 0xFFE58032.toInt() else 0xFF0284C7.toInt())
                     tvOverdueAlert.visibility = View.GONE
+
+                    val pricing = PriceCalculator.calculateBestPrice(elapsed, startDate, card.isDouble)
+                    card.estimatedPrice = pricing.price
+                    card.pricePlanName = pricing.planName
+                    card.priceDetails = pricing.details
+
+                    tvEstimatedPriceBig.text = "¥ ${String.format(Locale.US, "%.1f", pricing.price)}"
+                    tvBestPlanName.text = "💡 推荐方案: ${pricing.planName}"
+                    tvPriceBreakdown.text = pricing.details
+                } else {
+                    // 倒计时
+                    var remaining = card.savedRemainingSeconds.toDouble()
+                    var isOverdue = false
+                    var overdueSeconds = 0.0
+
+                    if (startMs != null && (card.status == 1 || card.status == 3)) {
+                        val elapsedSec = (now - startMs) / 1000.0
+                        remaining = card.savedRemainingSeconds - elapsedSec
+                    }
+
+                    if (remaining < 0) {
+                        isOverdue = true
+                        overdueSeconds = Math.abs(remaining)
+                    }
+
+                    if (isOverdue) {
+                        tvStatusBadge.text = "⚠️ 已超时"
+                        tvStatusBadge.setTextColor(0xFFFF5252.toInt())
+
+                        tvRemaining.text = "已超时"
+                        tvRemaining.setTextColor(0xFFFF5252.toInt())
+
+                        tvOverdueAlert.visibility = View.VISIBLE
+                        tvOverdueAlert.text = "🚨 已超时: ${formatTime(overdueSeconds)}"
+                    } else {
+                        tvStatusBadge.text = if (card.status == 2) "已暂停" else "进行中"
+                        tvStatusBadge.setTextColor(if (card.status == 2) 0xFFE58032.toInt() else 0xFF45B880.toInt())
+
+                        tvRemaining.text = formatTime(remaining)
+                        tvRemaining.setTextColor(if (card.status == 2) 0xFFE58032.toInt() else 0xFF45B880.toInt())
+
+                        tvOverdueAlert.visibility = View.GONE
+                    }
+
+                    // 实时计算倒计时对应的价格
+                    val totalDuration = card.targetDurationSeconds + overdueSeconds
+                    val pricing = PriceCalculator.calculateBestPrice(totalDuration, startDate, card.isDouble)
+                    card.estimatedPrice = pricing.price
+                    card.pricePlanName = pricing.planName
+                    card.priceDetails = pricing.details
+
+                    tvEstimatedPriceBig.text = "¥ ${String.format(Locale.US, "%.1f", pricing.price)}"
+                    tvBestPlanName.text = "💡 方案: ${pricing.planName}"
+                    tvPriceBreakdown.text = pricing.details
                 }
 
                 delay(1000)
@@ -491,17 +590,39 @@ class MainActivity : AppCompatActivity() {
 
         btnPause.setOnClickListener {
             val action = if (card.status == 2) "resume" else "pause"
-            apiClient.setTimerImmediate(card.cardId, 0, action)
+            apiClient.setTimerImmediate(card.cardId, 0, action, card.timerMode, card.isDouble)
             Toast.makeText(this, if (action == "resume") "已恢复" else "已暂停", Toast.LENGTH_SHORT).show()
             dialog.dismiss()
             triggerLocalRefresh()
         }
 
         btnStop.setOnClickListener {
-            apiClient.setTimerImmediate(card.cardId, 0, "stop")
-            Toast.makeText(this, "已停止计时", Toast.LENGTH_SHORT).show()
-            dialog.dismiss()
-            triggerLocalRefresh()
+            if (card.timerMode == 1) {
+                // 正计时模式弹出详细结账清单
+                AlertDialog.Builder(this)
+                    .setTitle("💰 结账结算清单")
+                    .setMessage(
+                        "手作名称: ${card.name}\n" +
+                        "已玩时长: ${formatTime(card.elapsedSeconds)}\n" +
+                        "计费人数: ${if (card.isDouble) "双人" else "单人"}\n" +
+                        "最划算方案: ${card.pricePlanName}\n" +
+                        "计费明细: ${card.priceDetails}\n\n" +
+                        "💵 应收总额: ¥${String.format(Locale.US, "%.1f", card.estimatedPrice)}"
+                    )
+                    .setPositiveButton("确认收款并结束") { _, _ ->
+                        apiClient.setTimerImmediate(card.cardId, 0, "stop", 1, card.isDouble)
+                        Toast.makeText(this, "结算完成，已停止计时！", Toast.LENGTH_SHORT).show()
+                        dialog.dismiss()
+                        triggerLocalRefresh()
+                    }
+                    .setNegativeButton("继续游玩", null)
+                    .show()
+            } else {
+                apiClient.setTimerImmediate(card.cardId, 0, "stop", 0, card.isDouble)
+                Toast.makeText(this, "已停止计时", Toast.LENGTH_SHORT).show()
+                dialog.dismiss()
+                triggerLocalRefresh()
+            }
         }
 
         dialog.show()
@@ -513,15 +634,30 @@ class MainActivity : AppCompatActivity() {
             .setView(view)
             .create()
 
-        // Set transparent window background for custom rounded background corner rendering
         dialog.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
 
         val tvUid = view.findViewById<TextView>(R.id.dialogCardUid)
         val etName = view.findViewById<EditText>(R.id.etCardName)
         val etRemark = view.findViewById<EditText>(R.id.etCardRemark)
         val llTimelineDetails = view.findViewById<LinearLayout>(R.id.llTimelineDetails)
+
+        val rgTimerMode = view.findViewById<RadioGroup>(R.id.rgTimerMode)
+        val rbCountdown = view.findViewById<RadioButton>(R.id.rbCountdown)
+        val rbCountup = view.findViewById<RadioButton>(R.id.rbCountup)
+        val cbIsDouble = view.findViewById<CheckBox>(R.id.cbIsDouble)
+
+        val btnQuick1H = view.findViewById<Button>(R.id.btnQuick1H)
+        val btnQuick3H = view.findViewById<Button>(R.id.btnQuick3H)
+        val btnQuickMorning = view.findViewById<Button>(R.id.btnQuickMorning)
+        val btnQuickAfternoon = view.findViewById<Button>(R.id.btnQuickAfternoon)
+        val btnQuickAllDay = view.findViewById<Button>(R.id.btnQuickAllDay)
+        val btnQuickDouble3H = view.findViewById<Button>(R.id.btnQuickDouble3H)
+
+        val tvPickerTitle = view.findViewById<TextView>(R.id.tvPickerTitle)
+        val llPickerArea = view.findViewById<LinearLayout>(R.id.llPickerArea)
         val npHours = view.findViewById<NumberPicker>(R.id.npHours)
         val npMinutes = view.findViewById<NumberPicker>(R.id.npMinutes)
+
         val btnRename = view.findViewById<Button>(R.id.btnRename)
         val btnSaveRemark = view.findViewById<Button>(R.id.btnSaveRemark)
         val btnQuickUnpaid = view.findViewById<Button>(R.id.btnQuickUnpaid)
@@ -546,11 +682,84 @@ class MainActivity : AppCompatActivity() {
         npMinutes.minValue = 0
         npMinutes.maxValue = 59
 
-        val initialSec = card.targetDurationSeconds
+        val initialSec = if (card.targetDurationSeconds > 0) card.targetDurationSeconds else 3600
         val initialH = initialSec / 3600
         val initialM = (initialSec % 3600) / 60
         npHours.value = Math.min(23, initialH)
         npMinutes.value = initialM
+
+        cbIsDouble.isChecked = card.isDouble
+        if (card.timerMode == 1) {
+            rbCountup.isChecked = true
+            llPickerArea.visibility = View.GONE
+            tvPickerTitle.visibility = View.GONE
+            btnStart.text = "⏱️ 开始正计时 (先玩后付)"
+        } else {
+            rbCountdown.isChecked = true
+            llPickerArea.visibility = View.VISIBLE
+            tvPickerTitle.visibility = View.VISIBLE
+            btnStart.text = "⏳ 开始倒计时"
+        }
+
+        rgTimerMode.setOnCheckedChangeListener { _, checkedId ->
+            if (checkedId == R.id.rbCountup) {
+                llPickerArea.visibility = View.GONE
+                tvPickerTitle.visibility = View.GONE
+                btnStart.text = "⏱️ 开始正计时 (先玩后付)"
+            } else {
+                llPickerArea.visibility = View.VISIBLE
+                tvPickerTitle.visibility = View.VISIBLE
+                btnStart.text = "⏳ 开始倒计时"
+            }
+        }
+
+        btnQuick1H.setOnClickListener {
+            rbCountdown.isChecked = true
+            cbIsDouble.isChecked = false
+            npHours.value = 1
+            npMinutes.value = 0
+            Toast.makeText(this, "已预选: 单人1小时套餐 (¥12.9)", Toast.LENGTH_SHORT).show()
+        }
+
+        btnQuick3H.setOnClickListener {
+            rbCountdown.isChecked = true
+            cbIsDouble.isChecked = false
+            npHours.value = 3
+            npMinutes.value = 0
+            Toast.makeText(this, "已预选: 单人3小时套餐 (¥29.9)", Toast.LENGTH_SHORT).show()
+        }
+
+        btnQuickMorning.setOnClickListener {
+            rbCountdown.isChecked = true
+            cbIsDouble.isChecked = false
+            npHours.value = 4
+            npMinutes.value = 0
+            Toast.makeText(this, "已预选: 单人上午场套餐 (10:00-14:00, ¥36.9)", Toast.LENGTH_SHORT).show()
+        }
+
+        btnQuickAfternoon.setOnClickListener {
+            rbCountdown.isChecked = true
+            cbIsDouble.isChecked = false
+            npHours.value = 5
+            npMinutes.value = 30
+            Toast.makeText(this, "已预选: 单人下午场套餐 (14:00-19:30, ¥43.9)", Toast.LENGTH_SHORT).show()
+        }
+
+        btnQuickAllDay.setOnClickListener {
+            rbCountdown.isChecked = true
+            cbIsDouble.isChecked = false
+            npHours.value = 10
+            npMinutes.value = 30
+            Toast.makeText(this, "已预选: 单人全天场套餐 (10:00-20:30, ¥59.9)", Toast.LENGTH_SHORT).show()
+        }
+
+        btnQuickDouble3H.setOnClickListener {
+            rbCountdown.isChecked = true
+            cbIsDouble.isChecked = true
+            npHours.value = 3
+            npMinutes.value = 0
+            Toast.makeText(this, "已预选: 双人3小时套餐 (¥56.9)", Toast.LENGTH_SHORT).show()
+        }
 
         btnRename.setOnClickListener {
             val newName = etName.text.toString().trim()
@@ -583,12 +792,13 @@ class MainActivity : AppCompatActivity() {
         }
 
         btnStart.setOnClickListener {
-            val hours = npHours.value
-            val minutes = npMinutes.value
-            val totalSeconds = (hours * 3600) + (minutes * 60)
+            val isCountup = rbCountup.isChecked
+            val timerMode = if (isCountup) 1 else 0
+            val isDouble = cbIsDouble.isChecked
+            val totalSeconds = if (isCountup) 0 else (npHours.value * 3600 + npMinutes.value * 60)
 
-            apiClient.setTimerImmediate(card.cardId, totalSeconds, "start")
-            Toast.makeText(this@MainActivity, "倒计时已开始!", Toast.LENGTH_SHORT).show()
+            apiClient.setTimerImmediate(card.cardId, totalSeconds, "start", timerMode, isDouble)
+            Toast.makeText(this@MainActivity, if (isCountup) "正计时已开始 (先玩后付)!" else "倒计时已开始!", Toast.LENGTH_SHORT).show()
             dialog.dismiss()
             triggerLocalRefresh()
         }
@@ -656,6 +866,7 @@ class MainActivity : AppCompatActivity() {
             private val tvTime: TextView = itemView.findViewById(R.id.tvTimeDisplay)
             private val tvAvatarChar: TextView = itemView.findViewById(R.id.tvAvatarChar)
             private val tvRemarkBadge: TextView = itemView.findViewById(R.id.tvRemarkBadge)
+            private val tvCardPriceEstimate: TextView = itemView.findViewById(R.id.tvCardPriceEstimate)
 
             fun bind(card: CardInfo, onManageClick: ((CardInfo) -> Unit)?) {
                 tvName.text = card.name
@@ -677,26 +888,61 @@ class MainActivity : AppCompatActivity() {
                     tvRemarkBadge.visibility = View.GONE
                 }
 
-                if (card.isOverdue || card.status == 3) {
-                    tvBadge.text = "⚠️ 已超时"
-                    tvBadge.setTextColor(0xFFFF5252.toInt())
-                    tvTime.text = formatTime(card.overdueSeconds)
-                    tvTime.setTextColor(0xFFFF5252.toInt())
-                } else if (card.status == 1) {
-                    tvBadge.text = "进行中"
-                    tvBadge.setTextColor(0xFF45B880.toInt())
-                    tvTime.text = formatTime(card.remainingSeconds)
-                    tvTime.setTextColor(0xFF45B880.toInt())
-                } else if (card.status == 2) {
-                    tvBadge.text = "已暂停"
-                    tvBadge.setTextColor(0xFFE58032.toInt())
-                    tvTime.text = formatTime(card.remainingSeconds)
-                    tvTime.setTextColor(0xFFE58032.toInt())
+                if (card.timerMode == 1) {
+                    // 正计时卡片
+                    if (card.status == 1) {
+                        tvBadge.text = "⏱️ 正计时"
+                        tvBadge.setTextColor(0xFF0284C7.toInt())
+                        tvTime.text = formatTime(card.elapsedSeconds)
+                        tvTime.setTextColor(0xFF0284C7.toInt())
+                    } else if (card.status == 2) {
+                        tvBadge.text = "🍵 已暂停"
+                        tvBadge.setTextColor(0xFFE58032.toInt())
+                        tvTime.text = formatTime(card.elapsedSeconds)
+                        tvTime.setTextColor(0xFFE58032.toInt())
+                    } else {
+                        tvBadge.text = "未使用"
+                        tvBadge.setTextColor(0xFF7F91A4.toInt())
+                        tvTime.text = "0秒"
+                        tvTime.setTextColor(0xFF7F91A4.toInt())
+                    }
+
+                    if (card.status != 0) {
+                        tvCardPriceEstimate.visibility = View.VISIBLE
+                        tvCardPriceEstimate.text = "💰 预估: ¥${String.format(Locale.US, "%.1f", card.estimatedPrice)} (${card.pricePlanName})"
+                    } else {
+                        tvCardPriceEstimate.visibility = View.GONE
+                    }
                 } else {
-                    tvBadge.text = "未使用"
-                    tvBadge.setTextColor(0xFF7F91A4.toInt())
-                    tvTime.text = "0秒"
-                    tvTime.setTextColor(0xFF7F91A4.toInt())
+                    // 倒计时卡片
+                    if (card.isOverdue || card.status == 3) {
+                        tvBadge.text = "⚠️ 已超时"
+                        tvBadge.setTextColor(0xFFFF5252.toInt())
+                        tvTime.text = formatTime(card.overdueSeconds)
+                        tvTime.setTextColor(0xFFFF5252.toInt())
+                    } else if (card.status == 1) {
+                        tvBadge.text = "进行中"
+                        tvBadge.setTextColor(0xFF45B880.toInt())
+                        tvTime.text = formatTime(card.remainingSeconds)
+                        tvTime.setTextColor(0xFF45B880.toInt())
+                    } else if (card.status == 2) {
+                        tvBadge.text = "已暂停"
+                        tvBadge.setTextColor(0xFFE58032.toInt())
+                        tvTime.text = formatTime(card.remainingSeconds)
+                        tvTime.setTextColor(0xFFE58032.toInt())
+                    } else {
+                        tvBadge.text = "未使用"
+                        tvBadge.setTextColor(0xFF7F91A4.toInt())
+                        tvTime.text = "0秒"
+                        tvTime.setTextColor(0xFF7F91A4.toInt())
+                    }
+
+                    if (card.status != 0 && card.estimatedPrice > 0) {
+                        tvCardPriceEstimate.visibility = View.VISIBLE
+                        tvCardPriceEstimate.text = "💰 计费: ¥${String.format(Locale.US, "%.1f", card.estimatedPrice)} (${card.pricePlanName})"
+                    } else {
+                        tvCardPriceEstimate.visibility = View.GONE
+                    }
                 }
 
                 itemView.setOnClickListener { onManageClick?.invoke(card) }

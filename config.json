@@ -1,0 +1,9 @@
+{
+  "server_url": "https://gist.githubusercontent.com/raw/6582c66b24bad75381f70abdae62e81b/cards_data.json",
+  "poll_interval_seconds": 60,
+  "pause_system_music": true,
+  "enable_voice_alert": true,
+  "expired_template": "{卡片列表}即将超时",
+  "selected_voice_name": "zh-CN-XiaoxiaoNeural",
+  "volume_boost": 5
+}

@@ -22,6 +22,21 @@
         </header>
 
         <main class="content">
+            <!-- Voice Alert & 10s Refresh Banner -->
+            <div class="voice-alert-banner">
+                <div class="voice-info">
+                    <span class="voice-icon">📢</span>
+                    <div>
+                        <h3>卡片超时语音提醒服务（每10秒拉取）</h3>
+                        <p id="speechStatusText">正在10秒定时拉取中... 提示：浏览器要求点击页面后激活语音合成。</p>
+                    </div>
+                </div>
+                <div class="voice-actions">
+                    <button id="btnEnableVoice" class="btn-voice-enable">🔊 激活语音提醒</button>
+                    <button id="btnTestVoice" class="btn-voice-test">🗣️ 测试语音播报</button>
+                </div>
+            </div>
+
             <!-- Android Web NFC Scanner Section (Only shown on Android Chrome/Edge) -->
             <div id="androidNfcSection" class="nfc-scan-card" style="display: none;">
                 <div class="nfc-scan-info">
