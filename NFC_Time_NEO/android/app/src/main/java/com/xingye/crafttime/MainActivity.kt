@@ -37,7 +37,9 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.xingye.crafttime.api.BackendApiClient
 import com.xingye.crafttime.api.CardInfo
+import com.xingye.crafttime.api.PaymentBreakdownItem
 import com.xingye.crafttime.api.PriceCalculator
+import com.xingye.crafttime.api.PricingResult
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
@@ -751,6 +753,76 @@ class MainActivity : AppCompatActivity() {
                 .show()
         }
 
+        // 付款项目 CheckboxList
+        val llPaymentContainer = view.findViewById<LinearLayout>(R.id.llPaymentCheckboxesContainer)
+        val tvPaymentBadge = view.findViewById<TextView>(R.id.tvPaymentSummaryBadge)
+        val tvPaidAmount = view.findViewById<TextView>(R.id.tvPaidAmountText)
+        val tvUnpaidAmount = view.findViewById<TextView>(R.id.tvUnpaidAmountText)
+
+        var lastPaymentItemKeys = ""
+        fun renderPaymentCheckboxes(pricing: PricingResult) {
+            val currentKeys = pricing.paymentItems.joinToString("|") { "${it.id}:${it.amount}:${it.isPaid}" }
+            if (currentKeys == lastPaymentItemKeys && llPaymentContainer.childCount == pricing.paymentItems.size) {
+                tvPaidAmount.text = "✅ 已付款: ¥${String.format(Locale.US, "%.1f", pricing.paidAmount)}"
+                tvUnpaidAmount.text = if (pricing.unpaidAmount > 0) "⚠️ 待收(未付): ¥${String.format(Locale.US, "%.1f", pricing.unpaidAmount)}" else "✅ 全部已结清"
+                tvUnpaidAmount.setTextColor(if (pricing.unpaidAmount > 0) 0xFFFB7185.toInt() else 0xFF34D399.toInt())
+                if (pricing.unpaidAmount > 0) {
+                    tvPaymentBadge.text = "待收: ¥${String.format(Locale.US, "%.1f", pricing.unpaidAmount)}"
+                    tvPaymentBadge.setBackgroundColor(0xFF881337.toInt())
+                    tvPaymentBadge.setTextColor(0xFFFB7185.toInt())
+                } else {
+                    tvPaymentBadge.text = "已全付清"
+                    tvPaymentBadge.setBackgroundColor(0xFF064E3B.toInt())
+                    tvPaymentBadge.setTextColor(0xFF34D399.toInt())
+                }
+                return
+            }
+
+            lastPaymentItemKeys = currentKeys
+            llPaymentContainer.removeAllViews()
+
+            for (item in pricing.paymentItems) {
+                val cb = CheckBox(this@MainActivity).apply {
+                    text = "${item.title}  [¥${String.format(Locale.US, "%.1f", item.amount)}] ${if (item.isPaid) "✅ 已付" else "⚠️ 待收"}"
+                    setTextColor(if (item.isPaid) 0xFF34D399.toInt() else 0xFFF1F5F9.toInt())
+                    textSize = 13f
+                    isChecked = item.isPaid
+                    setPadding(8, 4, 8, 4)
+
+                    setOnCheckedChangeListener { _, isChecked ->
+                        val curList = card.paidItems.toMutableList()
+                        if (isChecked) {
+                            if (!curList.contains(item.id)) curList.add(item.id)
+                            curList.remove("${item.id}_unpaid")
+                        } else {
+                            curList.remove(item.id)
+                            if (!curList.contains("${item.id}_unpaid")) curList.add("${item.id}_unpaid")
+                        }
+                        card.paidItems = curList
+                        lifecycleScope.launch {
+                            apiClient.updateCardConfig(card.cardId, paidItems = curList)
+                            refreshCardsLocal()
+                        }
+                    }
+                }
+                llPaymentContainer.addView(cb)
+            }
+
+            tvPaidAmount.text = "✅ 已付款: ¥${String.format(Locale.US, "%.1f", pricing.paidAmount)}"
+            tvUnpaidAmount.text = if (pricing.unpaidAmount > 0) "⚠️ 待收(未付): ¥${String.format(Locale.US, "%.1f", pricing.unpaidAmount)}" else "✅ 全部已结清"
+            tvUnpaidAmount.setTextColor(if (pricing.unpaidAmount > 0) 0xFFFB7185.toInt() else 0xFF34D399.toInt())
+
+            if (pricing.unpaidAmount > 0) {
+                tvPaymentBadge.text = "待收: ¥${String.format(Locale.US, "%.1f", pricing.unpaidAmount)}"
+                tvPaymentBadge.setBackgroundColor(0xFF881337.toInt())
+                tvPaymentBadge.setTextColor(0xFFFB7185.toInt())
+            } else {
+                tvPaymentBadge.text = "已全付清"
+                tvPaymentBadge.setBackgroundColor(0xFF064E3B.toInt())
+                tvPaymentBadge.setTextColor(0xFF34D399.toInt())
+            }
+        }
+
         var dialogJob: Job? = null
         dialogJob = lifecycleScope.launch {
             while (isActive) {
@@ -808,13 +880,14 @@ class MainActivity : AppCompatActivity() {
                     tvDoubanTime.text = "豆板已用时长: ${formatSeconds(card.doubanElapsedSeconds)}"
                 }
 
-                // 3. 计费动态刷新
+                // 3. 计费与付款 Checkbox 动态刷新
                 card.pricing = PriceCalculator.computeCardPricing(card)
                 val p = card.pricing!!
                 tvBestPlanTitle.text = if (card.isPostPay) "💡 玩完再付最优方案: ${p.bestPlanName}" else "📦 当前计费: ${p.bestPlanName}"
                 tvPriceBig.text = "¥ ${String.format(Locale.US, "%.1f", p.totalPrice)}"
                 tvFormula.text = "📐 公式: ${p.formula}"
                 tvBreakdown.text = p.breakdownItems.joinToString("\n")
+                renderPaymentCheckboxes(p)
 
                 delay(1000)
             }
@@ -862,17 +935,14 @@ class MainActivity : AppCompatActivity() {
                 p.breakdownItems.joinToString("\n") + "\n\n"
             } else ""
 
-            val title = if (!card.isPostPay && card.presetPlan.isNotEmpty() && card.presetPlan != "none") {
-                if (p.needToPay > 0) "💰 结账清单 (需补收差价 ¥${String.format(Locale.US, "%.1f", p.needToPay)})" else "💰 结账清单 (已预付，无补收)"
+            val title = if (p.unpaidAmount > 0) {
+                "💰 结账清单 (待收未付金额: ¥${String.format(Locale.US, "%.1f", p.unpaidAmount)})"
             } else {
-                "💰 结账清单 (应收 ¥${String.format(Locale.US, "%.1f", p.totalPrice)})"
+                "💰 结账清单 (已全部付款结清)"
             }
 
-            val paySummary = if (!card.isPostPay && card.presetPlan.isNotEmpty() && card.presetPlan != "none") {
-                "已付基价: ¥${String.format(Locale.US, "%.1f", p.playFee)}\n" +
-                "💵 本次需补收: ¥${String.format(Locale.US, "%.1f", p.needToPay)}"
-            } else {
-                "💵 应收总额: ¥${String.format(Locale.US, "%.1f", p.totalPrice)}"
+            val payItemsDetail = p.paymentItems.joinToString("\n") {
+                "• ${it.title}: ¥${String.format(Locale.US, "%.1f", it.amount)} [${if (it.isPaid) "✅ 已付款" else "⚠️ 未付款"}]"
             }
 
             AlertDialog.Builder(this)
@@ -883,8 +953,10 @@ class MainActivity : AppCompatActivity() {
                     (if (card.useDouban) "智能豆板: 已用 ${formatSeconds(card.doubanElapsedSeconds)}\n" else "") +
                     "结算方案: ${p.bestPlanName}\n" +
                     "计算说明: ${p.formula}\n\n" +
-                    breakdownStr +
-                    paySummary
+                    "【付款项目明细】\n" +
+                    payItemsDetail + "\n\n" +
+                    "✅ 已付款合计: ¥${String.format(Locale.US, "%.1f", p.paidAmount)}\n" +
+                    "💵 待收款(需收): ¥${String.format(Locale.US, "%.1f", p.unpaidAmount)}"
                 )
                 .setPositiveButton("确认收款并结束") { _, _ ->
                     lifecycleScope.launch {
@@ -943,7 +1015,6 @@ class MainActivity : AppCompatActivity() {
                 tvUid.text = "UID: ${card.cardId}"
 
                 // 1. 智能豆板 Tag
-                // 1. 智能豆板 Tag (只要用了就直接显示已用时长与应收豆板费)
                 if (card.useDouban) {
                     tvTagDouban.visibility = View.VISIBLE
                     val (dFee, _) = PriceCalculator.calculateDoubanFee(card.doubanElapsedSeconds)
@@ -1015,21 +1086,19 @@ class MainActivity : AppCompatActivity() {
                     }
                 }
 
-                // 6. 价格预估与补收提示
+                // 6. 价格预估与补收提示 (根据付款项精准提示已付与待收)
                 val p = card.pricing ?: PriceCalculator.computeCardPricing(card)
                 if (card.status != 0) {
                     tvCardPriceEstimate.visibility = View.VISIBLE
-                    if (!card.isPostPay && card.presetPlan.isNotEmpty() && card.presetPlan != "none") {
-                        if (p.needToPay > 0) {
-                            tvCardPriceEstimate.text = "💰 需补收: ¥${String.format(Locale.US, "%.1f", p.needToPay)} (超时加时/豆板)"
-                            tvCardPriceEstimate.setTextColor(0xFFFF5252.toInt())
-                        } else {
-                            tvCardPriceEstimate.text = "💰 已付套餐: ¥${String.format(Locale.US, "%.1f", p.playFee)} (正常未超时)"
-                            tvCardPriceEstimate.setTextColor(0xFF4ADE80.toInt())
-                        }
+                    if (p.unpaidAmount > 0 && p.paidAmount > 0) {
+                        tvCardPriceEstimate.text = "💰 待收: ¥${String.format(Locale.US, "%.1f", p.unpaidAmount)} (已收 ¥${String.format(Locale.US, "%.1f", p.paidAmount)})"
+                        tvCardPriceEstimate.setTextColor(0xFFFF5252.toInt())
+                    } else if (p.unpaidAmount <= 0) {
+                        tvCardPriceEstimate.text = "✅ 已全款结清: ¥${String.format(Locale.US, "%.1f", p.paidAmount)}"
+                        tvCardPriceEstimate.setTextColor(0xFF4ADE80.toInt())
                     } else {
-                        tvCardPriceEstimate.text = "💡 最优结算: ¥${String.format(Locale.US, "%.1f", p.totalPrice)} (${p.bestPlanName})"
-                        tvCardPriceEstimate.setTextColor(0xFF38BDF8.toInt())
+                        tvCardPriceEstimate.text = "⚠️ 未付款 (待收 ¥${String.format(Locale.US, "%.1f", p.unpaidAmount)}) - ${p.bestPlanName}"
+                        tvCardPriceEstimate.setTextColor(0xFFFBBF24.toInt())
                     }
                 } else {
                     tvCardPriceEstimate.visibility = View.GONE

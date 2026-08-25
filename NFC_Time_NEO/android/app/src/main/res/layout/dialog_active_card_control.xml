@@ -215,6 +215,89 @@
                 android:textSize="11sp" />
         </LinearLayout>
 
+        <!-- 付款项目 CheckboxList (勾选已付款，未勾选未付款) -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:background="#16222F"
+            android:orientation="vertical"
+            android:padding="12dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="💳 付款项目明细 (手动勾选已付款)"
+                    android:textColor="#FFFFFF"
+                    android:textSize="13sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/tvPaymentSummaryBadge"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:background="#064E3B"
+                    android:paddingHorizontal="6dp"
+                    android:paddingVertical="2dp"
+                    android:text="待收: ¥0.0"
+                    android:textColor="#34D399"
+                    android:textSize="11sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:text="☑️ 勾选 = 客户已付款  |  ⬜ 未勾选 = 客户尚未付款"
+                android:textColor="#94A3B8"
+                android:textSize="11sp" />
+
+            <!-- 动态 Checkbox 容器 -->
+            <LinearLayout
+                android:id="@+id/llPaymentCheckboxesContainer"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:orientation="vertical" />
+
+            <!-- 收款汇总统计 -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:background="#1C2733"
+                android:padding="8dp"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:id="@+id/tvPaidAmountText"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="✅ 已付款: ¥0.0"
+                    android:textColor="#34D399"
+                    android:textSize="12sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/tvUnpaidAmountText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="⚠️ 待收(未付): ¥0.0"
+                    android:textColor="#FB7185"
+                    android:textSize="12sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+        </LinearLayout>
+
         <!-- 自定义加时区 (输入分钟数，自由加时) -->
         <LinearLayout
             android:id="@+id/llAddDurationSection"

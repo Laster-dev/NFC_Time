@@ -88,49 +88,45 @@ public static class PriceCalculator
     /// </summary>
     public static PricingResult ComputeCardPricing(CardInfo card)
     {
-        double playElapsedSeconds = card.ElapsedSeconds;
-        int totalPlayMinutes = Math.Max(1, (int)Math.Ceiling(playElapsedSeconds / 60.0));
+        int totalPlayMinutes = Math.Max(1, (int)Math.Ceiling(card.ElapsedSeconds / 60.0));
 
         // 1. 智能豆板费用
         double doubanFee = 0.0;
         string doubanDetail = "";
         if (card.UseDouban)
         {
-            var dRes = CalculateDoubanFee(card.DoubanElapsedSeconds);
-            doubanFee = dRes.fee;
-            doubanDetail = dRes.detail;
+            var (dFee, dDetail) = CalculateDoubanFee(card.DoubanElapsedSeconds);
+            doubanFee = dFee;
+            doubanDetail = dDetail;
         }
+
+        string basePlanName;
+        double basePlayFee;
+        double overtimeFee;
+        string formula;
+        var breakdown = new List<string>();
 
         // 2. 场景 A: 购买了预设套餐 (先付款)
         if (!card.IsPostPay && !string.IsNullOrWhiteSpace(card.PresetPlan) && card.PresetPlan != "none" && card.PresetPlan != "custom")
         {
-            string basePlanName;
-            double basePlanFee;
             int baseMinutes;
-
             if (card.PresetPlan == "3h")
             {
                 basePlanName = "3小时套餐";
-                basePlanFee = 29.9;
+                basePlayFee = 29.9;
                 baseMinutes = 180;
             }
             else
             {
                 basePlanName = "1小时套餐";
-                basePlanFee = 12.9;
+                basePlayFee = 12.9;
                 baseMinutes = 60;
             }
 
             int extraMin = Math.Max(0, totalPlayMinutes - baseMinutes);
-            double overtimeFee = CalculatePlayOvertimeFee(extraMin);
-            double totalPrice = Math.Round(basePlanFee + overtimeFee + doubanFee, 1);
-            double needToPay = Math.Round(overtimeFee + doubanFee, 1); // 先付款客户需补收的差价
+            overtimeFee = CalculatePlayOvertimeFee(extraMin);
 
-            var breakdown = new List<string>
-            {
-                $"📦 已选套餐: {basePlanName} (已付基价 ¥{basePlanFee:F1})"
-            };
-
+            breakdown.Add($"📦 已选套餐: {basePlanName} (基价 ¥{basePlayFee:F1})");
             if (overtimeFee > 0)
             {
                 string otText = extraMin <= 30 ? $"超时{extraMin}分" : $"超时{extraMin / 60}小时{extraMin % 60}分";
@@ -146,98 +142,94 @@ public static class PriceCalculator
                 breakdown.Add($"📟 智能豆板: +¥{doubanFee:F1} ({doubanDetail})");
             }
 
-            string formula;
-            if (needToPay > 0)
+            formula = $"套餐¥{basePlayFee:F1}" +
+                      (overtimeFee > 0 ? $" + 加时¥{overtimeFee:F1}" : "") +
+                      (doubanFee > 0 ? $" + 豆板¥{doubanFee:F1}" : "");
+        }
+        else
+        {
+            // 3. 场景 B: 玩完再付 (后付款) -> 全场智能推荐最优解 (比对所有套餐与组合)
+            var candidates = new List<(string planName, double playFee, double playOvertimeFee, string overtimeText, double total)>
             {
-                formula = $"已付¥{basePlanFee:F1} + 需补收¥{needToPay:F1}" +
-                          (overtimeFee > 0 ? $" [加时¥{overtimeFee:F1}]" : "") +
-                          (doubanFee > 0 ? $" [豆板¥{doubanFee:F1}]" : "") +
-                          $" = 总价¥{totalPrice:F1}";
-            }
-            else
-            {
-                formula = $"已付¥{basePlanFee:F1} (未超时/无补收)";
-            }
-
-            return new PricingResult
-            {
-                TotalPrice = totalPrice,
-                NeedToPay = needToPay,
-                BestPlanName = basePlanName,
-                PlayFee = basePlanFee,
-                PlayOvertimeFee = overtimeFee,
-                DoubanFee = doubanFee,
-                DoubanOvertimeFee = 0.0,
-                Formula = formula,
-                BreakdownItems = breakdown
+                ("1小时套餐", 12.9, CalculatePlayOvertimeFee(Math.Max(0, totalPlayMinutes - 60)), "超时", 12.9 + CalculatePlayOvertimeFee(Math.Max(0, totalPlayMinutes - 60))),
+                ("3小时套餐", 29.9, CalculatePlayOvertimeFee(Math.Max(0, totalPlayMinutes - 180)), "超时", 29.9 + CalculatePlayOvertimeFee(Math.Max(0, totalPlayMinutes - 180))),
+                ("3h+1h组合(4h)", 42.8, CalculatePlayOvertimeFee(Math.Max(0, totalPlayMinutes - 240)), "超时", 42.8 + CalculatePlayOvertimeFee(Math.Max(0, totalPlayMinutes - 240))),
+                ("3h+2h组合(5h)", 55.7, CalculatePlayOvertimeFee(Math.Max(0, totalPlayMinutes - 300)), "超时", 55.7 + CalculatePlayOvertimeFee(Math.Max(0, totalPlayMinutes - 300))),
+                ("下午场套餐", 43.9, CalculatePlayOvertimeFee(Math.Max(0, totalPlayMinutes - 330)), "超时", 43.9 + CalculatePlayOvertimeFee(Math.Max(0, totalPlayMinutes - 330))),
+                ("全天不限时", 59.9, 0.0, "不限时", 59.9)
             };
+
+            var best = candidates.OrderBy(c => c.total).First();
+            basePlanName = best.planName;
+            basePlayFee = best.playFee;
+            overtimeFee = best.playOvertimeFee;
+
+            breakdown.Add($"💡 自动推荐最优: {best.planName} (¥{best.playFee:F1})");
+            if (best.playOvertimeFee > 0)
+            {
+                breakdown.Add($"⏳ 游玩超时加时: +¥{best.playOvertimeFee:F1} ({best.overtimeText})");
+            }
+            if (card.UseDouban)
+            {
+                breakdown.Add($"📟 智能豆板: +¥{doubanFee:F1} ({doubanDetail})");
+            }
+
+            formula = $"游玩¥{best.total:F1}({best.planName})" +
+                      (doubanFee > 0 ? $" + 豆板¥{doubanFee:F1}" : "");
         }
 
-        // 3. 场景 B: 玩完再付 (后付款) -> 全场智能推荐最优解 (比对所有套餐与组合)
-        var candidates = new List<(string planName, double playFee, double playOvertimeFee, string overtimeText, double total)>();
+        // 构建结构化收款项列表
+        var paymentItems = new List<PaymentBreakdownItem>();
 
-        // 方案 1: 单买 1小时套餐 (12.9) + 超时
-        int ex1 = Math.Max(0, totalPlayMinutes - 60);
-        double ot1 = CalculatePlayOvertimeFee(ex1);
-        candidates.Add(("1小时套餐", 12.9, ot1, ex1 > 0 ? $"超时{ex1}分" : "未超时", 12.9 + ot1));
-
-        // 方案 2: 单买 3小时套餐 (29.9) + 超时
-        int ex3 = Math.Max(0, totalPlayMinutes - 180);
-        double ot3 = CalculatePlayOvertimeFee(ex3);
-        candidates.Add(("3小时套餐", 29.9, ot3, ex3 > 0 ? $"超时{ex3}分" : "未超时", 29.9 + ot3));
-
-        // 方案 3: 拼套餐 3小时(29.9) + 1小时(12.9) = 42.8元 (240分钟) + 超时
-        int ex3_1 = Math.Max(0, totalPlayMinutes - 240);
-        double ot3_1 = CalculatePlayOvertimeFee(ex3_1);
-        candidates.Add(("3小时+1小时组合(4h)", 42.8, ot3_1, ex3_1 > 0 ? $"超时{ex3_1}分" : "未超时", 42.8 + ot3_1));
-
-        // 方案 4: 拼套餐 3小时(29.9) + 1小时(12.9) + 1小时(12.9) = 55.7元 (300分钟) + 超时
-        int ex3_2 = Math.Max(0, totalPlayMinutes - 300);
-        double ot3_2 = CalculatePlayOvertimeFee(ex3_2);
-        candidates.Add(("3小时+2小时组合(5h)", 55.7, ot3_2, ex3_2 > 0 ? $"超时{ex3_2}分" : "未超时", 55.7 + ot3_2));
-
-        // 方案 5: 下午场套餐 (43.9元，330分钟即 14:00-19:30 5.5小时)
-        int exAft = Math.Max(0, totalPlayMinutes - 330);
-        double otAft = CalculatePlayOvertimeFee(exAft);
-        candidates.Add(("下午场套餐(¥43.9)", 43.9, otAft, exAft > 0 ? $"超时{exAft}分" : "场次内", 43.9 + otAft));
-
-        // 方案 6: 全天不限时套餐 (59.9元)
-        candidates.Add(("全天不限时套餐", 59.9, 0.0, "不限时", 59.9));
-
-        // 选取游玩部分最省钱的方案
-        var best = candidates.OrderBy(c => c.total).First();
-        double finalTotalPrice = Math.Round(best.total + doubanFee, 1);
-
-        var bestBreakdown = new List<string>
+        bool playPaid = card.PaidItems.Contains("play") || (!card.IsPostPay && !string.IsNullOrWhiteSpace(card.PresetPlan) && card.PresetPlan != "none" && !card.PaidItems.Contains("play_unpaid"));
+        paymentItems.Add(new PaymentBreakdownItem
         {
-            $"💡 自动推荐最优: {best.planName} (¥{best.playFee:F1})"
-        };
+            Id = "play",
+            Title = $"基础游玩/套餐费 ({basePlanName})",
+            Amount = basePlayFee,
+            IsPaid = playPaid
+        });
 
-        if (best.playOvertimeFee > 0)
+        if (overtimeFee > 0)
         {
-            bestBreakdown.Add($"⏳ 游玩超时加时: +¥{best.playOvertimeFee:F1} ({best.overtimeText})");
+            paymentItems.Add(new PaymentBreakdownItem
+            {
+                Id = "overtime",
+                Title = "游玩超时加时费",
+                Amount = overtimeFee,
+                IsPaid = card.PaidItems.Contains("overtime")
+            });
         }
 
-        if (card.UseDouban)
+        if (card.UseDouban && doubanFee > 0)
         {
-            bestBreakdown.Add($"📟 智能豆板: +¥{doubanFee:F1} ({doubanDetail})");
+            paymentItems.Add(new PaymentBreakdownItem
+            {
+                Id = "douban",
+                Title = $"智能豆板使用费 ({doubanDetail})",
+                Amount = doubanFee,
+                IsPaid = card.PaidItems.Contains("douban")
+            });
         }
 
-        string bestFormula = $"游玩¥{best.total:F1}({best.planName})" +
-                             (doubanFee > 0 ? $" + 豆板¥{doubanFee:F1}" : "") +
-                             $" = 应收¥{finalTotalPrice:F1}";
+        double paidAmount = Math.Round(paymentItems.Where(it => it.IsPaid).Sum(it => it.Amount), 1);
+        double unpaidAmount = Math.Round(paymentItems.Where(it => !it.IsPaid).Sum(it => it.Amount), 1);
+        double finalTotalPrice = Math.Round(paidAmount + unpaidAmount, 1);
 
         return new PricingResult
         {
             TotalPrice = finalTotalPrice,
-            NeedToPay = finalTotalPrice, // 玩完再付客户应收全额
-            BestPlanName = best.planName,
-            PlayFee = best.playFee,
-            PlayOvertimeFee = best.playOvertimeFee,
+            PaidAmount = paidAmount,
+            UnpaidAmount = unpaidAmount,
+            NeedToPay = unpaidAmount,
+            BestPlanName = basePlanName,
+            PlayFee = basePlayFee,
+            PlayOvertimeFee = overtimeFee,
             DoubanFee = doubanFee,
             DoubanOvertimeFee = 0.0,
-            Formula = bestFormula,
-            BreakdownItems = bestBreakdown
+            Formula = $"{formula} = 应收总计 ¥{finalTotalPrice:F1}",
+            BreakdownItems = breakdown,
+            PaymentItems = paymentItems
         };
     }
 }

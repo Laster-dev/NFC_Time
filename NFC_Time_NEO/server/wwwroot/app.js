@@ -190,9 +190,19 @@ function renderCards(cards) {
             ? `<span class="tag-badge tag-douban-on">📟 智能豆板: 进行中 (已用 ${formatDuration(card.doubanElapsedSeconds)} · 豆板费 ¥${doubanFee.toFixed(1)})</span>`
             : `<span class="tag-badge tag-douban-off">📟 智能豆板: 未使用</span>`;
 
-        const paymentTag = card.isPostPay
-            ? `<span class="tag-badge tag-unpaid">⚠️ 未付款 (玩完再付)</span>`
-            : `<span class="tag-badge tag-paid">✅ 已付款 (先付款)</span>`;
+        let paymentTag = `<span class="tag-badge tag-paid">✅ 已付款</span>`;
+        if (card.pricing) {
+            const p = card.pricing;
+            if (p.unpaidAmount > 0 && p.paidAmount > 0) {
+                paymentTag = `<span class="tag-badge tag-unpaid">⚠️ 部分已付: 待收 ¥${p.unpaidAmount.toFixed(1)} (已收 ¥${p.paidAmount.toFixed(1)})</span>`;
+            } else if (p.unpaidAmount <= 0) {
+                paymentTag = `<span class="tag-badge tag-paid">✅ 已全付清 (¥${p.paidAmount.toFixed(1)})</span>`;
+            } else {
+                paymentTag = `<span class="tag-badge tag-unpaid">⚠️ 玩完再付 (待收 ¥${p.unpaidAmount.toFixed(1)})</span>`;
+            }
+        } else if (card.isPostPay) {
+            paymentTag = `<span class="tag-badge tag-unpaid">⚠️ 未付款 (玩完再付)</span>`;
+        }
 
         const presetTag = `<span class="tag-badge tag-preset">📦 预设套餐: ${formatPresetPlan(card.presetPlan)}</span>`;
         const remarkTag = card.remark ? `<span class="tag-badge" style="background:#F1F5F9; color:#475569;">📝 ${escapeHtml(card.remark)}</span>` : '';
@@ -206,11 +216,18 @@ function renderCards(cards) {
         let pricingHtml = '';
         if (card.pricing) {
             const p = card.pricing;
-            const items = (p.breakdownItems || []).map(it => `<div class="pricing-item-text">${escapeHtml(it)}</div>`).join('');
-            const isPrepaid = !card.isPostPay && card.presetPlan && card.presetPlan !== 'none';
-            const priceTitle = isPrepaid ? (p.needToPay > 0 ? '💰 需补收加时/豆板差价:' : '💰 已预付套餐金额:') : '💰 实时最优预估结算价:';
-            const priceDisplay = isPrepaid ? (p.needToPay > 0 ? `需补收 ¥${p.needToPay.toFixed(1)}` : `¥${p.playFee.toFixed(1)}`) : `¥${p.totalPrice.toFixed(1)}`;
-            const priceColor = isPrepaid && p.needToPay > 0 ? '#DC2626' : (card.isPostPay ? '#D97706' : '#059669');
+            const payItemsHtml = (p.paymentItems || []).map(it => `
+                <div class="pricing-item-text" style="display:flex; justify-content:space-between; align-items:center;">
+                    <span>• ${escapeHtml(it.title)}</span>
+                    <span style="font-weight:800; color:${it.isPaid ? '#059669' : '#DC2626'};">
+                        ¥${it.amount.toFixed(1)} [${it.isPaid ? '✅ 已付款' : '⚠️ 待收'}]
+                    </span>
+                </div>
+            `).join('');
+
+            const priceTitle = p.unpaidAmount > 0 ? '💰 待收未付金额:' : '💰 已全款结清:';
+            const priceDisplay = p.unpaidAmount > 0 ? `待收 ¥${p.unpaidAmount.toFixed(1)}` : `¥${p.paidAmount.toFixed(1)}`;
+            const priceColor = p.unpaidAmount > 0 ? '#DC2626' : '#059669';
 
             pricingHtml = `
                 <div class="pricing-breakdown-box">
@@ -221,8 +238,10 @@ function renderCards(cards) {
                         </div>
                         <div class="pricing-total-price" style="color:${priceColor};">${priceDisplay}</div>
                     </div>
-                    ${p.formula ? `<div class="pricing-formula">📐 计算说明: ${escapeHtml(p.formula)}</div>` : ''}
-                    <div class="pricing-items-list">${items}</div>
+                    ${p.formula ? `<div class="pricing-formula">📐 计费明细: ${escapeHtml(p.formula)}</div>` : ''}
+                    <div class="pricing-items-list" style="margin-top:4px;">
+                        ${payItemsHtml || (p.breakdownItems || []).map(it => `<div class="pricing-item-text">${escapeHtml(it)}</div>`).join('')}
+                    </div>
                 </div>
             `;
         }

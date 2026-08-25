@@ -301,6 +301,7 @@ public class CardManager
         if (req.Remark != null) card.Remark = req.Remark.Trim();
         if (req.IsPostPay.HasValue) card.IsPostPay = req.IsPostPay.Value;
         if (req.PresetPlan != null) card.PresetPlan = req.PresetPlan;
+        if (req.PaidItems != null) card.PaidItems = req.PaidItems;
 
         // 智能豆板更新（支持中途开启）
         if (req.UseDouban.HasValue)

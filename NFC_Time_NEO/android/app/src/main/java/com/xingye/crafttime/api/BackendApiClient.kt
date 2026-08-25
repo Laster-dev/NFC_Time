@@ -15,6 +15,13 @@ import java.util.Locale
 import java.util.TimeZone
 import java.util.concurrent.TimeUnit
 
+data class PaymentBreakdownItem(
+    val id: String = "", // "play", "overtime", "douban", "extra"
+    val title: String = "",
+    val amount: Double = 0.0,
+    var isPaid: Boolean = false
+)
+
 data class CardInfo(
     val cardId: String = "",
     var name: String = "",
@@ -24,6 +31,7 @@ data class CardInfo(
     // 客户属性与标签
     var isPostPay: Boolean = false, // 玩完再付 (后付款)
     var presetPlan: String = "none", // none, 1h, 3h
+    var paidItems: MutableList<String> = mutableListOf(), // 已付款的项目ID列表: "play", "overtime", "douban"
     
     // 智能豆板属性 (支持中途开启)
     var useDouban: Boolean = false,
@@ -48,6 +56,8 @@ data class CardInfo(
 
 data class PricingResult(
     var totalPrice: Double = 0.0,
+    var paidAmount: Double = 0.0, // 已付款总额
+    var unpaidAmount: Double = 0.0, // 待付款(需补收/未付)总额
     var needToPay: Double = 0.0,
     var bestPlanName: String = "",
     var playFee: Double = 0.0,
@@ -55,7 +65,8 @@ data class PricingResult(
     var doubanFee: Double = 0.0,
     var doubanOvertimeFee: Double = 0.0,
     var formula: String = "",
-    var breakdownItems: List<String> = emptyList()
+    var breakdownItems: List<String> = emptyList(),
+    var paymentItems: List<PaymentBreakdownItem> = emptyList()
 )
 
 class BackendApiClient(private val context: Context) {
@@ -418,6 +429,7 @@ class BackendApiClient(private val context: Context) {
         remark: String? = null,
         isPostPay: Boolean? = null,
         presetPlan: String? = null,
+        paidItems: List<String>? = null,
         useDouban: Boolean? = null,
         doubanPlan: String? = null,
         startTimeUtc: String? = null,
@@ -431,6 +443,7 @@ class BackendApiClient(private val context: Context) {
             if (remark != null) card.remark = remark
             if (isPostPay != null) card.isPostPay = isPostPay
             if (presetPlan != null) card.presetPlan = presetPlan
+            if (paidItems != null) card.paidItems = paidItems.toMutableList()
 
             if (useDouban != null) {
                 if (useDouban && !card.useDouban) {
@@ -461,6 +474,7 @@ class BackendApiClient(private val context: Context) {
             if (remark != null) payload["remark"] = remark
             if (isPostPay != null) payload["isPostPay"] = isPostPay
             if (presetPlan != null) payload["presetPlan"] = presetPlan
+            if (paidItems != null) payload["paidItems"] = paidItems
             if (useDouban != null) payload["useDouban"] = useDouban
             if (doubanPlan != null) payload["doubanPlan"] = doubanPlan
             if (startTimeUtc != null) payload["startTimeUtc"] = startTimeUtc

@@ -76,29 +76,29 @@ object PriceCalculator {
             doubanDetail = dRes.second
         }
 
+        val basePlanName: String
+        val basePlayFee: Double
+        val overtimeFee: Double
+        val formula: String
+        val breakdown = mutableListOf<String>()
+
         // 2. 场景 A: 购买了预设套餐 (先付款)
         if (!card.isPostPay && card.presetPlan.isNotEmpty() && card.presetPlan != "none" && card.presetPlan != "custom") {
-            val basePlanName: String
-            val basePlanFee: Double
             val baseMinutes: Int
-
             if (card.presetPlan == "3h") {
                 basePlanName = "3小时套餐"
-                basePlanFee = 29.9
+                basePlayFee = 29.9
                 baseMinutes = 180
             } else {
                 basePlanName = "1小时套餐"
-                basePlanFee = 12.9
+                basePlayFee = 12.9
                 baseMinutes = 60
             }
 
             val extraMin = Math.max(0, totalPlayMinutes - baseMinutes)
-            val overtimeFee = calculatePlayOvertimeFee(extraMin)
-            val totalPrice = Math.round((basePlanFee + overtimeFee + doubanFee) * 10.0) / 10.0
-            val needToPay = Math.round((overtimeFee + doubanFee) * 10.0) / 10.0 // 先付款需补收差价
+            overtimeFee = calculatePlayOvertimeFee(extraMin)
 
-            val breakdown = mutableListOf<String>()
-            breakdown.add("📦 已选套餐: $basePlanName (已付基价 ¥${String.format(Locale.US, "%.1f", basePlanFee)})")
+            breakdown.add("📦 已选套餐: $basePlanName (基价 ¥${String.format(Locale.US, "%.1f", basePlayFee)})")
             if (overtimeFee > 0) {
                 val otText = if (extraMin <= 30) "超时${extraMin}分" else "超时${extraMin / 60}小时${extraMin % 60}分"
                 breakdown.add("⏳ 游玩超时加时: +¥${String.format(Locale.US, "%.1f", overtimeFee)} ($otText)")
@@ -110,86 +110,119 @@ object PriceCalculator {
                 breakdown.add("📟 智能豆板: +¥${String.format(Locale.US, "%.1f", doubanFee)} ($doubanDetail)")
             }
 
-            val formula = if (needToPay > 0) {
-                "已付¥${String.format(Locale.US, "%.1f", basePlanFee)} + 需补收¥${String.format(Locale.US, "%.1f", needToPay)}" +
-                        (if (overtimeFee > 0) " [加时¥${String.format(Locale.US, "%.1f", overtimeFee)}]" else "") +
-                        (if (doubanFee > 0) " [豆板¥${String.format(Locale.US, "%.1f", doubanFee)}]" else "") +
-                        " = 总价¥${String.format(Locale.US, "%.1f", totalPrice)}"
-            } else {
-                "已付¥${String.format(Locale.US, "%.1f", basePlanFee)} (未超时/无补收)"
+            formula = "套餐¥${String.format(Locale.US, "%.1f", basePlayFee)}" +
+                    (if (overtimeFee > 0) " + 加时¥${String.format(Locale.US, "%.1f", overtimeFee)}" else "") +
+                    (if (doubanFee > 0) " + 豆板¥${String.format(Locale.US, "%.1f", doubanFee)}" else "")
+        } else {
+            // 3. 场景 B: 玩完再付 (后付款) -> 全场智能推荐最优解 (比对所有套餐与组合)
+            data class Cand(val planName: String, val playFee: Double, val playOt: Double, val otText: String, val total: Double)
+            val candidates = mutableListOf<Cand>()
+
+            // 方案 1: 单买 1小时套餐 (12.9) + 超时
+            val ex1 = Math.max(0, totalPlayMinutes - 60)
+            val ot1 = calculatePlayOvertimeFee(ex1)
+            candidates.add(Cand("1小时套餐", 12.9, ot1, if (ex1 > 0) "超时${ex1}分" else "未超时", 12.9 + ot1))
+
+            // 方案 2: 单买 3小时套餐 (29.9) + 超时
+            val ex3 = Math.max(0, totalPlayMinutes - 180)
+            val ot3 = calculatePlayOvertimeFee(ex3)
+            candidates.add(Cand("3小时套餐", 29.9, ot3, if (ex3 > 0) "超时${ex3}分" else "未超时", 29.9 + ot3))
+
+            // 方案 3: 拼套餐 3小时(29.9) + 1小时(12.9) = 42.8元 (240分钟) + 超时
+            val ex3_1 = Math.max(0, totalPlayMinutes - 240)
+            val ot3_1 = calculatePlayOvertimeFee(ex3_1)
+            candidates.add(Cand("3小时+1小时组合(4h)", 42.8, ot3_1, if (ex3_1 > 0) "超时${ex3_1}分" else "未超时", 42.8 + ot3_1))
+
+            // 方案 4: 拼套餐 3小时(29.9) + 1小时(12.9) + 1小时(12.9) = 55.7元 (300分钟) + 超时
+            val ex3_2 = Math.max(0, totalPlayMinutes - 300)
+            val ot3_2 = calculatePlayOvertimeFee(ex3_2)
+            candidates.add(Cand("3小时+2小时组合(5h)", 55.7, ot3_2, if (ex3_2 > 0) "超时${ex3_2}分" else "未超时", 55.7 + ot3_2))
+
+            // 方案 5: 下午场套餐 (43.9元，330分钟即 14:00-19:30 5.5小时)
+            val exAft = Math.max(0, totalPlayMinutes - 330)
+            val otAft = calculatePlayOvertimeFee(exAft)
+            candidates.add(Cand("下午场套餐(¥43.9)", 43.9, otAft, if (exAft > 0) "超时${exAft}分" else "场次内", 43.9 + otAft))
+
+            // 方案 6: 全天不限时套餐 (59.9元)
+            candidates.add(Cand("全天不限时套餐", 59.9, 0.0, "不限时", 59.9))
+
+            val best = candidates.minByOrNull { it.total } ?: candidates[0]
+            basePlanName = best.planName
+            basePlayFee = best.playFee
+            overtimeFee = best.playOt
+
+            breakdown.add("💡 自动推荐最优: ${best.planName} (¥${String.format(Locale.US, "%.1f", best.playFee)})")
+            if (best.playOt > 0) {
+                breakdown.add("⏳ 游玩超时加时: +¥${String.format(Locale.US, "%.1f", best.playOt)} (${best.otText})")
+            }
+            if (card.useDouban) {
+                breakdown.add("📟 智能豆板: +¥${String.format(Locale.US, "%.1f", doubanFee)} ($doubanDetail)")
             }
 
-            return PricingResult(
-                totalPrice = totalPrice,
-                needToPay = needToPay,
-                bestPlanName = basePlanName,
-                playFee = basePlanFee,
-                playOvertimeFee = overtimeFee,
-                doubanFee = doubanFee,
-                doubanOvertimeFee = 0.0,
-                formula = formula,
-                breakdownItems = breakdown
+            formula = "游玩¥${String.format(Locale.US, "%.1f", best.total)}(${best.planName})" +
+                    (if (doubanFee > 0) " + 豆板¥${String.format(Locale.US, "%.1f", doubanFee)}" else "")
+        }
+
+        // 构建结构化收款项列表 (用于 CheckboxList 勾选)
+        val paymentItems = mutableListOf<PaymentBreakdownItem>()
+
+        val playPaid = if (card.paidItems.contains("play")) {
+            true
+        } else if (!card.isPostPay && card.presetPlan.isNotEmpty() && card.presetPlan != "none" && !card.paidItems.contains("play_unpaid")) {
+            true
+        } else {
+            false
+        }
+        paymentItems.add(
+            PaymentBreakdownItem(
+                id = "play",
+                title = "基础游玩/套餐费 ($basePlanName)",
+                amount = basePlayFee,
+                isPaid = playPaid
+            )
+        )
+
+        if (overtimeFee > 0) {
+            val otPaid = card.paidItems.contains("overtime")
+            paymentItems.add(
+                PaymentBreakdownItem(
+                    id = "overtime",
+                    title = "游玩超时加时费",
+                    amount = overtimeFee,
+                    isPaid = otPaid
+                )
             )
         }
 
-        // 3. 场景 B: 玩完再付 (后付款) -> 全场智能推荐最优解 (比对所有套餐与组合)
-        data class Cand(val planName: String, val playFee: Double, val playOt: Double, val otText: String, val total: Double)
-        val candidates = mutableListOf<Cand>()
-
-        // 方案 1: 单买 1小时套餐 (12.9) + 超时
-        val ex1 = Math.max(0, totalPlayMinutes - 60)
-        val ot1 = calculatePlayOvertimeFee(ex1)
-        candidates.add(Cand("1小时套餐", 12.9, ot1, if (ex1 > 0) "超时${ex1}分" else "未超时", 12.9 + ot1))
-
-        // 方案 2: 单买 3小时套餐 (29.9) + 超时
-        val ex3 = Math.max(0, totalPlayMinutes - 180)
-        val ot3 = calculatePlayOvertimeFee(ex3)
-        candidates.add(Cand("3小时套餐", 29.9, ot3, if (ex3 > 0) "超时${ex3}分" else "未超时", 29.9 + ot3))
-
-        // 方案 3: 拼套餐 3小时(29.9) + 1小时(12.9) = 42.8元 (240分钟) + 超时
-        val ex3_1 = Math.max(0, totalPlayMinutes - 240)
-        val ot3_1 = calculatePlayOvertimeFee(ex3_1)
-        candidates.add(Cand("3小时+1小时组合(4h)", 42.8, ot3_1, if (ex3_1 > 0) "超时${ex3_1}分" else "未超时", 42.8 + ot3_1))
-
-        // 方案 4: 拼套餐 3小时(29.9) + 1小时(12.9) + 1小时(12.9) = 55.7元 (300分钟) + 超时
-        val ex3_2 = Math.max(0, totalPlayMinutes - 300)
-        val ot3_2 = calculatePlayOvertimeFee(ex3_2)
-        candidates.add(Cand("3小时+2小时组合(5h)", 55.7, ot3_2, if (ex3_2 > 0) "超时${ex3_2}分" else "未超时", 55.7 + ot3_2))
-
-        // 方案 5: 下午场套餐 (43.9元，330分钟即 14:00-19:30 5.5小时)
-        val exAft = Math.max(0, totalPlayMinutes - 330)
-        val otAft = calculatePlayOvertimeFee(exAft)
-        candidates.add(Cand("下午场套餐(¥43.9)", 43.9, otAft, if (exAft > 0) "超时${exAft}分" else "场次内", 43.9 + otAft))
-
-        // 方案 6: 全天不限时套餐 (59.9元)
-        candidates.add(Cand("全天不限时套餐", 59.9, 0.0, "不限时", 59.9))
-
-        val best = candidates.minByOrNull { it.total } ?: candidates[0]
-        val finalTotalPrice = Math.round((best.total + doubanFee) * 10.0) / 10.0
-
-        val bestBreakdown = mutableListOf<String>()
-        bestBreakdown.add("💡 自动推荐最优: ${best.planName} (¥${String.format(Locale.US, "%.1f", best.playFee)})")
-        if (best.playOt > 0) {
-            bestBreakdown.add("⏳ 游玩超时加时: +¥${String.format(Locale.US, "%.1f", best.playOt)} (${best.otText})")
-        }
-        if (card.useDouban) {
-            bestBreakdown.add("📟 智能豆板: +¥${String.format(Locale.US, "%.1f", doubanFee)} ($doubanDetail)")
+        if (card.useDouban && doubanFee > 0) {
+            val dPaid = card.paidItems.contains("douban")
+            paymentItems.add(
+                PaymentBreakdownItem(
+                    id = "douban",
+                    title = "智能豆板使用费 ($doubanDetail)",
+                    amount = doubanFee,
+                    isPaid = dPaid
+                )
+            )
         }
 
-        val bestFormula = "游玩¥${String.format(Locale.US, "%.1f", best.total)}(${best.planName})" +
-                (if (doubanFee > 0) " + 豆板¥${String.format(Locale.US, "%.1f", doubanFee)}" else "") +
-                " = 应收¥${String.format(Locale.US, "%.1f", finalTotalPrice)}"
+        val paidAmount = Math.round(paymentItems.filter { it.isPaid }.sumOf { it.amount } * 10.0) / 10.0
+        val unpaidAmount = Math.round(paymentItems.filter { !it.isPaid }.sumOf { it.amount } * 10.0) / 10.0
+        val finalTotalPrice = Math.round((paidAmount + unpaidAmount) * 10.0) / 10.0
 
         return PricingResult(
             totalPrice = finalTotalPrice,
-            needToPay = finalTotalPrice,
-            bestPlanName = best.planName,
-            playFee = best.playFee,
-            playOvertimeFee = best.playOt,
+            paidAmount = paidAmount,
+            unpaidAmount = unpaidAmount,
+            needToPay = unpaidAmount,
+            bestPlanName = basePlanName,
+            playFee = basePlayFee,
+            playOvertimeFee = overtimeFee,
             doubanFee = doubanFee,
             doubanOvertimeFee = 0.0,
-            formula = bestFormula,
-            breakdownItems = bestBreakdown
+            formula = "$formula = 应收总计 ¥${String.format(Locale.US, "%.1f", finalTotalPrice)}",
+            breakdownItems = breakdown,
+            paymentItems = paymentItems
         )
     }
 }

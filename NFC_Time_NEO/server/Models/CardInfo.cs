@@ -20,6 +20,7 @@ public class CardInfo
     // 客户属性
     public bool IsPostPay { get; set; } = false; // 是否后付款（玩完再付）
     public string PresetPlan { get; set; } = "none"; // none, 1h, 3h
+    public List<string> PaidItems { get; set; } = new(); // 已付款的项目列表: "play", "overtime", "douban"
     
     // 智能豆板属性 (支持中途开启使用)
     public bool UseDouban { get; set; } = false; // 是否使用智能豆板
@@ -110,9 +111,19 @@ public class CardInfo
     public PricingResult? Pricing { get; set; }
 }
 
+public class PaymentBreakdownItem
+{
+    public string Id { get; set; } = string.Empty;
+    public string Title { get; set; } = string.Empty;
+    public double Amount { get; set; }
+    public bool IsPaid { get; set; }
+}
+
 public class PricingResult
 {
     public double TotalPrice { get; set; }
+    public double PaidAmount { get; set; }
+    public double UnpaidAmount { get; set; }
     public double NeedToPay { get; set; } // 先付款需补收差价，后付款为应收全款
     public string BestPlanName { get; set; } = string.Empty;
     public double PlayFee { get; set; }
@@ -121,6 +132,7 @@ public class PricingResult
     public double DoubanOvertimeFee { get; set; }
     public string Formula { get; set; } = string.Empty;
     public List<string> BreakdownItems { get; set; } = new();
+    public List<PaymentBreakdownItem> PaymentItems { get; set; } = new();
 }
 
 public class SwipeRequest
@@ -148,6 +160,7 @@ public class UpdateCardConfigRequest
     public string? Remark { get; set; }
     public bool? IsPostPay { get; set; }
     public string? PresetPlan { get; set; }
+    public List<string>? PaidItems { get; set; }
     public bool? UseDouban { get; set; }
     public string? DoubanPlan { get; set; }
     public DateTime? StartTimeUtc { get; set; } // 修改开始时间
