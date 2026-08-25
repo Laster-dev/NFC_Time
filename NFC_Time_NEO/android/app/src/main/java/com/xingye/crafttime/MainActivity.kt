@@ -647,11 +647,10 @@ class MainActivity : AppCompatActivity() {
         val tvFormula = view.findViewById<TextView>(R.id.tvActiveFormula)
         val tvBreakdown = view.findViewById<TextView>(R.id.tvActiveBreakdown)
 
-        // 加时
+        // 自定义加时输入
         val llAddSection = view.findViewById<LinearLayout>(R.id.llAddDurationSection)
-        val btnAdd10 = view.findViewById<Button>(R.id.btnAdd10Min)
-        val btnAdd30 = view.findViewById<Button>(R.id.btnAdd30Min)
-        val btnAdd1H = view.findViewById<Button>(R.id.btnAdd1Hour)
+        val etCustomAddMinutes = view.findViewById<EditText>(R.id.etCustomAddMinutes)
+        val btnConfirmAddMinutes = view.findViewById<Button>(R.id.btnConfirmAddMinutes)
 
         val btnPause = view.findViewById<Button>(R.id.btnActivePause)
         val btnStop = view.findViewById<Button>(R.id.btnActiveStop)
@@ -687,9 +686,27 @@ class MainActivity : AppCompatActivity() {
         // 中途开启/关闭智能豆板
         btnToggleDouban.setOnClickListener {
             val nextState = !card.useDouban
+            val nowIso = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US).apply {
+                timeZone = TimeZone.getTimeZone("UTC")
+            }.format(Date())
+
             lifecycleScope.launch {
-                val (updated, synced) = apiClient.updateCardConfig(card.cardId, useDouban = nextState)
+                val (updated, synced) = apiClient.updateCardConfig(
+                    card.cardId,
+                    useDouban = nextState,
+                    doubanStartTimeUtc = if (nextState) nowIso else null
+                )
                 card.useDouban = nextState
+                if (nextState) {
+                    card.doubanStartTimeUtc = nowIso
+                    card.doubanSavedSeconds = 0
+                    card.doubanElapsedSeconds = 0.0
+                } else {
+                    card.doubanStartTimeUtc = null
+                    card.doubanSavedSeconds = 0
+                    card.doubanElapsedSeconds = 0.0
+                }
+                card.pricing = PriceCalculator.computeCardPricing(card)
                 updateDoubanUi()
                 if (synced) {
                     Toast.makeText(this@MainActivity, if (nextState) "✅ 智能豆板已开启，已同步至服务器" else "✅ 智能豆板已关闭，已同步至服务器", Toast.LENGTH_SHORT).show()
@@ -715,7 +732,7 @@ class MainActivity : AppCompatActivity() {
                         else -> 0
                     }
                     val sdf = getIsoFormat()
-                    val curStartMs = try { sdf.parse(card.startTimeUtc ?: "")?.time ?: System.currentTimeMillis() } catch (e: Exception) { System.currentTimeMillis() }
+                    val curStartMs = parseIsoToMillis(card.startTimeUtc) ?: System.currentTimeMillis()
                     val newStartMs = curStartMs + (deltaMinutes * 60 * 1000L)
                     val newIso = sdf.format(Date(newStartMs))
 
@@ -738,15 +755,36 @@ class MainActivity : AppCompatActivity() {
         dialogJob = lifecycleScope.launch {
             while (isActive) {
                 // Real-time update in dialog
+                val now = System.currentTimeMillis()
                 val clockSdf = SimpleDateFormat("HH:mm:ss", Locale.getDefault())
-                val startMs = try { getIsoFormat().parse(card.startTimeUtc ?: "")?.time } catch (e: Exception) { null }
+                val startMs = parseIsoToMillis(card.startTimeUtc)
+                val doubanStartMs = parseIsoToMillis(card.doubanStartTimeUtc)
+
                 tvStartTimeDisplay.text = "🕒 开始时间: ${if (startMs != null) clockSdf.format(Date(startMs)) else "--:--"}"
 
+                // 1. 卡片计时动态刷新
                 if (card.timerMode == 1) {
+                    var elapsed = card.savedRemainingSeconds.toDouble()
+                    if (startMs != null && card.status == 1) {
+                        val cur = Math.max(0.0, (now - startMs) / 1000.0)
+                        elapsed = card.savedRemainingSeconds.toDouble() + cur
+                    }
+                    card.elapsedSeconds = elapsed
+                    card.remainingSeconds = elapsed
                     tvRemainingBig.text = formatSeconds(card.elapsedSeconds)
                     tvRemainingBig.setTextColor(if (card.status == 2) 0xFFE58032.toInt() else 0xFF2AABEE.toInt())
                     tvOverdueAlert.visibility = View.GONE
                 } else {
+                    var rem = card.savedRemainingSeconds.toDouble()
+                    if (startMs != null && (card.status == 1 || card.status == 3)) {
+                        val spent = (now - startMs) / 1000.0
+                        rem = card.savedRemainingSeconds - spent
+                    }
+                    card.remainingSeconds = rem
+                    card.isOverdue = rem < 0 && (card.status == 1 || card.status == 3)
+                    card.overdueSeconds = if (card.isOverdue) Math.abs(rem) else 0.0
+                    card.elapsedSeconds = Math.max(0.0, card.targetDurationSeconds - rem)
+
                     if (card.isOverdue || card.status == 3) {
                         tvRemainingBig.text = "已超时"
                         tvRemainingBig.setTextColor(0xFFFF5252.toInt())
@@ -759,12 +797,20 @@ class MainActivity : AppCompatActivity() {
                     }
                 }
 
+                // 2. 豆板计时动态刷新
                 if (card.useDouban) {
+                    var dElapsed = card.doubanSavedSeconds.toDouble()
+                    if (doubanStartMs != null && card.status == 1) {
+                        val cur = Math.max(0.0, (now - doubanStartMs) / 1000.0)
+                        dElapsed = card.doubanSavedSeconds.toDouble() + cur
+                    }
+                    card.doubanElapsedSeconds = dElapsed
                     tvDoubanTime.text = "豆板已用时长: ${formatSeconds(card.doubanElapsedSeconds)}"
                 }
 
-                // Pricing
-                val p = card.pricing ?: PriceCalculator.computeCardPricing(card)
+                // 3. 计费动态刷新
+                card.pricing = PriceCalculator.computeCardPricing(card)
+                val p = card.pricing!!
                 tvBestPlanTitle.text = if (card.isPostPay) "💡 玩完再付最优方案: ${p.bestPlanName}" else "📦 当前计费: ${p.bestPlanName}"
                 tvPriceBig.text = "¥ ${String.format(Locale.US, "%.1f", p.totalPrice)}"
                 tvFormula.text = "📐 公式: ${p.formula}"
@@ -776,39 +822,20 @@ class MainActivity : AppCompatActivity() {
 
         dialog.setOnDismissListener { dialogJob?.cancel() }
 
-        btnAdd10.setOnClickListener {
-            lifecycleScope.launch {
-                val (updated, synced) = apiClient.addTime(card.cardId, 10 * 60)
-                if (synced) {
-                    Toast.makeText(this@MainActivity, "✅ 已加时 10 分钟并同步至服务器", Toast.LENGTH_SHORT).show()
-                } else {
-                    Toast.makeText(this@MainActivity, "⚠️ 已加时 10 分钟 (本地离线)", Toast.LENGTH_SHORT).show()
-                }
-                dialog.dismiss()
-                refreshCardsLocal()
+        // 自定义加时
+        btnConfirmAddMinutes.setOnClickListener {
+            val minsStr = etCustomAddMinutes.text.toString().trim()
+            val mins = minsStr.toIntOrNull()
+            if (mins == null || mins <= 0) {
+                Toast.makeText(this@MainActivity, "⚠️ 请输入要加时的分钟数 (如: 15, 60)", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
             }
-        }
-
-        btnAdd30.setOnClickListener {
             lifecycleScope.launch {
-                val (updated, synced) = apiClient.addTime(card.cardId, 30 * 60)
+                val (updated, synced) = apiClient.addTime(card.cardId, mins * 60)
                 if (synced) {
-                    Toast.makeText(this@MainActivity, "✅ 已加时 30 分钟并同步至服务器", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this@MainActivity, "✅ 已成功加时 $mins 分钟并同步至服务器", Toast.LENGTH_SHORT).show()
                 } else {
-                    Toast.makeText(this@MainActivity, "⚠️ 已加时 30 分钟 (本地离线)", Toast.LENGTH_SHORT).show()
-                }
-                dialog.dismiss()
-                refreshCardsLocal()
-            }
-        }
-
-        btnAdd1H.setOnClickListener {
-            lifecycleScope.launch {
-                val (updated, synced) = apiClient.addTime(card.cardId, 60 * 60)
-                if (synced) {
-                    Toast.makeText(this@MainActivity, "✅ 已加时 1 小时并同步至服务器", Toast.LENGTH_SHORT).show()
-                } else {
-                    Toast.makeText(this@MainActivity, "⚠️ 已加时 1 小时 (本地离线)", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this@MainActivity, "⚠️ 已加时 $mins 分钟 (本地离线)", Toast.LENGTH_SHORT).show()
                 }
                 dialog.dismiss()
                 refreshCardsLocal()

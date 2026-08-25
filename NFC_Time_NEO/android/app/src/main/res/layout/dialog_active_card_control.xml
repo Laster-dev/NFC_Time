@@ -215,18 +215,20 @@
                 android:textSize="11sp" />
         </LinearLayout>
 
-        <!-- Quick Add Time Section -->
+        <!-- 自定义加时区 (输入分钟数，自由加时) -->
         <LinearLayout
             android:id="@+id/llAddDurationSection"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="10dp"
-            android:orientation="vertical">
+            android:background="#16222F"
+            android:orientation="vertical"
+            android:padding="10dp">
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="⚡ 快速加时:"
+                android:text="⏱️ 自定义加时 (输入分钟数)"
                 android:textColor="#FFFFFF"
                 android:textSize="13sp"
                 android:textStyle="bold" />
@@ -234,37 +236,34 @@
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
+                android:layout_marginTop="6dp"
+                android:gravity="center_vertical"
                 android:orientation="horizontal">
 
-                <Button
-                    android:id="@+id/btnAdd10Min"
-                    style="@style/Widget.App.Button.TonalButton"
+                <EditText
+                    android:id="@+id/etCustomAddMinutes"
                     android:layout_width="0dp"
-                    android:layout_height="40dp"
+                    android:layout_height="42dp"
                     android:layout_weight="1"
-                    android:text="+10分钟"
-                    android:textColor="#FFFFFF" />
+                    android:background="@drawable/edit_text_bg"
+                    android:hint="输入加时分钟 (如: 15, 60)"
+                    android:inputType="number"
+                    android:paddingHorizontal="12dp"
+                    android:textColor="#FFFFFF"
+                    android:textColorHint="#64748B"
+                    android:textSize="13sp" />
 
                 <Button
-                    android:id="@+id/btnAdd30Min"
-                    style="@style/Widget.App.Button.TonalButton"
-                    android:layout_width="0dp"
-                    android:layout_height="40dp"
-                    android:layout_marginStart="4dp"
-                    android:layout_weight="1"
-                    android:text="+30分钟"
-                    android:textColor="#FFFFFF" />
-
-                <Button
-                    android:id="@+id/btnAdd1Hour"
-                    style="@style/Widget.App.Button.TonalButton"
-                    android:layout_width="0dp"
-                    android:layout_height="40dp"
-                    android:layout_marginStart="4dp"
-                    android:layout_weight="1"
-                    android:text="+1小时"
-                    android:textColor="#FFFFFF" />
+                    android:id="@+id/btnConfirmAddMinutes"
+                    style="@style/Widget.App.Button"
+                    android:layout_width="wrap_content"
+                    android:layout_height="42dp"
+                    android:layout_marginStart="8dp"
+                    android:backgroundTint="#0284C7"
+                    android:text="➕ 确认加时"
+                    android:textColor="#FFFFFF"
+                    android:textSize="13sp"
+                    android:textStyle="bold" />
             </LinearLayout>
         </LinearLayout>
 

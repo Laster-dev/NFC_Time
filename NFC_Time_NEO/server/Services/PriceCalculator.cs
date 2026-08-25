@@ -44,12 +44,7 @@ public static class PriceCalculator
     /// </summary>
     public static (double fee, string detail) CalculateDoubanFee(double doubanElapsedSeconds)
     {
-        if (doubanElapsedSeconds <= 0)
-        {
-            return (0.0, "未开启");
-        }
-
-        int totalMinutes = Math.Max(1, (int)Math.Ceiling(doubanElapsedSeconds / 60.0));
+        int totalMinutes = Math.Max(1, (int)Math.Ceiling(Math.Max(1.0, doubanElapsedSeconds) / 60.0));
         double fee;
         string detail;
 

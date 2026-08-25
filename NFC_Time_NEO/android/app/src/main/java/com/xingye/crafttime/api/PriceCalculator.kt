@@ -29,11 +29,7 @@ object PriceCalculator {
     ///    - 超时15~30分钟：加收半小时2.5元 (N * 5 + 2.5元)
     ///    - 超时30分钟以上：按下一整小时计 ((N + 1) * 5元)
     fun calculateDoubanFee(doubanElapsedSeconds: Double): Pair<Double, String> {
-        if (doubanElapsedSeconds <= 0) {
-            return Pair(0.0, "未开启")
-        }
-
-        val totalMinutes = Math.max(1, Math.ceil(doubanElapsedSeconds / 60.0).toInt())
+        val totalMinutes = Math.max(1, Math.ceil(Math.max(1.0, doubanElapsedSeconds) / 60.0).toInt())
         val fee: Double
         val detail: String
 
