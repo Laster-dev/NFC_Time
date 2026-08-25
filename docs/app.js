@@ -16,7 +16,7 @@ document.addEventListener('DOMContentLoaded', () => {
     setInterval(updateLiveClock, 1000);
     updateLiveClock();
 
-    // Tab buttons
+    // Tab buttons for Card filtering
     const tabBtns = document.querySelectorAll('.tab-pill');
     tabBtns.forEach(btn => {
         btn.addEventListener('click', (e) => {
@@ -30,6 +30,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     fetchCards();
     setInterval(fetchCards, 1200); // 1.2s 实时轮询
+
+    // Auto load initial NetEase music playlist
+    loadNetEasePlaylist('3778678', document.getElementById('pill-3778678'));
 });
 
 function updateLiveClock() {
@@ -40,6 +43,31 @@ function updateLiveClock() {
     if (el) el.textContent = str;
 }
 
+// ==========================================
+// 📱 Tab 页面切换 (计时 / 点歌 / 智能豆板)
+// ==========================================
+function switchTab(tabId, clickedBtn) {
+    // 隐藏所有 Tab 页面
+    document.querySelectorAll('.tab-section').forEach(sec => {
+        sec.style.display = 'none';
+    });
+    // 显示选中的 Tab 页面
+    const target = document.getElementById(tabId);
+    if (target) target.style.display = 'flex';
+
+    // 激活底部导航栏样式
+    document.querySelectorAll('.nav-item').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    if (clickedBtn) {
+        clickedBtn.classList.add('active');
+    }
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// ==========================================
+// ⏱️ 计时卡片数据拉取与渲染
+// ==========================================
 async function fetchCards() {
     const url = getApiUrl();
     try {
@@ -233,6 +261,240 @@ function renderCards(cards) {
             </div>
         `;
     }).join('');
+}
+
+// ==========================================
+// 🎵 点歌台逻辑 (网易云音乐 + ntfy.sh)
+// ==========================================
+let currentLoadedSongs = [];
+let currentPlaylistId = '3778678';
+
+const METING_MIRRORS = [
+    (type, id) => `https://api.injahow.cn/meting/?type=${type}&id=${id}`,
+    (type, id) => `https://meting.005.cx/api?server=netease&type=${type}&id=${id}`,
+    (type, id) => `https://api.i-meto.com/meting/api?server=netease&type=${type}&id=${id}`
+];
+
+async function fetchNetEaseMeting(type, id) {
+    for (const mirrorFn of METING_MIRRORS) {
+        try {
+            const url = mirrorFn(type, encodeURIComponent(id));
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 4500);
+
+            const res = await fetch(url, { signal: controller.signal });
+            clearTimeout(timeoutId);
+
+            if (!res.ok) continue;
+            const data = await res.json();
+
+            if (Array.isArray(data) && data.length > 0) {
+                return data.map(s => ({
+                    id: s.id || s.songid || s.mid || s.url_id || '',
+                    name: s.name || s.title || s.song || '未知歌曲',
+                    artist: s.artist || s.author || s.singer || (Array.isArray(s.artists) ? s.artists.map(a=>a.name).join('/') : '未知歌手'),
+                    pic: s.pic || s.cover || s.album_pic || ''
+                }));
+            }
+        } catch (e) {
+            // failover
+        }
+    }
+    return null;
+}
+
+async function loadNetEasePlaylist(playlistId, pillElement) {
+    currentPlaylistId = playlistId;
+    if (pillElement) {
+        document.querySelectorAll('.playlist-pill').forEach(p => p.classList.remove('active'));
+        pillElement.classList.add('active');
+    }
+
+    const listArea = document.getElementById('musicSearchResultArea');
+    const label = document.getElementById('musicListLabel');
+
+    if (listArea) {
+        listArea.innerHTML = `<div style="text-align: center; padding: 24px; color: var(--text-sub); font-size: 0.78rem;"><span>⏳ 正在加载精选歌单...</span></div>`;
+    }
+    if (label) label.textContent = '📜 网易云推荐曲目 (点击即可一键点歌)：';
+
+    try {
+        const songs = await fetchNetEaseMeting('playlist', playlistId);
+        if (songs && songs.length > 0) {
+            currentLoadedSongs = songs;
+            renderNetEaseSongs(songs);
+        } else {
+            if (listArea) listArea.innerHTML = `<div style="text-align: center; padding: 20px; color: var(--text-sub); font-size: 0.78rem;">⚠️ 歌单加载繁忙，您可以直接在上方输入歌名点歌~</div>`;
+        }
+    } catch (err) {
+        if (listArea) listArea.innerHTML = `<div style="text-align: center; padding: 20px; color: #BE123C; font-size: 0.78rem;">❌ 歌单加载失败，请直接输入歌名点歌~</div>`;
+    }
+}
+
+async function searchNetEaseMusic() {
+    const input = document.getElementById('musicSearchInput');
+    const listArea = document.getElementById('musicSearchResultArea');
+    const label = document.getElementById('musicListLabel');
+    let val = (input.value || '').trim();
+
+    if (!val) {
+        showMusicToast('⚠️ 请输入歌曲名称、歌手或网易云链接~', '#BE123C', '#FFF1F2', '#FDA4AF');
+        input.focus();
+        return;
+    }
+
+    if (listArea) listArea.innerHTML = `<div style="text-align: center; padding: 24px; color: var(--text-sub); font-size: 0.78rem;"><span>🔍 正在搜索网易云音乐曲库...</span></div>`;
+    if (label) label.textContent = `🔍 搜索 “${val}” 的结果：`;
+
+    try {
+        const songs = await fetchNetEaseMeting('search', val);
+        if (songs && songs.length > 0) {
+            currentLoadedSongs = songs;
+            renderNetEaseSongs(songs);
+        } else {
+            if (listArea) {
+                listArea.innerHTML = `
+                    <div style="text-align: center; padding: 18px; color: var(--text-sub); font-size: 0.78rem;">
+                        <p style="margin-bottom: 8px;">未在曲库找到完全匹配的结果，您可以直接点歌：</p>
+                        <button type="button" class="music-pick-btn" style="padding: 6px 14px; font-size: 0.75rem;" onclick="selectSong('', '${escapeHtml(val)}', '未指定', '')">👉 点歌《${escapeHtml(val)}》</button>
+                    </div>
+                `;
+            }
+        }
+    } catch (err) {
+        if (listArea) {
+            listArea.innerHTML = `
+                <div style="text-align: center; padding: 18px; color: var(--text-sub); font-size: 0.78rem;">
+                    <p style="margin-bottom: 8px;">搜索服务暂忙，您可以直接点这首歌：</p>
+                    <button type="button" class="music-pick-btn" style="padding: 6px 14px; font-size: 0.75rem;" onclick="selectSong('', '${escapeHtml(val)}', '未指定', '')">👉 点歌《${escapeHtml(val)}》</button>
+                </div>
+            `;
+        }
+    }
+}
+
+function renderNetEaseSongs(songs) {
+    const listArea = document.getElementById('musicSearchResultArea');
+    if (!listArea) return;
+
+    if (!songs || songs.length === 0) {
+        listArea.innerHTML = `<div style="text-align: center; padding: 20px; color: var(--text-sub); font-size: 0.78rem;">暂无歌曲数据</div>`;
+        return;
+    }
+
+    listArea.innerHTML = songs.map(s => {
+        const songId = s.id || '';
+        const songNameEsc = escapeHtml(s.name);
+        const artistEsc = escapeHtml(s.artist || '未知歌手');
+        const picUrl = s.pic || '';
+
+        return `
+            <div class="music-item-row">
+                <div class="music-item-left">
+                    ${picUrl ? `<img src="${picUrl}" class="music-item-pic" alt="cover" onerror="this.style.display='none'">` : `<div class="music-item-pic" style="display:flex;align-items:center;justify-content:center;font-size:16px;">🎵</div>`}
+                    <div class="music-item-meta">
+                        <span class="music-item-name" title="${songNameEsc}">${songNameEsc}</span>
+                        <span class="music-item-artist" title="${artistEsc}">${artistEsc}</span>
+                    </div>
+                </div>
+                <button type="button" class="music-pick-btn" onclick="selectSong('${songId}', '${songNameEsc}', '${artistEsc}', '${picUrl}')">点这首 🐾</button>
+            </div>
+        `;
+    }).join('');
+}
+
+function selectSong(id, name, artist, pic) {
+    const songIdInput = document.getElementById('musicSongId');
+    const songNameInput = document.getElementById('musicSongName');
+    const artistInput = document.getElementById('musicArtist');
+    const selectedBox = document.getElementById('selectedSongBox');
+    const dispName = document.getElementById('dispSelectedSong');
+    const dispArtist = document.getElementById('dispSelectedArtist');
+
+    if (songIdInput) songIdInput.value = id || '';
+    if (songNameInput) songNameInput.value = name;
+    if (artistInput) artistInput.value = artist;
+
+    if (dispName) dispName.textContent = `🎵 已选：${name}`;
+    if (dispArtist) dispArtist.textContent = `🎤 歌手：${artist || '未指定'}`;
+    if (selectedBox) selectedBox.style.display = 'block';
+
+    submitSongRequest();
+}
+
+async function submitSongRequest() {
+    const songId = (document.getElementById('musicSongId')?.value || '').trim();
+    const songName = (document.getElementById('musicSongName')?.value || '').trim();
+    const submitBtn = document.getElementById('btnSubmitSong');
+    const submitBtnText = document.getElementById('btnSubmitSongText');
+
+    if (!songId && !songName) {
+        showMusicToast('⚠️ 请先在上方列表中点击「点这首」选择一首歌曲哦~', '#BE123C', '#FFF1F2', '#FDA4AF');
+        return;
+    }
+
+    const lastSent = localStorage.getItem('ntfy_last_song_sent');
+    const now = Date.now();
+    if (lastSent && (now - parseInt(lastSent)) < 2000) {
+        const waitSec = Math.ceil((2000 - (now - parseInt(lastSent))) / 1000);
+        showMusicToast(`⏳ 点歌太快啦，请等待 ${waitSec} 秒后再点下一首哦~`, '#D97706', '#FEF3C7', '#FCD34D');
+        return;
+    }
+
+    if (submitBtn) submitBtn.disabled = true;
+    if (submitBtnText) submitBtnText.textContent = '正在点歌...';
+
+    const topic = 'XingYeShouZuo';
+    const messageBody = songId ? `${songId}` : `${songName}`;
+
+    try {
+        const response = await fetch('https://ntfy.sh', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                topic: topic,
+                title: `🎵 点歌: ${songName}`,
+                message: messageBody,
+                tags: ['musical_note', 'sparkles'],
+                priority: 4,
+                click: songId ? `https://music.163.com/song?id=${songId}` : undefined
+            })
+        });
+
+        if (response.ok) {
+            localStorage.setItem('ntfy_last_song_sent', Date.now().toString());
+            showMusicToast(`🎉 点歌成功！《${songName}》已加入播放列表，当前歌曲播放完毕后将为您播放~ 🐱`, '#15803D', '#F0FDF4', '#86EFAC');
+            
+            let countdown = 2;
+            const timer = setInterval(() => {
+                countdown--;
+                if (countdown > 0) {
+                    if (submitBtnText) submitBtnText.textContent = `冷却中 (${countdown}s)`;
+                } else {
+                    clearInterval(timer);
+                    if (submitBtn) submitBtn.disabled = false;
+                    if (submitBtnText) submitBtnText.textContent = '再次点歌 🐾';
+                }
+            }, 1000);
+        } else {
+            throw new Error(`Status: ${response.status}`);
+        }
+    } catch (err) {
+        console.error('ntfy push failed:', err);
+        if (submitBtn) submitBtn.disabled = false;
+        if (submitBtnText) submitBtnText.textContent = '立即点歌 🐾';
+        showMusicToast('❌ 点歌失败，请检查网络连接后重试~', '#BE123C', '#FFF1F2', '#FDA4AF');
+    }
+}
+
+function showMusicToast(text, color, bg, border) {
+    const toast = document.getElementById('musicToast');
+    if (!toast) return;
+    toast.style.display = 'block';
+    toast.style.color = color;
+    toast.style.background = bg;
+    toast.style.borderColor = border;
+    toast.textContent = text;
 }
 
 function escapeHtml(str) {

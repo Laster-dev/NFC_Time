@@ -163,11 +163,44 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    companion object {
+        fun parseIsoToMillis(isoStr: String?): Long? {
+            if (isoStr.isNullOrEmpty()) return null
+            return try {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    java.time.Instant.parse(isoStr).toEpochMilli()
+                } else {
+                    var clean = isoStr.trim()
+                    if (clean.contains(".")) {
+                        val dotIdx = clean.indexOf(".")
+                        val zIdx = clean.indexOf("Z", dotIdx)
+                        clean = if (zIdx > 0) clean.substring(0, dotIdx) + "Z" else clean.substring(0, dotIdx)
+                    }
+                    val sdf = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US).apply {
+                        timeZone = TimeZone.getTimeZone("UTC")
+                    }
+                    sdf.parse(clean)?.time
+                }
+            } catch (e: Exception) {
+                null
+            }
+        }
+
+        fun formatSeconds(seconds: Double): String {
+            val totalSec = Math.max(0, Math.round(seconds).toInt())
+            val h = totalSec / 3600
+            val m = (totalSec % 3600) / 60
+            val s = totalSec % 60
+            val pad = { n: Int -> if (n < 10) "0$n" else "$n" }
+            return if (h > 0) "${pad(h)}:${pad(m)}:${pad(s)}" else "${pad(m)}:${pad(s)}"
+        }
+    }
+
     private fun startPolling() {
         syncJob?.cancel()
         tickJob?.cancel()
 
-        // 1. Tick local cards every 1s
+        // 1. Tick local cards every 1s (每秒刷新显示)
         tickJob = lifecycleScope.launch {
             while (isActive) {
                 refreshCardsLocal()
@@ -175,7 +208,7 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        // 2. Fetch active cards and check live connection every 2.5s (仅传输活跃卡片，省流量)
+        // 2. Fetch active cards and check live connection every 5s (每5秒向服务器同步一次)
         syncJob = lifecycleScope.launch {
             while (isActive) {
                 val currentUrl = apiClient.getServerUrl()
@@ -189,11 +222,12 @@ class MainActivity : AppCompatActivity() {
                         tvServerStatus.text = "🔴 离线 (点击配置)"
                         tvServerStatus.setTextColor(0xFFEF4444.toInt())
                     }
+                    refreshCardsLocal()
                 } catch (e: Exception) {
                     tvServerStatus.text = "🔴 离线 (点击配置)"
                     tvServerStatus.setTextColor(0xFFEF4444.toInt())
                 }
-                delay(2500)
+                delay(5000)
             }
         }
     }
@@ -258,8 +292,8 @@ class MainActivity : AppCompatActivity() {
         val activeCards = allCards.filter { it.status != 0 }.toMutableList()
 
         activeCards.forEach { card ->
-            val startMs = try { sdf.parse(card.startTimeUtc ?: "")?.time } catch (e: Exception) { null }
-            val doubanStartMs = try { sdf.parse(card.doubanStartTimeUtc ?: "")?.time } catch (e: Exception) { null }
+            val startMs = parseIsoToMillis(card.startTimeUtc)
+            val doubanStartMs = parseIsoToMillis(card.doubanStartTimeUtc)
 
             // Compute elapsed / remaining
             if (card.timerMode == 1) {
@@ -842,17 +876,6 @@ class MainActivity : AppCompatActivity() {
         }
 
         dialog.show()
-    }
-
-    companion object {
-        fun formatSeconds(sec: Double): String {
-            val totalSec = Math.abs(sec.toInt())
-            val h = totalSec / 3600
-            val m = (totalSec % 3600) / 60
-            val s = totalSec % 60
-            val pad = { n: Int -> if (n < 10) "0$n" else "$n" }
-            return if (h > 0) "${pad(h)}:${pad(m)}:${pad(s)}" else "${pad(m)}:${pad(s)}"
-        }
     }
 
     class CardAdapter : RecyclerView.Adapter<CardAdapter.CardViewHolder>() {

@@ -19,7 +19,7 @@
                 <span class="mascot-icon">🐱</span>
                 <div>
                     <h1 class="shop-name">星野手作 · 实时时光</h1>
-                    <p class="shop-slogan">✦ 智能手作计时与结算中心 ✦</p>
+                    <p class="shop-slogan">✦ 智能手作计时与点歌中心 ✦</p>
                 </div>
             </div>
             <div class="header-right">
@@ -28,32 +28,142 @@
             </div>
         </header>
 
-        <!-- Pricing Rules Bar -->
-        <div class="pricing-rules-bar">
-            <div class="rule-chip">✨ 智能豆板: ¥5/h (满1h后15分内免/半小时¥2.5/超30分¥5)</div>
-            <div class="rule-chip">⏳ 游玩超时: 15min内免 · 半小时¥8 · 1小时¥15</div>
-        </div>
-
-        <!-- Filter Tabs -->
-        <div class="tabs-pill-bar">
-            <button class="tab-pill active" data-filter="all">全部 (<span id="countAll">0</span>)</button>
-            <button class="tab-pill" data-filter="running">制作中 (<span id="countRunning">0</span>)</button>
-            <button class="tab-pill" data-filter="postpay">⚠️ 玩完再付 (<span id="countPostpay">0</span>)</button>
-            <button class="tab-pill" data-filter="douban">📟 智能豆板 (<span id="countDouban">0</span>)</button>
-            <button class="tab-pill" data-filter="expired">🚨 已超时 (<span id="countExpired">0</span>)</button>
-        </div>
-
-        <!-- Card Grid List -->
-        <div id="cardsGrid" class="card-grid">
-            <div class="empty-cute-box">
-                <div class="empty-mascot">🐾</div>
-                <p>正在获取实时手作卡片数据...</p>
+        <!-- Section 1: Timer Dashboard -->
+        <section id="sec-timer" class="tab-section">
+            <!-- Pricing Rules Bar -->
+            <div class="pricing-rules-bar">
+                <div class="rule-chip">✨ 智能豆板: ¥5/h (满1h后15分内免/半小时¥2.5/超30分¥5)</div>
+                <div class="rule-chip">⏳ 游玩超时: 15min内免 · 半小时¥8 · 1小时¥15</div>
             </div>
-        </div>
+
+            <!-- Filter Tabs -->
+            <div class="tabs-pill-bar">
+                <button class="tab-pill active" data-filter="all">全部 (<span id="countAll">0</span>)</button>
+                <button class="tab-pill" data-filter="running">制作中 (<span id="countRunning">0</span>)</button>
+                <button class="tab-pill" data-filter="postpay">⚠️ 玩完再付 (<span id="countPostpay">0</span>)</button>
+                <button class="tab-pill" data-filter="douban">📟 智能豆板 (<span id="countDouban">0</span>)</button>
+                <button class="tab-pill" data-filter="expired">🚨 已超时 (<span id="countExpired">0</span>)</button>
+            </div>
+
+            <!-- Card Grid List -->
+            <div id="cardsGrid" class="card-grid">
+                <div class="empty-cute-box">
+                    <div class="empty-mascot">🐾</div>
+                    <p>正在获取实时手作卡片数据...</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 2: Music Jukebox -->
+        <section id="sec-music" class="tab-section" style="display: none;">
+            <div class="music-card">
+                <div class="music-head">
+                    <div class="music-head-title">
+                        <span>🎵</span>
+                        <span>星野萌趣点歌台</span>
+                        <span>🐱</span>
+                    </div>
+                    <p class="music-head-subtitle">连接网易云曲库 · 选一首心仪的旋律陪伴手作时光</p>
+                </div>
+
+                <div id="musicToast" class="music-feedback-toast"></div>
+
+                <!-- NetEase Search Input -->
+                <div class="form-group">
+                    <label class="form-label" for="musicSearchInput">
+                        <span>🔍 网易云曲库搜索 / 歌单导入</span>
+                    </label>
+                    <div class="music-search-bar-wrap">
+                        <input type="text" id="musicSearchInput" class="music-search-input" placeholder="输入歌名/歌手，或粘贴网易云歌单链接" onkeydown="if(event.key==='Enter') searchNetEaseMusic()" />
+                        <button type="button" class="music-search-btn" onclick="searchNetEaseMusic()">🔍 搜索/导入</button>
+                    </div>
+                </div>
+
+                <!-- Preset Playlists -->
+                <div class="form-group">
+                    <label class="form-label">✨ 精选网易云歌单推荐：</label>
+                    <div class="music-playlist-pills">
+                        <span class="playlist-pill active" id="pill-3778678" onclick="loadNetEasePlaylist('3778678', this)">🔥 热歌榜</span>
+                        <span class="playlist-pill" id="pill-2829883282" onclick="loadNetEasePlaylist('2829883282', this)">☕ 治愈手作慢调</span>
+                        <span class="playlist-pill" id="pill-505964270" onclick="loadNetEasePlaylist('505964270', this)">🌻 宫崎骏原声</span>
+                        <span class="playlist-pill" id="pill-3779629" onclick="loadNetEasePlaylist('3779629', this)">🌸 经典暖心榜</span>
+                    </div>
+                </div>
+
+                <!-- Song Selection List -->
+                <div class="form-group">
+                    <label class="form-label" id="musicListLabel">📜 网易云推荐曲目 (点击即可一键点歌)：</label>
+                    <div class="music-list-wrap" id="musicSearchResultArea">
+                        <div style="text-align: center; padding: 20px; color: var(--text-sub); font-size: 0.78rem;">
+                            <span>⏳ 正在加载网易云热歌榜...</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Selected Song Indicator & Quick Submit -->
+                <div id="selectedSongBox" style="display: none;">
+                    <div class="selected-song-banner">
+                        <div class="selected-song-info">
+                            <div class="selected-song-title" id="dispSelectedSong">🎵 已选歌曲：--</div>
+                            <div class="selected-song-artist" id="dispSelectedArtist">🎤 歌手：--</div>
+                        </div>
+                        <button type="button" id="btnSubmitSong" class="music-submit-btn" onclick="submitSongRequest()">
+                            <span id="btnSubmitSongText">立即点歌 🐾</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Hidden inputs holding selected song -->
+                <input type="hidden" id="musicSongId" />
+                <input type="hidden" id="musicSongName" />
+                <input type="hidden" id="musicArtist" />
+
+                <!-- Tip Box -->
+                <div class="music-tip-box">
+                    <span>💡</span>
+                    <span>点歌须知：新点的歌曲会自动加入店内播放队列，当前歌曲播放完毕后将依次为您播放~</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 3: Smart Douban App -->
+        <section id="sec-led" class="tab-section" style="display: none;">
+            <div class="led-download-card">
+                <div style="font-size: 3rem; animation: cute-wobble 3s ease-in-out infinite; display: inline-block;">📟</div>
+                <h2 style="font-weight: 800; font-size: 1.15rem; color: var(--text-dark);">智能豆板 App</h2>
+                <p style="font-size: 0.8rem; color: var(--text-sub); line-height: 1.5; max-width: 280px; margin-bottom: 6px;">
+                    扫描下方二维码下载「智能豆板」App，随时随地开启你的智能设备手作之旅！
+                </p>
+                
+                <div class="led-qr-wrap">
+                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=156x156&data=https%3A%2F%2Fapp.iledshow.cn%2Fappversion%2Fdownload%3Fpackage%3Dcom.led.pixdou" alt="智能豆板下载二维码" style="width: 156px; height: 156px; display: block; border-radius: 6px;" />
+                </div>
+
+                <a href="https://app.iledshow.cn/appversion/download?package=com.led.pixdou" target="_blank" class="led-download-btn">
+                    📥 直接点击下载
+                </a>
+            </div>
+        </section>
 
         <footer class="footer-stamp">
             <span>🐾 星野手作 · 温暖陪伴每一刻 🐾</span>
         </footer>
+
+        <!-- Bottom Navigation Bar -->
+        <nav class="bottom-nav">
+            <button type="button" class="nav-item active" onclick="switchTab('sec-timer', this)">
+                <span class="nav-item-icon">⏱️</span>
+                <span class="nav-item-text">计时</span>
+            </button>
+            <button type="button" class="nav-item" onclick="switchTab('sec-music', this)">
+                <span class="nav-item-icon">🎵</span>
+                <span class="nav-item-text">点歌</span>
+            </button>
+            <button type="button" class="nav-item" onclick="switchTab('sec-led', this)">
+                <span class="nav-item-icon">📟</span>
+                <span class="nav-item-text">智能豆板</span>
+            </button>
+        </nav>
     </div>
 
     <script src="app.js"></script>

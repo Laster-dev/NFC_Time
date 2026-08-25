@@ -186,12 +186,21 @@ class BackendApiClient(private val context: Context) {
                     val body = resp.body?.string()
                     if (!body.isNullOrEmpty()) {
                         val activeList = gson.fromJson(body, Array<CardInfo>::class.java).toList()
+                        val activeIds = activeList.map { it.cardId.uppercase(Locale.US) }.toSet()
                         
                         // 合并更新到本地缓存中
                         val local = getLocalCards()
                         for (remote in activeList) {
                             val idx = local.indexOfFirst { it.cardId.equals(remote.cardId, ignoreCase = true) }
                             if (idx >= 0) local[idx] = remote else local.add(remote)
+                        }
+                        // 若远程已停卡，本地同步置为0
+                        for (loc in local) {
+                            if (loc.status != 0 && !activeIds.contains(loc.cardId.uppercase(Locale.US))) {
+                                loc.status = 0
+                                loc.startTimeUtc = null
+                                loc.doubanStartTimeUtc = null
+                            }
                         }
                         saveLocalCards(local)
                         return@withContext Pair(local.filter { it.status != 0 }, true)
