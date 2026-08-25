@@ -1,0 +1,106 @@
+name: Build and Publish Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build-android:
+    name: Build Android APK
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x NFC_Time_NEO/android/gradlew
+
+      - name: Build Release APK
+        run: |
+          cd NFC_Time_NEO/android
+          ./gradlew assembleRelease
+
+      - name: Upload APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-release
+          path: NFC_Time_NEO/android/app/build/outputs/apk/release/app-release.apk
+
+  build-server:
+    name: Build Server Binaries
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Build Linux-x64 (Self-Contained)
+        run: |
+          cd NFC_Time_NEO/server
+          dotnet publish -c Release -r linux-x64 --self-contained -o ./publish-linux
+          cd publish-linux
+          tar -czvf ../../../NfcServer-linux-x64.tar.gz .
+
+      - name: Build Win-x64 (Self-Contained)
+        run: |
+          cd NFC_Time_NEO/server
+          dotnet publish -c Release -r win-x64 --self-contained -o ./publish-win
+          cd publish-win
+          zip -r ../../../NfcServer-win-x64.zip .
+
+      - name: Upload Server Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: server-binaries
+          path: |
+            NfcServer-linux-x64.tar.gz
+            NfcServer-win-x64.zip
+
+  publish-release:
+    name: Create GitHub Release
+    needs: [build-android, build-server]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Download Android Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: app-release
+          path: ./release-assets
+
+      - name: Download Server Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: server-binaries
+          path: ./release-assets
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: Release ${{ github.ref_name }}
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+          files: |
+            ./release-assets/app-release.apk
+            ./release-assets/NfcServer-linux-x64.tar.gz
+            ./release-assets/NfcServer-win-x64.zip
